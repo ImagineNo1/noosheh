@@ -1,0 +1,178 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Tahoma, sans-serif;
+  background: #f2f2f2;
+  color: #111;
+}
+
+.container {
+  width: min(1100px, 92%);
+  margin-inline: auto;
+}
+
+.topbar {
+  text-align: center;
+  padding: 0.7rem;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+.hero {
+  position: relative;
+  min-height: 70vh;
+  background: url('https://images.unsplash.com/photo-1618677831708-0e7fda3148b5?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
+  display: grid;
+  place-items: center;
+}
+.hero .overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+}
+.heroContent {
+  position: relative;
+  text-align: center;
+  color: #f8dfc9;
+}
+.heroContent h1 { font-size: clamp(2rem, 5vw, 4rem); margin: 0; }
+.heroContent p { color: #ff1e8a; font-size: clamp(1.5rem, 3vw, 3rem); margin-top: 0.5rem; }
+
+.categoryCards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-block: 3rem;
+}
+.categoryCard {
+  position: relative;
+  min-height: 230px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: url('https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
+  color: #fff;
+  padding: 2rem;
+}
+.categoryCard:first-child {
+  background-image: url('https://images.unsplash.com/photo-1469504512102-900f29606341?auto=format&fit=crop&w=1200&q=80');
+}
+.cardShade {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+}
+.categoryCard h3, .categoryCard p, .categoryCard button { position: relative; z-index: 2; }
+.categoryCard button {
+  border: none;
+  background: #f3278f;
+  color: #fff;
+  padding: .6rem 1.4rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.productsSection { margin-block: 4rem; }
+.sectionHeading {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.2rem;
+}
+.sectionHeading.single { justify-content: center; }
+
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.2rem;
+}
+.productCard { text-align: center; }
+.imageWrap {
+  position: relative;
+  width: 100%;
+  padding-top: 125%;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+.productCard h4 { margin-bottom: .3rem; font-size: 1.05rem; }
+.productCard p { margin-top: 0; color: #333; }
+
+.featureBanner {
+  min-height: 310px;
+  display: grid;
+  place-items: center;
+  background: url('https://images.unsplash.com/photo-1571513800374-df1bbe650e56?auto=format&fit=crop&w=1800&q=80') center/cover no-repeat;
+}
+.featureBanner.second {
+  background-image: url('https://images.unsplash.com/photo-1581044777550-4cfa60707c03?auto=format&fit=crop&w=1800&q=80');
+}
+.quoteBox {
+  background: rgba(255, 255, 255, 0.88);
+  padding: 1rem 1.8rem;
+  border-radius: 8px;
+  width: min(680px, 90%);
+  text-align: center;
+  font-weight: 700;
+}
+
+.benefits {
+  text-align: center;
+  margin-block: 3.5rem;
+}
+.benefitGrid {
+  margin-top: 2rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 2rem;
+}
+.benefitGrid article {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.partners {
+  text-align: center;
+  margin-block: 3rem;
+}
+.logoRow {
+  margin-top: 1.2rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+.logoRow span {
+  background: #fff;
+  padding: 1rem 1.4rem;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.footer {
+  background: #4a032a;
+  color: #fff;
+  margin-top: 3rem;
+  padding-top: 2rem;
+}
+.footerGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 2rem;
+}
+.footer ul { list-style: none; margin: 0; padding: 0; }
+.copyright {
+  text-align: center;
+  margin: 0;
+  padding: 1.3rem;
+  border-top: 1px solid rgba(255,255,255,.2);
+}
+
+@media (max-width: 960px) {
+  .productGrid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .benefitGrid, .footerGrid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 700px) {
+  .categoryCards { grid-template-columns: 1fr; }
+  .sectionHeading { flex-direction: column; gap: .4rem; text-align: center; }
+}
