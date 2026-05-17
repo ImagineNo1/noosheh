@@ -1,7 +1,7 @@
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  font-family: Tahoma, sans-serif;
+  font-family: var(--font-vazir), Tahoma, sans-serif;
   background: #f2f2f2;
   color: #111;
 }
@@ -177,15 +177,83 @@ body {
   .sectionHeading { flex-direction: column; gap: .4rem; text-align: center; }
 }
 
+/* Tailwind design tokens */
+:root {
+  --font-vazir: Tahoma, sans-serif;
+  --radius: 0.85rem;
+  --background: 330 24% 98%;
+  --foreground: 323 77% 8%;
+  --card: 0 0% 100%;
+  --card-foreground: 323 77% 8%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 323 77% 8%;
+  --primary: 326 89% 55%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 327 31% 95%;
+  --secondary-foreground: 323 77% 8%;
+  --muted: 327 31% 95%;
+  --muted-foreground: 314 7% 43%;
+  --accent: 30 96% 62%;
+  --accent-foreground: 323 77% 8%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 322 24% 88%;
+  --input: 322 24% 88%;
+  --ring: 326 89% 55%;
+  --chart-1: 326 89% 55%;
+  --chart-2: 30 96% 62%;
+  --chart-3: 262 83% 58%;
+  --chart-4: 199 89% 48%;
+  --chart-5: 142 71% 45%;
+  --sidebar-background: 323 77% 8%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-primary: 326 89% 55%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 323 38% 16%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 323 28% 22%;
+  --sidebar-ring: 326 89% 55%;
+}
+
+.dark {
+  --background: 323 77% 8%;
+  --foreground: 330 24% 98%;
+  --card: 323 52% 11%;
+  --card-foreground: 330 24% 98%;
+  --popover: 323 52% 11%;
+  --popover-foreground: 330 24% 98%;
+  --primary: 326 89% 62%;
+  --primary-foreground: 323 77% 8%;
+  --secondary: 323 38% 16%;
+  --secondary-foreground: 330 24% 98%;
+  --muted: 323 38% 16%;
+  --muted-foreground: 322 17% 74%;
+  --accent: 30 96% 62%;
+  --accent-foreground: 323 77% 8%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 323 28% 22%;
+  --input: 323 28% 22%;
+  --ring: 326 89% 62%;
+  --sidebar-background: 323 77% 8%;
+  --sidebar-foreground: 330 24% 98%;
+  --sidebar-primary: 326 89% 62%;
+  --sidebar-primary-foreground: 323 77% 8%;
+  --sidebar-accent: 323 38% 16%;
+  --sidebar-accent-foreground: 330 24% 98%;
+  --sidebar-border: 323 28% 22%;
+  --sidebar-ring: 326 89% 62%;
+}
+
 /* Admin panel */
 :root {
-  --admin-primary: #f3278f;
-  --admin-primary-dark: #d91578;
-  --admin-foreground: #250516;
-  --admin-bg: #f7f3f5;
-  --admin-border: rgba(37, 5, 22, 0.12);
-  --admin-muted: #766674;
-  --admin-card: #fff;
+  --admin-primary: hsl(var(--primary));
+  --admin-primary-dark: hsl(326 82% 47%);
+  --admin-foreground: hsl(var(--sidebar-background));
+  --admin-bg: hsl(var(--background));
+  --admin-border: hsl(var(--border));
+  --admin-muted: hsl(var(--muted-foreground));
+  --admin-card: hsl(var(--card));
 }
 
 .admin-shell {
