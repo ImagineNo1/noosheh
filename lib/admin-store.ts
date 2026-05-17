@@ -39,15 +39,50 @@ type MongoCollection = {
 const now = () => new Date().toISOString();
 
 const initialDatabase: Record<EntityName, AnyRecord[]> = {
-  categories: [{ id: 'cat-set', title: 'کالکشن ست', title_en: 'Set Collection', slug: 'sets', image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=900&q=80', order: 1, is_active: true, created_date: now(), updated_date: now() }, { id: 'cat-bra', title: 'کالکشن سوتین', title_en: 'Bra Collection', slug: 'bra', image: 'https://images.unsplash.com/photo-1469504512102-900f29606341?auto=format&fit=crop&w=900&q=80', order: 2, is_active: true, created_date: now(), updated_date: now() }],
-  products: [{ id: 'prd-1', title: 'ست شورت و سوتین تورگاز', code: 'NP-1001', price: 1020000, discount_price: 860000, description: 'محصولی لطیف و خوش‌دوخت برای استفاده روزمره.', short_description: 'ست لطیف و سبک', images: ['https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'], category: 'sets', collection: 'fantasy', sizes: ['75', '80', '85', '90'], colors: ['مشکی', 'صورتی'], cup_size: 'B', material: 'تور و نخ', brand: 'نوشه پوش', stock: 12, is_active: true, is_featured: true, wash_instructions: 'با آب سرد و شوینده ملایم شسته شود.', created_date: now(), updated_date: now() }],
-  orders: [{ id: 'ord-1', order_number: 'NO-14040517-001', customer_name: 'سارا', customer_family: 'محمدی', customer_phone: '09120000000', customer_email: 'sara@example.com', province: 'تهران', city: 'تهران', address: 'خیابان ولیعصر، پلاک ۱۲', postal_code: '1234567890', notes: '', items: [{ product_id: 'prd-1', title: 'ست شورت و سوتین تورگاز', image: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80', quantity: 1, price: 1020000, size: '80' }], total_amount: 1020000, discount_amount: 0, shipping_cost: 0, status: 'pending', payment_status: 'paid', tracking_code: '', created_date: now(), updated_date: now() }],
-  settings: [{ id: 'set-phone', key: 'phone', value: '021-00000000', type: 'text', created_date: now(), updated_date: now() }, { id: 'set-free-shipping', key: 'free_shipping_min', value: '1500000', type: 'text', created_date: now(), updated_date: now() }, { id: 'set-about', key: 'about_text', value: 'نوشه پوش، ترکیب زیبایی، کیفیت و تجربه خرید مطمئن است.', type: 'text', created_date: now(), updated_date: now() }],
-  reviews: [{ id: 'rev-1', product_id: 'prd-1', author_name: 'مریم', rating: 5, comment: 'کیفیت دوخت و لطافت پارچه عالی بود.', is_approved: true, created_date: now(), updated_date: now() }],
+  categories: [],
+  products: [],
+  orders: [],
+  settings: [],
+  reviews: [],
   users: []
 };
 
 let mongoClientPromise: Promise<any> | null = null;
+
+let bootstrapPromise: Promise<void> | null = null;
+
+async function ensureBootstrapData(client: any) {
+  if (bootstrapPromise) return bootstrapPromise;
+  bootstrapPromise = (async () => {
+    const db = client.db();
+    await Promise.all((Object.values(entityMap) as EntityName[]).concat('users').map(async (entity) => {
+      const collectionName = `noosheh_${entity}`;
+      const exists = await db.listCollections({ name: collectionName }, { nameOnly: true }).toArray();
+      if (!exists.length) await db.createCollection(collectionName);
+    }));
+
+    const usersCollection = db.collection('noosheh_users') as MongoCollection;
+    const productsCollection = db.collection('noosheh_products') as MongoCollection;
+    const userCount = await usersCollection.countDocuments({});
+    const productCount = await productsCollection.countDocuments({});
+    if (userCount === 0 && productCount === 0) {
+      await usersCollection.insertOne({
+        id: randomUUID(),
+        name: 'Admin',
+        email: 'admin',
+        password_hash: hashPassword('admin'),
+        role: 'admin',
+        created_date: now(),
+        updated_date: now()
+      });
+    }
+  })().catch((error) => {
+    bootstrapPromise = null;
+    throw error;
+  });
+  return bootstrapPromise;
+}
+
 
 function stripMongoId(record: AnyRecord) {
   const { _id, ...rest } = record;
@@ -64,6 +99,7 @@ async function getMongoCollection(entity: EntityName): Promise<MongoCollection |
       mongoClientPromise = client.connect();
     }
     const client = await mongoClientPromise;
+    await ensureBootstrapData(client);
     const collection = client.db().collection(`noosheh_${entity}`) as MongoCollection;
     if ((await collection.countDocuments()) === 0 && initialDatabase[entity].length > 0) {
       await collection.insertMany(initialDatabase[entity].map((record) => ({ ...record })), { ordered: false });
