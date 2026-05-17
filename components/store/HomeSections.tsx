@@ -53,16 +53,18 @@ export function FeaturedProducts({ title, titleEn, collection, limit = 8 }: { ti
   useEffect(() => { setIsLoading(true); storeApi.products().then(setProducts).finally(() => setIsLoading(false)); }, []);
   const filtered = useMemo(() => products.filter((product) => product.is_active !== false).filter((product) => collection ? product.collection === collection : product.is_featured).slice(0, limit), [products, collection, limit]);
   if (isLoading) return <section className="store-featured"><div className="store-container"><div className="store-product-grid">{Array.from({ length: 4 }).map((_, index) => <div className="store-skeleton square" key={index} />)}</div></div></section>;
-  if (!filtered.length) return null;
+  if (!filtered.length) return <section className="store-featured" dir="rtl"><div className="store-container"><div className="store-empty">در این بخش محصولی یافت نشد.</div></div></section>;
   return <section className="store-featured" dir="rtl"><div className="store-container"><div className="store-section-heading">{titleEn && <h2>{titleEn}</h2>}<h2 className="primary">{title}</h2></div><div className="store-product-grid">{filtered.map((product) => <ProductCard key={product.id} product={product} />)}</div></div></section>;
 }
 
 export function FlashSaleSection() {
   const { h, m, s } = useCountdown(8);
   const [products, setProducts] = useState<Product[]>([]);
-  useEffect(() => { storeApi.products().then(setProducts).catch(() => setProducts([])); }, []);
+  const [error, setError] = useState('');
+  useEffect(() => { storeApi.products().then(setProducts).catch(() => { setProducts([]); setError('خطا در دریافت محصولات تخفیف‌دار'); }); }, []);
   const discounted = products.filter((product) => product.is_active !== false && product.discount_price && product.discount_price < product.price).slice(0, 4);
-  if (!discounted.length) return null;
+  if (error) return <section className="store-flash-sale" dir="rtl"><div className="store-container"><div className="store-empty">{error}</div></div></section>;
+  if (!discounted.length) return <section className="store-flash-sale" dir="rtl"><div className="store-container"><div className="store-empty">تخفیف فعالی وجود ندارد.</div></div></section>;
   return <section className="store-flash-sale" dir="rtl"><div className="store-container"><header><div><span>⚡</span><div><h2>پیشنهاد شگفت‌انگیز</h2><p>تخفیف‌های ویژه برای مدت محدود</p></div></div><div className="store-countdown"><span>◷ اتمام پیشنهاد تا:</span><TimeBox value={h} label="ساعت" /><b>:</b><TimeBox value={m} label="دقیقه" /><b>:</b><TimeBox value={s} label="ثانیه" /></div></header><div className="store-product-grid">{discounted.map((product) => <div className="store-flash-item" key={product.id}><b>{Math.round(((product.price - (product.discount_price || 0)) / product.price) * 100)}٪ تخفیف</b><ProductCard product={product} /></div>)}</div><div className="store-flash-link"><Link href="/category/all">⚡ مشاهده همه پیشنهادها</Link></div></div></section>;
 }
 
