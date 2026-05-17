@@ -111,6 +111,26 @@ async function getMongoCollection(entity: EntityName): Promise<MongoCollection |
   }
 }
 
+export async function checkMongoHealth(): Promise<{ ok: boolean; error?: string }> {
+  if (!process.env.MONGODB_URI) {
+    return { ok: false, error: 'MONGODB_URI is not configured' };
+  }
+  try {
+    const req = eval('require') as NodeRequire;
+    const { MongoClient } = req('mongodb');
+    if (!mongoClientPromise) {
+      const client = new MongoClient(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
+      mongoClientPromise = client.connect();
+    }
+    const client = await mongoClientPromise;
+    await client.db().command({ ping: 1 });
+    return { ok: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'MongoDB connection failed';
+    return { ok: false, error: message };
+  }
+}
+
 async function getRequiredMongoCollection(entity: EntityName): Promise<MongoCollection> {
   if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI is not configured');
   const collection = await getMongoCollection(entity);
