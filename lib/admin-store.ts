@@ -106,6 +106,7 @@ const initialDatabase: Database = {
       notes: '',
       items: [
         {
+          product_id: 'prd-1',
           title: 'ست شورت و سوتین تورگاز',
           image: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80',
           quantity: 1,
@@ -114,6 +115,8 @@ const initialDatabase: Database = {
         }
       ],
       total_amount: 1020000,
+      discount_amount: 0,
+      shipping_cost: 0,
       status: 'pending',
       payment_status: 'paid',
       tracking_code: '',
@@ -126,19 +129,50 @@ const initialDatabase: Database = {
     { id: 'set-free-shipping', key: 'free_shipping_min', value: '1500000', type: 'text', created_date: now(), updated_date: now() },
     { id: 'set-about', key: 'about_text', value: 'نوشه پوش، ترکیب زیبایی، کیفیت و تجربه خرید مطمئن است.', type: 'text', created_date: now(), updated_date: now() }
   ],
-  reviews: [],
+  reviews: [
+    {
+      id: 'rev-1',
+      product_id: 'prd-1',
+      author_name: 'مریم',
+      rating: 5,
+      comment: 'کیفیت دوخت و لطافت پارچه عالی بود.',
+      is_approved: true,
+      created_date: now(),
+      updated_date: now()
+    }
+  ],
   users: []
 };
+
+function cloneInitialRecords(entity: EntityName) {
+  return initialDatabase[entity].map((record) => ({ ...record, created_date: record.created_date || now(), updated_date: now() }));
+}
+
+function withInitialCatalogSeed(database: Database): Database {
+  if ((database.products ?? []).length > 0) return database;
+  return {
+    ...database,
+    categories: cloneInitialRecords('categories'),
+    products: cloneInitialRecords('products'),
+    orders: cloneInitialRecords('orders'),
+    settings: cloneInitialRecords('settings'),
+    reviews: cloneInitialRecords('reviews'),
+    users: database.users ?? []
+  };
+}
 
 async function readDatabase(): Promise<Database> {
   try {
     const raw = await readFile(dataFile, 'utf8');
     const parsed = JSON.parse(raw);
-    return { ...initialDatabase, ...parsed };
+    const database = withInitialCatalogSeed({ ...initialDatabase, ...parsed });
+    if ((parsed.products ?? []).length === 0) await writeDatabase(database);
+    return database;
   } catch {
+    const database = withInitialCatalogSeed(initialDatabase);
     await mkdir(dataDir, { recursive: true });
-    await writeFile(dataFile, JSON.stringify(initialDatabase, null, 2));
-    return initialDatabase;
+    await writeFile(dataFile, JSON.stringify(database, null, 2));
+    return database;
   }
 }
 

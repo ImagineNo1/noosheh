@@ -28,20 +28,22 @@ type CartContextValue = {
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
-const storageKey = 'noosheh-cart';
+const storageKey = 'cart';
+const legacyStorageKey = 'noosheh-cart';
+
+function readInitialCart(): CartItem[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = window.localStorage.getItem(storageKey) || window.localStorage.getItem(legacyStorageKey);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+}
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(readInitialCart);
   const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      if (saved) setItems(JSON.parse(saved));
-    } catch {
-      setItems([]);
-    }
-  }, []);
 
   useEffect(() => {
     window.localStorage.setItem(storageKey, JSON.stringify(items));
@@ -70,7 +72,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           quantity,
           size,
           color,
-          image: product.images?.[0]
+          image: product.images?.[0] || ''
         }];
       });
       setIsOpen(true);
