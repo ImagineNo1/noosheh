@@ -146,7 +146,7 @@ export async function createUser(data: { name?: string; email: string; password_
 
 export async function ensureDefaultAdminUser(): Promise<UserRecord | null> {
   const collection = await getRequiredMongoCollection('users');
-  const admins = await collection.find({ role: 'admin' }).limit(1).toArray();
+  const admins = await collection.find({ role: 'admin' }).sort({ created_date: -1 }).limit(1).toArray();
   if (admins.length > 0) return null;
   return createUser({ name: 'Admin', email: 'admin', password_hash: hashPassword('admin'), role: 'admin' });
 }
