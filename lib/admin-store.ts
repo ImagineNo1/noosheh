@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { MongoClient } from 'mongodb';
 import { hashPassword } from '@/lib/password';
 
 export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users';
@@ -92,8 +93,6 @@ function stripMongoId(record: AnyRecord) {
 async function getMongoCollection(entity: EntityName): Promise<MongoCollection | null> {
   if (!process.env.MONGODB_URI) return null;
   try {
-    const req = eval('require') as NodeRequire;
-    const { MongoClient } = req('mongodb');
     if (!mongoClientPromise) {
       const client = new MongoClient(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
       mongoClientPromise = client.connect();
@@ -108,6 +107,24 @@ async function getMongoCollection(entity: EntityName): Promise<MongoCollection |
   } catch (error) {
     console.warn('MongoDB connection failed.', error);
     return null;
+  }
+}
+
+export async function checkMongoHealth(): Promise<{ ok: boolean; error?: string }> {
+  if (!process.env.MONGODB_URI) {
+    return { ok: false, error: 'MONGODB_URI is not configured' };
+  }
+  try {
+    if (!mongoClientPromise) {
+      const client = new MongoClient(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
+      mongoClientPromise = client.connect();
+    }
+    const client = await mongoClientPromise;
+    await client.db().command({ ping: 1 });
+    return { ok: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'MongoDB connection failed';
+    return { ok: false, error: message };
   }
 }
 

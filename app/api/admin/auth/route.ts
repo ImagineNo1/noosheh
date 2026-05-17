@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ensureDefaultAdminUser, findUserByEmail, type UserRecord } from '@/lib/admin-store';
+import { checkMongoHealth, ensureDefaultAdminUser, findUserByEmail, type UserRecord } from '@/lib/admin-store';
 import { getBearerToken, isJwtConfigured, signJwt, verifyJwt } from '@/lib/jwt';
 import { verifyPassword } from '@/lib/password';
 
@@ -8,12 +8,17 @@ function publicUser(user: UserRecord) {
 }
 
 export async function GET(request: Request) {
-  if (!isJwtConfigured()) return NextResponse.json({ authenticated: false, configured: false });
+  const mongo = await checkMongoHealth();
+  if (!mongo.ok) {
+    return NextResponse.json({ authenticated: false, configured: isJwtConfigured(), db_connected: false, db_error: mongo.error }, { status: 503 });
+  }
+
+  if (!isJwtConfigured()) return NextResponse.json({ authenticated: false, configured: false, db_connected: true });
   await ensureDefaultAdminUser();
   const payload = verifyJwt(getBearerToken(request));
-  if (payload?.role !== 'admin' || !payload.email) return NextResponse.json({ authenticated: false, configured: true });
+  if (payload?.role !== 'admin' || !payload.email) return NextResponse.json({ authenticated: false, configured: true, db_connected: true });
   const user = await findUserByEmail(String(payload.email));
-  return NextResponse.json({ authenticated: user?.role === 'admin', configured: true, user: user?.role === 'admin' ? publicUser(user) : null });
+  return NextResponse.json({ authenticated: user?.role === 'admin', configured: true, db_connected: true, user: user?.role === 'admin' ? publicUser(user) : null });
 }
 
 export async function POST(request: Request) {

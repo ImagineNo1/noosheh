@@ -20,9 +20,11 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const [email, setEmail] = useState('admin');
   const [password, setPassword] = useState('admin');
   const [loginError, setLoginError] = useState('');
+  const [serverStatus, setServerStatus] = useState<{ connected: boolean; message: string }>({ connected: false, message: 'در حال بررسی ارتباط با سرور...' });
 
   useEffect(() => {
     adminApi.isAuthenticated().then(setAuthenticated).finally(() => setCheckingAuth(false));
+    adminApi.checkServerConnection().then(setServerStatus);
   }, []);
 
   const handleLogin = async (event: FormEvent) => {
@@ -51,6 +53,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         <form className="admin-auth-card" onSubmit={handleLogin}>
           <h1>ورود به پنل مدیریت</h1>
           <p>اگر هیچ کاربری در سیستم وجود نداشته باشد، حساب پیش‌فرض با نام کاربری admin و رمز عبور admin خودکار ساخته می‌شود.</p>
+          <p className={serverStatus.connected ? 'admin-muted success' : 'admin-muted danger'}>{serverStatus.message}</p>
           <input type="text" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="admin" autoFocus />
           <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="admin" />
           {loginError && <span>{loginError}</span>}
