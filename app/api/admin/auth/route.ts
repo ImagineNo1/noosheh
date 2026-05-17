@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { findUserByEmail, type UserRecord } from '@/lib/admin-store';
+import { ensureDefaultAdminUser, findUserByEmail, type UserRecord } from '@/lib/admin-store';
 import { getBearerToken, isJwtConfigured, signJwt, verifyJwt } from '@/lib/jwt';
 import { verifyPassword } from '@/lib/password';
 
@@ -9,6 +9,7 @@ function publicUser(user: UserRecord) {
 
 export async function GET(request: Request) {
   if (!isJwtConfigured()) return NextResponse.json({ authenticated: false, configured: false });
+  await ensureDefaultAdminUser();
   const payload = verifyJwt(getBearerToken(request));
   if (payload?.role !== 'admin' || !payload.email) return NextResponse.json({ authenticated: false, configured: true });
   const user = await findUserByEmail(String(payload.email));
@@ -20,8 +21,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'JWT_SECRET is not configured' }, { status: 500 });
   }
 
-  const { email, password } = await request.json().catch(() => ({ email: '', password: '' }));
-  const user = await findUserByEmail(String(email || ''));
+  await ensureDefaultAdminUser();
+  const { email, username, password } = await request.json().catch(() => ({ email: '', username: '', password: '' }));
+  const identifier = String(email || username || '').trim();
+  const user = await findUserByEmail(identifier);
   if (!user || user.role !== 'admin' || !verifyPassword(String(password || ''), user.password_hash)) {
     return NextResponse.json({ error: 'Invalid admin credentials' }, { status: 401 });
   }

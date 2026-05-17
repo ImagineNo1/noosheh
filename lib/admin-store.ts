@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { randomUUID } from 'crypto';
+import { hashPassword } from '@/lib/password';
 
 export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users';
 
@@ -304,4 +305,14 @@ export async function createUser(data: { name?: string; email: string; password_
   database.users = [user, ...database.users];
   await writeDatabase(database);
   return user;
+}
+
+export async function ensureDefaultAdminUser(): Promise<UserRecord | null> {
+  if ((await countUsers()) > 0) return null;
+  return createUser({
+    name: 'Admin',
+    email: 'admin',
+    password_hash: hashPassword('admin'),
+    role: 'admin'
+  });
 }

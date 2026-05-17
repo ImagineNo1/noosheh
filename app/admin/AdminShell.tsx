@@ -17,8 +17,8 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin');
+  const [password, setPassword] = useState('admin');
   const [loginError, setLoginError] = useState('');
 
   useEffect(() => {
@@ -50,9 +50,9 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       <div className="admin-auth-screen" dir="rtl">
         <form className="admin-auth-card" onSubmit={handleLogin}>
           <h1>ورود به پنل مدیریت</h1>
-          <p>برای تغییر محصولات، سفارشات و تنظیمات، با حساب مدیر وارد شوید. اولین کاربری که از API عمومی ثبت‌نام کند به‌صورت مدیر ساخته می‌شود.</p>
-          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="admin@example.com" autoFocus />
-          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="رمز عبور" />
+          <p>اگر هیچ کاربری در سیستم وجود نداشته باشد، حساب پیش‌فرض با نام کاربری admin و رمز عبور admin خودکار ساخته می‌شود.</p>
+          <input type="text" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="admin" autoFocus />
+          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="admin" />
           {loginError && <span>{loginError}</span>}
           <button className="admin-btn primary" disabled={!email || !password}>ورود</button>
           <Link href="/">بازگشت به سایت</Link>
