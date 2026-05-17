@@ -12,6 +12,8 @@ export type CartItem = {
   quantity: number;
   size?: string;
   color?: string;
+  cup?: string;
+  variant_id?: string;
   image?: string;
 };
 
@@ -21,7 +23,7 @@ type CartContextValue = {
   setIsOpen: (open: boolean) => void;
   totalPrice: number;
   totalItems: number;
-  addItem: (product: Product, quantity?: number, size?: string, color?: string) => void;
+  addItem: (product: Product, quantity?: number, size?: string, color?: string, cup?: string, variantId?: string) => void;
   removeItem: (key: string) => void;
   updateQuantity: (key: string, quantity: number) => void;
   clearCart: () => void;
@@ -55,9 +57,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setIsOpen,
     totalPrice: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
     totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
-    addItem(product, quantity = 1, size = '', color = '') {
+    addItem(product, quantity = 1, size = '', color = '', cup = '', variantId = '') {
       const price = product.discount_price && product.discount_price > 0 ? product.discount_price : product.price;
-      const key = `${product.id}-${size || 'no-size'}-${color || 'no-color'}`;
+      const key = `${product.id}-${variantId || 'no-variant'}-${size || 'no-size'}-${color || 'no-color'}-${cup || 'no-cup'}`;
       setItems((current) => {
         const existing = current.find((item) => item.key === key);
         if (existing) {
@@ -72,6 +74,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
           quantity,
           size,
           color,
+          cup,
+          variant_id: variantId,
           image: product.images?.[0] || ''
         }];
       });
