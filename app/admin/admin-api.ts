@@ -31,6 +31,21 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export const adminApi = {
+  async checkServerConnection() {
+    try {
+      const response = await fetch('/api/admin/auth', { cache: 'no-store' });
+      if (!response.ok) {
+        return { connected: false, message: 'ارتباط با سرور برقرار نشد.' };
+      }
+      const result = await response.json() as { configured?: boolean };
+      if (result.configured === false) {
+        return { connected: true, message: 'ارتباط با سرور برقرار است، اما JWT_SECRET تنظیم نشده است.' };
+      }
+      return { connected: true, message: 'ارتباط با سرور برقرار شد.' };
+    } catch {
+      return { connected: false, message: 'ارتباط با سرور برقرار نشد.' };
+    }
+  },
   async login(credentials: { email: string; password: string }) {
     const result = await request<{ token: string }>('/api/admin/auth', { method: 'POST', body: JSON.stringify(credentials) });
     setAdminToken(result.token);
