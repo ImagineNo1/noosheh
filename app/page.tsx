@@ -1,4 +1,5 @@
 import StoreHeader from '@/components/store/StoreHeader';
+import Footer from '@/components/store/Footer';
 import { CategorySection, FeaturedProducts, FlashSaleSection, HeroBanner, QuoteSection, WhyUsSection } from '@/components/store/HomeSections';
 
 export default function Home() {
@@ -13,7 +14,7 @@ export default function Home() {
       <FeaturedProducts title="محصولات پرفروش" titleEn="Best Sellers" />
       <WhyUsSection />
       <FeaturedProducts title="جدیدترین محصولات" titleEn="New Arrivals" collection="new" limit={4} />
-      <footer className="store-footer"><div className="store-container"><p>© ۱۴۰۴ تمامی حقوق محفوظ است.</p></div></footer>
+      <Footer />
     </main>
   );
 }

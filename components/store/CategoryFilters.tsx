@@ -10,6 +10,13 @@ const sortOptions = [
   { value: 'discount', label: 'بیشترین تخفیف' }
 ];
 
+const ranges = [
+  { label: 'همه', min: 0, max: Infinity },
+  { label: 'زیر ۵۰۰ هزار', min: 0, max: 500000 },
+  { label: '۵۰۰ تا ۱ میلیون', min: 500000, max: 1000000 },
+  { label: 'بالای ۱ میلیون', min: 1000000, max: Infinity }
+];
+
 export default function CategoryFilters({ sort, setSort, priceRange, setPriceRange, totalCount }: {
   sort: string;
   setSort: (value: string) => void;
@@ -18,15 +25,10 @@ export default function CategoryFilters({ sort, setSort, priceRange, setPriceRan
   totalCount: number;
 }) {
   return (
-    <div className="store-filter-bar">
-      <div className="store-filter-count">{totalCount.toLocaleString('fa-IR')} محصول</div>
-      <div className="store-filter-controls">
-        <select value={sort} onChange={(event) => setSort(event.target.value)}>
-          {sortOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-        </select>
-        <input type="number" placeholder="حداقل قیمت" onChange={(event) => setPriceRange({ ...priceRange, min: Number(event.target.value) || 0 })} />
-        <input type="number" placeholder="حداکثر قیمت" onChange={(event) => setPriceRange({ ...priceRange, max: Number(event.target.value) || Infinity })} />
-      </div>
+    <div className="store-filter-bar" dir="rtl">
+      <div className="store-filter-count"><b>{totalCount.toLocaleString('fa-IR')}</b> محصول</div>
+      <div className="store-filter-group"><span>↕ مرتب‌سازی:</span><div>{sortOptions.map((option) => <button key={option.value} onClick={() => setSort(option.value)} className={sort === option.value ? 'active' : ''}>{option.label}</button>)}</div></div>
+      <div className="store-filter-group price"><span>☷ قیمت:</span><div>{ranges.map((range) => <button key={range.label} onClick={() => setPriceRange({ min: range.min, max: range.max })} className={priceRange.min === range.min && priceRange.max === range.max ? 'accent' : ''}>{range.label}</button>)}</div></div>
     </div>
   );
 }

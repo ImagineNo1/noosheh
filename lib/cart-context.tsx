@@ -8,6 +8,7 @@ export type CartItem = {
   product_id: string;
   title: string;
   price: number;
+  original_price: number;
   quantity: number;
   size?: string;
   color?: string;
@@ -16,7 +17,10 @@ export type CartItem = {
 
 type CartContextValue = {
   items: CartItem[];
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
   totalPrice: number;
+  totalItems: number;
   addItem: (product: Product, quantity?: number, size?: string, color?: string) => void;
   removeItem: (key: string) => void;
   updateQuantity: (key: string, quantity: number) => void;
@@ -24,11 +28,11 @@ type CartContextValue = {
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
-
 const storageKey = 'noosheh-cart';
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -45,7 +49,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<CartContextValue>(() => ({
     items,
+    isOpen,
+    setIsOpen,
     totalPrice: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
     addItem(product, quantity = 1, size = '', color = '') {
       const price = product.discount_price && product.discount_price > 0 ? product.discount_price : product.price;
       const key = `${product.id}-${size || 'no-size'}-${color || 'no-color'}`;
@@ -59,23 +66,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
           product_id: product.id,
           title: product.title,
           price,
+          original_price: product.price,
           quantity,
           size,
           color,
           image: product.images?.[0]
         }];
       });
+      setIsOpen(true);
     },
     removeItem(key) {
       setItems((current) => current.filter((item) => item.key !== key));
     },
     updateQuantity(key, quantity) {
-      setItems((current) => current.map((item) => item.key === key ? { ...item, quantity: Math.max(1, quantity) } : item));
+      if (quantity <= 0) {
+        setItems((current) => current.filter((item) => item.key !== key));
+        return;
+      }
+      setItems((current) => current.map((item) => item.key === key ? { ...item, quantity } : item));
     },
     clearCart() {
       setItems([]);
     }
-  }), [items]);
+  }), [items, isOpen]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

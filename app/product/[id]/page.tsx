@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import ProductCard from '@/components/store/ProductCard';
+import ProductReviews from '@/components/store/ProductReviews';
 import StoreHeader from '@/components/store/StoreHeader';
 import { useCart } from '@/lib/cart-context';
 import { storeApi } from '@/lib/store-api';
@@ -69,7 +70,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
         <div className="store-tab-list"><button className={activeTab === 'description' ? 'active' : ''} onClick={() => setActiveTab('description')}>توضیحات</button><button className={activeTab === 'extra' ? 'active' : ''} onClick={() => setActiveTab('extra')}>توضیحات تکمیلی</button><button className={activeTab === 'reviews' ? 'active' : ''} onClick={() => setActiveTab('reviews')}>نظرات</button></div>
         {activeTab === 'description' && <div className="store-tab-content"><p>{product.description || 'توضیحاتی برای این محصول ثبت نشده است.'}</p>{product.wash_instructions && <div><h4>راهنمای شستشو:</h4><p>{product.wash_instructions}</p></div>}</div>}
         {activeTab === 'extra' && <div className="store-tab-content"><p>جنس پارچه: {product.material || '—'}</p><p>سایز کاپ: {product.cup_size || '—'}</p><p>برند: {product.brand || '—'}</p></div>}
-        {activeTab === 'reviews' && <div className="store-tab-content">هنوز نظری برای این محصول ثبت نشده است.</div>}
+        {activeTab === 'reviews' && <div className="store-tab-content"><ProductReviews productId={product.id} /></div>}
       </section>
 
       {!!relatedProducts.length && <section className="store-container store-related"><div className="store-section-heading"><h2>محصولات مرتبط</h2><Link href={`/category/${product.category}`}>مشاهده همه ‹</Link></div><div className="store-product-grid">{relatedProducts.map((item) => <ProductCard key={item.id} product={item} />)}</div></section>}
