@@ -1,11 +1,17 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { CartProvider } from '@/lib/cart-context';
 import { CompareProvider } from '@/components/store/ProductCompare';
 
 export const metadata: Metadata = {
   title: 'Noosheh Poosh',
-  description: 'فروشگاه آنلاین نوشه پوش'
+  description: 'فروشگاه آنلاین نوشه پوش',
+  manifest: '/manifest.json'
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
