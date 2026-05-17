@@ -17,6 +17,7 @@ export default function AccountShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const current = getStoredUser();
@@ -26,5 +27,16 @@ export default function AccountShell({ children }: { children: ReactNode }) {
 
   if (!user) return <div className="admin-auth-screen"><div className="admin-card">در حال بررسی حساب کاربری...</div></div>;
 
-  return <div className="admin-shell" dir="rtl"><aside className="admin-sidebar"><div className="admin-brand"><Link href="/account">حساب کاربری</Link></div><nav className="admin-nav">{items.map((item) => <Link key={item.href} className={`admin-nav-link ${pathname === item.href ? 'active' : ''}`} href={item.href}>{item.label}</Link>)}</nav><div className="admin-sidebar-footer"><button className="admin-nav-link muted admin-logout" onClick={() => { clearUserSession(); router.replace('/'); }}>خروج</button></div></aside><main className="admin-main"><div className="admin-page-header"><h1>سلام {user.name || user.email}</h1></div>{children}</main></div>;
+  return (
+    <div dir="rtl" className="store-account-layout">
+      <aside className={`store-account-sidebar ${mobileMenuOpen ? 'open' : ''}`}>
+        <div className="store-account-brand"><Link href="/account">حساب کاربری</Link></div>
+        <div className="store-account-user"><b>{user.name || 'کاربر'}</b><small>{user.email}</small></div>
+        <nav className="store-account-nav">{items.map((item) => <Link key={item.href} className={`store-account-link ${pathname === item.href ? 'active' : ''}`} href={item.href} onClick={() => setMobileMenuOpen(false)}>{item.label}</Link>)}</nav>
+        <button className="store-account-logout" onClick={() => { clearUserSession(); router.replace('/'); }}>خروج از حساب</button>
+      </aside>
+      {mobileMenuOpen && <button className="store-account-overlay" onClick={() => setMobileMenuOpen(false)} aria-label="بستن" />}
+      <div className="store-account-main"><header className="store-account-mobile-head"><button onClick={() => setMobileMenuOpen(true)}>☰</button><b>پنل کاربری</b><span /></header>{children}</div>
+    </div>
+  );
 }

@@ -995,3 +995,22 @@ body {
 .not-found-home:hover { background: #f8fafc; border-color: #cbd5e1; }
 
 .store-card-actions{display:flex;gap:.5rem;margin-top:.6rem}.store-card-actions .store-outline-btn,.store-card-actions .store-primary-btn{flex:1;text-align:center;padding:.45rem .6rem}
+
+.store-account-layout { min-height: 100vh; background: #f8fafc; display: flex; }
+.store-account-sidebar { width: 16rem; background: #fff; border-left: 1px solid var(--store-border); padding: 1rem; display: grid; gap: 1rem; position: sticky; top: 0; height: 100vh; }
+.store-account-brand a { text-decoration: none; color: var(--store-foreground); font-weight: 900; }
+.store-account-user { background: linear-gradient(135deg, #fff1f7, #fff5f7); border: 1px solid #ffd4e7; border-radius: 1rem; padding: .8rem; display: grid; }
+.store-account-user small { color: var(--store-muted); }
+.store-account-nav { display: grid; gap: .35rem; }
+.store-account-link { text-decoration: none; color: var(--store-muted); border-radius: .8rem; padding: .7rem .9rem; font-weight: 700; }
+.store-account-link.active { background: linear-gradient(90deg, #ec4899, #f43f5e); color: #fff; }
+.store-account-logout { margin-top: auto; border: 0; background: #fff; color: #ef4444; cursor: pointer; text-align: right; padding: .7rem .9rem; border-radius: .8rem; }
+.store-account-main { flex: 1; padding: 1.5rem; }
+.store-account-mobile-head, .store-account-overlay { display:none; }
+.store-account-content,.store-account-panel { background:#fff; border:1px solid var(--store-border); border-radius:1rem; padding:1rem; }
+.store-account-cards { display:grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap:.8rem; margin-bottom:1rem; }
+.store-account-cards article { background: linear-gradient(135deg, #ec4899, #f43f5e); color:#fff; border-radius:1rem; padding:1rem; }
+.store-account-panel .head,.store-account-panel .row,.store-account-panel .inline { display:flex; justify-content:space-between; gap:.75rem; align-items:center; }
+.store-account-panel .row { padding:.8rem 0; border-top:1px solid var(--store-border); }
+.store-account-panel.form input { width:100%; border:1px solid var(--store-border); border-radius:.8rem; padding:.7rem .8rem; margin:.35rem 0; }
+@media (max-width: 960px){ .store-account-sidebar{position:fixed; inset:0 auto 0 0; translate:100% 0; z-index:40; transition:.25s;} .store-account-sidebar.open{translate:0 0;} .store-account-overlay{display:block; position:fixed; inset:0; background:rgba(0,0,0,.35); border:0; z-index:35;} .store-account-mobile-head{display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid var(--store-border); border-radius:.9rem; padding:.6rem .8rem; margin-bottom:1rem;} .store-account-cards{grid-template-columns:1fr;} }
