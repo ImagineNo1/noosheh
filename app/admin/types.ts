@@ -12,6 +12,18 @@ export type Product = {
   sizes?: string[];
   colors?: string[];
   cup_size?: string;
+  has_cup_option?: boolean;
+  cups?: string[];
+  color_swatches?: { name: string; value: string; hex?: string; image?: string; active?: boolean; order?: number; images?: string[] }[];
+  variants?: { id?: string; color?: string; size?: string; cup?: string; sku?: string; price?: number; discount_price?: number; stock?: number; image?: string }[];
+  badges?: string[];
+  details?: string;
+  size_fit?: string;
+  fabric_care?: string;
+  shipping_returns?: string;
+  faq?: string;
+  complete_the_look_ids?: string[];
+  similar_product_ids?: string[];
   material?: string;
   brand?: string;
   stock?: number;

@@ -20,16 +20,28 @@ export default function Products() {
   const [sizesInput, setSizesInput] = useState('');
   const [colorsInput, setColorsInput] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [cupsInput, setCupsInput] = useState('');
+  const [badgesInput, setBadgesInput] = useState('');
+  const [variantsInput, setVariantsInput] = useState('');
+  const [swatchesInput, setSwatchesInput] = useState('');
+  const [completeLookInput, setCompleteLookInput] = useState('');
+  const [similarInput, setSimilarInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const openCreate = () => { setEditingProduct(null); setForm(emptyProduct); setSizesInput(''); setColorsInput(''); setDialogOpen(true); };
+  const openCreate = () => { setEditingProduct(null); setForm(emptyProduct); setSizesInput(''); setColorsInput(''); setCupsInput(''); setBadgesInput(''); setVariantsInput(''); setSwatchesInput(''); setCompleteLookInput(''); setSimilarInput(''); setDialogOpen(true); };
   const openEdit = (product: Product) => {
     setEditingProduct(product);
     setForm({ ...emptyProduct, ...product });
     setSizesInput((product.sizes || []).join(', '));
     setColorsInput((product.colors || []).join(', '));
+    setCupsInput((product.cups || []).join(', '));
+    setBadgesInput((product.badges || []).join(', '));
+    setVariantsInput(JSON.stringify(product.variants || [], null, 2));
+    setSwatchesInput(JSON.stringify(product.color_swatches || [], null, 2));
+    setCompleteLookInput((product.complete_the_look_ids || []).join(', '));
+    setSimilarInput((product.similar_product_ids || []).join(', '));
     setDialogOpen(true);
   };
   const closeDialog = () => { setDialogOpen(false); setEditingProduct(null); };
@@ -57,7 +69,14 @@ export default function Products() {
       colors: colorsInput ? colorsInput.split(',').map((s) => s.trim()).filter(Boolean) : [],
       price: Number(form.price) || 0,
       discount_price: Number(form.discount_price) || 0,
-      stock: Number(form.stock) || 0
+      stock: Number(form.stock) || 0,
+      cups: cupsInput ? cupsInput.split(',').map((s) => s.trim()).filter(Boolean) : [],
+      badges: badgesInput ? badgesInput.split(',').map((s) => s.trim()).filter(Boolean) : [],
+      complete_the_look_ids: completeLookInput ? completeLookInput.split(',').map((s) => s.trim()).filter(Boolean) : [],
+      similar_product_ids: similarInput ? similarInput.split(',').map((s) => s.trim()).filter(Boolean) : [],
+      has_cup_option: !!cupsInput.trim(),
+      variants: variantsInput.trim() ? JSON.parse(variantsInput) : [],
+      color_swatches: swatchesInput.trim() ? JSON.parse(swatchesInput) : []
     };
     if (editingProduct) await adminApi.update<Product>('Product', editingProduct.id, data);
     else await adminApi.create<Product>('Product', data);
@@ -131,9 +150,19 @@ export default function Products() {
             <div><Label>جنس پارچه</Label><Input value={form.material} onChange={(e) => setForm((f) => ({ ...f, material: e.target.value }))} /></div>
             <div><Label>برند</Label><Input value={form.brand} onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value }))} placeholder="نوشه پوش" /></div>
             <div><Label>موجودی</Label><Input type="number" value={form.stock} onChange={(e) => setForm((f) => ({ ...f, stock: Number(e.target.value) }))} dir="ltr" /></div>
+            <div><Label>کاپ‌ها (با کاما)</Label><Input value={cupsInput} onChange={(e) => setCupsInput(e.target.value)} placeholder="A, B, C, D" /></div>
+            <div><Label>Badgeها (با کاما)</Label><Input value={badgesInput} onChange={(e) => setBadgesInput(e.target.value)} placeholder="new, sale, final-sale" /></div>
+            <div><Label>Complete the Look (id)</Label><Input value={completeLookInput} onChange={(e) => setCompleteLookInput(e.target.value)} placeholder="id1, id2" /></div>
+            <div><Label>Similar Products (id)</Label><Input value={similarInput} onChange={(e) => setSimilarInput(e.target.value)} placeholder="id1, id2" /></div>
           </div>
           <div><Label>توضیحات</Label><Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} /></div>
           <div><Label>راهنمای شستشو</Label><Textarea value={form.wash_instructions} onChange={(e) => setForm((f) => ({ ...f, wash_instructions: e.target.value }))} className="short" /></div>
+          <div><Label>Product Details</Label><Textarea value={form.details || ''} onChange={(e) => setForm((f) => ({ ...f, details: e.target.value }))} /></div>
+          <div><Label>Size & Fit</Label><Textarea value={form.size_fit || ''} onChange={(e) => setForm((f) => ({ ...f, size_fit: e.target.value }))} className="short" /></div>
+          <div><Label>Fabric & Care</Label><Textarea value={form.fabric_care || ''} onChange={(e) => setForm((f) => ({ ...f, fabric_care: e.target.value }))} className="short" /></div>
+          <div><Label>Shipping & Returns</Label><Textarea value={form.shipping_returns || ''} onChange={(e) => setForm((f) => ({ ...f, shipping_returns: e.target.value }))} className="short" /></div>
+          <div><Label>Color Swatches (JSON)</Label><Textarea value={swatchesInput} onChange={(e) => setSwatchesInput(e.target.value)} /></div>
+          <div><Label>Variants (JSON)</Label><Textarea value={variantsInput} onChange={(e) => setVariantsInput(e.target.value)} /></div>
           <div className="admin-toggle-row"><div className="admin-inline"><Toggle checked={form.is_active !== false} onChange={(value) => setForm((f) => ({ ...f, is_active: value }))} /><Label>فعال</Label></div><div className="admin-inline"><Toggle checked={!!form.is_featured} onChange={(value) => setForm((f) => ({ ...f, is_featured: value }))} /><Label>محصول ویژه</Label></div></div>
           <div>
             <Label>تصاویر محصول</Label>

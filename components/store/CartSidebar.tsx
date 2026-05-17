@@ -35,7 +35,7 @@ export default function CartSidebar() {
                   {item.image ? <img src={item.image} alt={item.title} /> : <div className="store-cart-placeholder">🛍</div>}
                   <div>
                     <div className="store-cart-item-head"><h3>{item.title}</h3><button onClick={() => removeItem(item.key)}>🗑</button></div>
-                    <div className="store-cart-tags">{item.size && <span>سایز: {item.size}</span>}{item.color && <span>رنگ: {item.color}</span>}</div>
+                    <div className="store-cart-tags">{item.size && <span>سایز: {item.size}</span>}{item.color && <span>رنگ: {item.color}</span>}{item.cup && <span>کاپ: {item.cup}</span>}</div>
                     <div className="store-cart-item-bottom">
                       <div className="store-cart-qty"><button onClick={() => updateQuantity(item.key, item.quantity + 1)}>+</button><span>{item.quantity.toLocaleString('fa-IR')}</span><button onClick={() => updateQuantity(item.key, item.quantity - 1)}>−</button></div>
                       <div className="store-cart-price"><b>{formatPrice(item.price * item.quantity)}</b>{item.original_price > item.price && <del>{formatPrice(item.original_price * item.quantity)}</del>}</div>
