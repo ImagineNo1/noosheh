@@ -2,10 +2,14 @@ import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import { NextResponse } from 'next/server';
+import { isAdminRequest, isJwtConfigured } from '@/lib/jwt';
 
 const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']);
 
 export async function POST(request: Request) {
+  if (isJwtConfigured() && !isAdminRequest(request)) {
+    return NextResponse.json({ error: 'Admin authentication required' }, { status: 401 });
+  }
   const formData = await request.formData();
   const file = formData.get('file');
 

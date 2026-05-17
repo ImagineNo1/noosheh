@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { FormEvent, useEffect, useState, type ReactNode } from 'react';
+import { adminApi, clearAdminToken } from './admin-api';
 
 const menuItems = [
   { label: 'داشبورد', path: '/admin', icon: '▦' },
@@ -14,6 +15,49 @@ const menuItems = [
 
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [secret, setSecret] = useState('');
+  const [loginError, setLoginError] = useState('');
+
+  useEffect(() => {
+    adminApi.isAuthenticated().then(setAuthenticated).finally(() => setCheckingAuth(false));
+  }, []);
+
+  const handleLogin = async (event: FormEvent) => {
+    event.preventDefault();
+    setLoginError('');
+    try {
+      await adminApi.login(secret);
+      setAuthenticated(true);
+    } catch {
+      setLoginError('رمز مدیریت معتبر نیست. مقدار JWT_SECRET را وارد کنید.');
+    }
+  };
+
+  const handleLogout = () => {
+    clearAdminToken();
+    setAuthenticated(false);
+  };
+
+  if (checkingAuth) {
+    return <div className="admin-auth-screen" dir="rtl"><div className="admin-card"><p>در حال بررسی دسترسی مدیریت...</p></div></div>;
+  }
+
+  if (!authenticated) {
+    return (
+      <div className="admin-auth-screen" dir="rtl">
+        <form className="admin-auth-card" onSubmit={handleLogin}>
+          <h1>ورود به پنل مدیریت</h1>
+          <p>برای تغییر محصولات، سفارشات و تنظیمات، مقدار امن `JWT_SECRET` را وارد کنید.</p>
+          <input type="password" value={secret} onChange={(event) => setSecret(event.target.value)} placeholder="JWT_SECRET" autoFocus />
+          {loginError && <span>{loginError}</span>}
+          <button className="admin-btn primary" disabled={!secret}>ورود</button>
+          <Link href="/">بازگشت به سایت</Link>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-shell" dir="rtl">
@@ -33,6 +77,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           })}
         </nav>
         <div className="admin-sidebar-footer">
+          <button className="admin-nav-link muted admin-logout" onClick={handleLogout}><span>⎋</span> خروج از پنل</button>
           <Link href="/" className="admin-nav-link muted"><span>↩</span> بازگشت به سایت</Link>
         </div>
       </aside>
@@ -40,7 +85,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       <header className="admin-mobile-header">
         <div className="admin-mobile-top">
           <Link href="/admin" className="admin-mobile-brand"><span className="admin-brand-icon">◆</span> پنل مدیریت</Link>
-          <Link href="/" className="admin-mobile-return">بازگشت به سایت</Link>
+          <button className="admin-mobile-return" onClick={handleLogout}>خروج</button>
         </div>
         <nav className="admin-mobile-nav">
           {menuItems.map((item) => (

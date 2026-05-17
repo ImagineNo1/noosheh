@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import { deleteEntity, resolveEntity, updateEntity } from '@/lib/admin-store';
+import { isAdminRequest, isJwtConfigured } from '@/lib/jwt';
+
+function requireAdmin(request: Request) {
+  return !isJwtConfigured() || isAdminRequest(request);
+}
 
 export async function PATCH(request: Request, { params }: { params: { entity: string; id: string } }) {
+  if (!requireAdmin(request)) return NextResponse.json({ error: 'Admin authentication required' }, { status: 401 });
   const entity = resolveEntity(params.entity);
   if (!entity) return NextResponse.json({ error: 'Unknown entity' }, { status: 404 });
   const payload = await request.json();
@@ -10,7 +16,8 @@ export async function PATCH(request: Request, { params }: { params: { entity: st
   return NextResponse.json(record);
 }
 
-export async function DELETE(_request: Request, { params }: { params: { entity: string; id: string } }) {
+export async function DELETE(request: Request, { params }: { params: { entity: string; id: string } }) {
+  if (!requireAdmin(request)) return NextResponse.json({ error: 'Admin authentication required' }, { status: 401 });
   const entity = resolveEntity(params.entity);
   if (!entity) return NextResponse.json({ error: 'Unknown entity' }, { status: 404 });
   const deleted = await deleteEntity(entity, params.id);

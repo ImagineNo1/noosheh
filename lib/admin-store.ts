@@ -2,24 +2,32 @@ import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { randomUUID } from 'crypto';
 
-export type EntityName = 'products' | 'orders' | 'categories' | 'settings';
+export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews';
 
 export const entityMap = {
   Product: 'products',
   Order: 'orders',
   Category: 'categories',
-  SiteSettings: 'settings'
+  SiteSettings: 'settings',
+  Review: 'reviews'
 } as const;
 
 export type ApiEntity = keyof typeof entityMap;
 
 type AnyRecord = Record<string, any>;
-
 type Database = Record<EntityName, AnyRecord[]>;
+
+type MongoCollection = {
+  countDocuments: (filter?: AnyRecord) => Promise<number>;
+  insertMany: (records: AnyRecord[], options?: AnyRecord) => Promise<unknown>;
+  insertOne: (record: AnyRecord) => Promise<unknown>;
+  find: (filter?: AnyRecord) => { sort: (sort: AnyRecord) => { limit: (limit: number) => { toArray: () => Promise<AnyRecord[]> } } };
+  findOneAndUpdate: (filter: AnyRecord, update: AnyRecord, options: AnyRecord) => Promise<AnyRecord | { value?: AnyRecord | null } | null>;
+  deleteOne: (filter: AnyRecord) => Promise<{ deletedCount?: number }>;
+};
 
 const dataDir = path.join(process.cwd(), '.data');
 const dataFile = path.join(dataDir, 'admin-store.json');
-
 const now = () => new Date().toISOString();
 
 const initialDatabase: Database = {
@@ -53,7 +61,7 @@ const initialDatabase: Database = {
       title: 'ست شورت و سوتین تورگاز',
       code: 'NP-1001',
       price: 1020000,
-      discount_price: 0,
+      discount_price: 860000,
       description: 'محصولی لطیف و خوش‌دوخت برای استفاده روزمره.',
       short_description: 'ست لطیف و سبک',
       images: ['https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'],
@@ -106,7 +114,8 @@ const initialDatabase: Database = {
     { id: 'set-phone', key: 'phone', value: '021-00000000', type: 'text', created_date: now(), updated_date: now() },
     { id: 'set-free-shipping', key: 'free_shipping_min', value: '1500000', type: 'text', created_date: now(), updated_date: now() },
     { id: 'set-about', key: 'about_text', value: 'نوشه پوش، ترکیب زیبایی، کیفیت و تجربه خرید مطمئن است.', type: 'text', created_date: now(), updated_date: now() }
-  ]
+  ],
+  reviews: []
 };
 
 async function readDatabase(): Promise<Database> {
@@ -126,43 +135,99 @@ async function writeDatabase(database: Database) {
   await writeFile(dataFile, JSON.stringify(database, null, 2));
 }
 
+let mongoClientPromise: Promise<any> | null = null;
+
+function stripMongoId(record: AnyRecord) {
+  const { _id, ...rest } = record;
+  return rest;
+}
+
+async function getMongoCollection(entity: EntityName): Promise<MongoCollection | null> {
+  if (!process.env.MONGODB_URI) return null;
+
+  try {
+    const req = eval('require') as NodeRequire;
+    const { MongoClient } = req('mongodb');
+    if (!mongoClientPromise) {
+      const client = new MongoClient(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
+      mongoClientPromise = client.connect();
+    }
+    const client = await mongoClientPromise;
+    const collection = client.db().collection(`noosheh_${entity}`) as MongoCollection;
+    if ((await collection.countDocuments()) === 0 && initialDatabase[entity].length > 0) {
+      await collection.insertMany(initialDatabase[entity].map((record) => ({ ...record })), { ordered: false });
+    }
+    return collection;
+  } catch (error) {
+    console.warn('MongoDB connection is unavailable; using local JSON store fallback.', error);
+    return null;
+  }
+}
+
 export function resolveEntity(entity: string): EntityName | null {
   return (entityMap as Record<string, EntityName>)[entity] ?? null;
 }
 
-function sortRecords(records: AnyRecord[], sort?: string | null, limit?: string | null) {
+function sortDescriptor(sort?: string | null) {
   const sortKey = sort || 'created_date';
   const desc = sortKey.startsWith('-');
   const key = desc ? sortKey.slice(1) : sortKey;
+  return { key, direction: desc ? -1 : 1 };
+}
+
+function sortRecords(records: AnyRecord[], sort?: string | null, limit?: string | null) {
+  const { key, direction } = sortDescriptor(sort);
   const sorted = [...records].sort((a, b) => {
     const av = a[key] ?? '';
     const bv = b[key] ?? '';
-    if (typeof av === 'number' && typeof bv === 'number') return desc ? bv - av : av - bv;
-    return desc ? String(bv).localeCompare(String(av), 'fa') : String(av).localeCompare(String(bv), 'fa');
+    if (typeof av === 'number' && typeof bv === 'number') return direction === -1 ? bv - av : av - bv;
+    return direction === -1 ? String(bv).localeCompare(String(av), 'fa') : String(av).localeCompare(String(bv), 'fa');
   });
   const take = Number(limit);
   return Number.isFinite(take) && take > 0 ? sorted.slice(0, take) : sorted;
 }
 
 export async function listEntity(entity: EntityName, sort?: string | null, limit?: string | null) {
+  const collection = await getMongoCollection(entity);
+  if (collection) {
+    const { key, direction } = sortDescriptor(sort);
+    const take = Number(limit);
+    const records = await collection.find({}).sort({ [key]: direction }).limit(Number.isFinite(take) && take > 0 ? take : 0).toArray();
+    return records.map(stripMongoId);
+  }
   const database = await readDatabase();
   return sortRecords(database[entity] ?? [], sort, limit);
 }
 
 export async function createEntity(entity: EntityName, data: AnyRecord) {
-  const database = await readDatabase();
   const record = {
     ...data,
     id: data.id || randomUUID(),
     created_date: data.created_date || now(),
     updated_date: now()
   };
+  const collection = await getMongoCollection(entity);
+  if (collection) {
+    await collection.insertOne(record);
+    return record;
+  }
+  const database = await readDatabase();
   database[entity] = [record, ...(database[entity] ?? [])];
   await writeDatabase(database);
   return record;
 }
 
 export async function updateEntity(entity: EntityName, id: string, data: AnyRecord) {
+  const collection = await getMongoCollection(entity);
+  if (collection) {
+    const result = await collection.findOneAndUpdate(
+      { id },
+      { $set: { ...data, id, updated_date: now() } },
+      { returnDocument: 'after' }
+    );
+    const record = result && 'value' in result ? result.value : result;
+    return record ? stripMongoId(record as AnyRecord) : null;
+  }
   const database = await readDatabase();
   const records = database[entity] ?? [];
   const index = records.findIndex((record) => record.id === id);
@@ -174,6 +239,11 @@ export async function updateEntity(entity: EntityName, id: string, data: AnyReco
 }
 
 export async function deleteEntity(entity: EntityName, id: string) {
+  const collection = await getMongoCollection(entity);
+  if (collection) {
+    const result = await collection.deleteOne({ id });
+    return (result.deletedCount ?? 0) > 0;
+  }
   const database = await readDatabase();
   const before = database[entity]?.length ?? 0;
   database[entity] = (database[entity] ?? []).filter((record) => record.id !== id);
