@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { adminApi } from '../admin-api';
 import { formatPrice, useEntityList } from '../_components/hooks';
-import { Button, Card, Dialog, EmptyState, Input, Label, Textarea, Toggle } from '../_components/ui';
+import { AlertDialog, Button, Card, Dialog, EmptyState, Input, Label, Textarea, Toggle } from '../_components/ui';
 import type { Product } from '../types';
 
 const emptyProduct: Omit<Product, 'id'> = {
@@ -21,6 +21,8 @@ export default function Products() {
   const [colorsInput, setColorsInput] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const openCreate = () => { setEditingProduct(null); setForm(emptyProduct); setSizesInput(''); setColorsInput(''); setDialogOpen(true); };
   const openEdit = (product: Product) => {
@@ -64,10 +66,13 @@ export default function Products() {
     closeDialog();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('آیا مطمئن هستید؟')) return;
-    await adminApi.delete('Product', id);
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    await adminApi.delete('Product', deleteTarget.id);
     await reload();
+    setDeleteLoading(false);
+    setDeleteTarget(null);
   };
 
   return (
@@ -93,12 +98,23 @@ export default function Products() {
                 <h3 className="truncate">{product.title}</h3>
                 <p className="admin-price">{formatPrice(product.price)} تومان</p>
                 {product.code && <p className="admin-muted small">کد: {product.code}</p>}
-                <div className="admin-actions-row"><Button className="outline grow" onClick={() => openEdit(product)}>✎ ویرایش</Button><Button className="outline danger" onClick={() => handleDelete(product.id)}>🗑</Button></div>
+                <div className="admin-actions-row"><Button className="outline grow" onClick={() => openEdit(product)}>✎ ویرایش</Button><Button className="outline danger" onClick={() => setDeleteTarget(product)} aria-label={`حذف ${product.title}`}>🗑</Button></div>
               </div>
             </Card>
           ))}
         </div>
       )}
+
+      <AlertDialog
+        open={!!deleteTarget}
+        title="حذف محصول"
+        description={deleteTarget ? <>آیا از حذف محصول <b>{deleteTarget.title}</b> مطمئن هستید؟ این عملیات قابل بازگشت نیست.</> : ''}
+        confirmText="حذف محصول"
+        danger
+        loading={deleteLoading}
+        onConfirm={handleDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
 
       <Dialog open={dialogOpen} title={editingProduct ? 'ویرایش محصول' : 'افزودن محصول جدید'} onClose={closeDialog} wide>
         <div className="admin-form">

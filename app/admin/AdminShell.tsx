@@ -17,7 +17,8 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
-  const [secret, setSecret] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
   useEffect(() => {
@@ -28,10 +29,10 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     event.preventDefault();
     setLoginError('');
     try {
-      await adminApi.login(secret);
+      await adminApi.login({ email, password });
       setAuthenticated(true);
     } catch {
-      setLoginError('رمز مدیریت معتبر نیست. مقدار JWT_SECRET را وارد کنید.');
+      setLoginError('ایمیل یا رمز عبور مدیریت معتبر نیست.');
     }
   };
 
@@ -49,10 +50,11 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       <div className="admin-auth-screen" dir="rtl">
         <form className="admin-auth-card" onSubmit={handleLogin}>
           <h1>ورود به پنل مدیریت</h1>
-          <p>برای تغییر محصولات، سفارشات و تنظیمات، مقدار امن `JWT_SECRET` را وارد کنید.</p>
-          <input type="password" value={secret} onChange={(event) => setSecret(event.target.value)} placeholder="JWT_SECRET" autoFocus />
+          <p>برای تغییر محصولات، سفارشات و تنظیمات، با حساب مدیر وارد شوید. اولین کاربری که از API عمومی ثبت‌نام کند به‌صورت مدیر ساخته می‌شود.</p>
+          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="admin@example.com" autoFocus />
+          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="رمز عبور" />
           {loginError && <span>{loginError}</span>}
-          <button className="admin-btn primary" disabled={!secret}>ورود</button>
+          <button className="admin-btn primary" disabled={!email || !password}>ورود</button>
           <Link href="/">بازگشت به سایت</Link>
         </form>
       </div>

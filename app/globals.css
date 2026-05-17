@@ -821,3 +821,29 @@ body {
 .admin-auth-card a { color: var(--admin-primary); text-align: center; text-decoration: none; }
 .admin-logout { width: 100%; border: 0; background: transparent; font: inherit; cursor: pointer; }
 .admin-mobile-top button { border: 0; background: transparent; cursor: pointer; }
+
+/* Shared UI primitives adapted from the provided shadcn-style UI snippets */
+.ui-accordion { display: grid; gap: .75rem; }
+.ui-accordion-item { border: 1px solid var(--store-border); border-radius: .95rem; overflow: hidden; background: #fff; transition: border-color .2s ease, box-shadow .2s ease, background .2s ease; }
+.ui-accordion-item:has(.ui-accordion-trigger[data-state="open"]) { background: rgba(243,39,143,.025); border-color: rgba(243,39,143,.25); box-shadow: 0 12px 32px rgba(35,4,21,.04); }
+.ui-accordion-trigger { width: 100%; border: 0; background: transparent; padding: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; text-align: right; cursor: pointer; font: inherit; font-weight: 800; color: var(--store-foreground); }
+.ui-accordion-trigger:hover { color: var(--store-primary); }
+.ui-accordion-chevron { display: inline-grid; place-items: center; width: 1.7rem; height: 1.7rem; border-radius: 999px; background: var(--store-secondary); color: var(--store-primary); transition: transform .2s ease; }
+.ui-accordion-trigger[data-state="open"] .ui-accordion-chevron { transform: rotate(180deg); }
+.ui-accordion-content { border-top: 1px solid var(--store-border); color: var(--store-muted); line-height: 2; animation: accordion-down .18s ease; }
+.ui-accordion-content-inner { padding: 1rem; }
+@keyframes accordion-down { from { opacity: 0; transform: translateY(-.25rem); } to { opacity: 1; transform: translateY(0); } }
+
+.admin-alert { border: 1px solid var(--admin-border); border-radius: .9rem; background: #fff; padding: .9rem 1rem; display: grid; gap: .35rem; color: var(--admin-foreground); }
+.admin-alert.destructive { border-color: rgba(220, 38, 38, .25); background: #fef2f2; color: #b91c1c; }
+.admin-alert-title { font-weight: 900; }
+.admin-alert-description { color: var(--admin-muted); line-height: 1.8; }
+.admin-alert.destructive .admin-alert-description { color: #991b1b; }
+.admin-alert-dialog { width: min(28rem, 100%); background: #fff; border-radius: 1.15rem; padding: 1.35rem; box-shadow: 0 28px 80px rgba(0,0,0,.28); border: 1px solid rgba(37, 5, 22, .08); display: grid; gap: .75rem; }
+.admin-alert-dialog-icon { width: 2.8rem; height: 2.8rem; border-radius: 999px; display: grid; place-items: center; background: #fef2f2; color: #dc2626; font-weight: 900; font-size: 1.35rem; }
+.admin-alert-dialog h2 { margin: 0; font-size: 1.2rem; }
+.admin-alert-dialog-description { color: var(--admin-muted); line-height: 1.9; }
+.admin-btn.danger-fill { background: #dc2626; color: #fff; }
+.admin-btn.danger-fill:hover { background: #b91c1c; }
+.store-faq-item .ui-accordion-content { padding: 0; }
+.store-faq-item .ui-accordion-content-inner { border-top: 0; padding: 1rem; }

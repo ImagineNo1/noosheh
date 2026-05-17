@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { randomUUID } from 'crypto';
 
-export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews';
+export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users';
 
 export const entityMap = {
   Product: 'products',
@@ -16,6 +16,16 @@ export type ApiEntity = keyof typeof entityMap;
 
 type AnyRecord = Record<string, any>;
 type Database = Record<EntityName, AnyRecord[]>;
+
+export type UserRecord = {
+  id: string;
+  name?: string;
+  email: string;
+  password_hash: string;
+  role: 'user' | 'admin';
+  created_date: string;
+  updated_date: string;
+};
 
 type MongoCollection = {
   countDocuments: (filter?: AnyRecord) => Promise<number>;
@@ -115,7 +125,8 @@ const initialDatabase: Database = {
     { id: 'set-free-shipping', key: 'free_shipping_min', value: '1500000', type: 'text', created_date: now(), updated_date: now() },
     { id: 'set-about', key: 'about_text', value: 'نوشه پوش، ترکیب زیبایی، کیفیت و تجربه خرید مطمئن است.', type: 'text', created_date: now(), updated_date: now() }
   ],
-  reviews: []
+  reviews: [],
+  users: []
 };
 
 async function readDatabase(): Promise<Database> {
@@ -249,4 +260,48 @@ export async function deleteEntity(entity: EntityName, id: string) {
   database[entity] = (database[entity] ?? []).filter((record) => record.id !== id);
   await writeDatabase(database);
   return database[entity].length < before;
+}
+
+
+export async function countUsers() {
+  const collection = await getMongoCollection('users');
+  if (collection) return collection.countDocuments({});
+  const database = await readDatabase();
+  return database.users.length;
+}
+
+export async function findUserByEmail(email: string): Promise<UserRecord | null> {
+  const normalized = email.trim().toLowerCase();
+  const collection = await getMongoCollection('users');
+  if (collection) {
+    const users = await collection.find({ email: normalized }).sort({ created_date: -1 }).limit(1).toArray();
+    return users[0] ? stripMongoId(users[0]) as UserRecord : null;
+  }
+  const database = await readDatabase();
+  return (database.users.find((user) => user.email === normalized) as UserRecord | undefined) ?? null;
+}
+
+export async function createUser(data: { name?: string; email: string; password_hash: string; role?: 'user' | 'admin' }): Promise<UserRecord> {
+  const existing = await findUserByEmail(data.email);
+  if (existing) throw new Error('USER_EXISTS');
+  const normalized = data.email.trim().toLowerCase();
+  const hasUsers = (await countUsers()) > 0;
+  const user: UserRecord = {
+    id: randomUUID(),
+    name: data.name || '',
+    email: normalized,
+    password_hash: data.password_hash,
+    role: data.role || (hasUsers ? 'user' : 'admin'),
+    created_date: now(),
+    updated_date: now()
+  };
+  const collection = await getMongoCollection('users');
+  if (collection) {
+    await collection.insertOne(user);
+    return user;
+  }
+  const database = await readDatabase();
+  database.users = [user, ...database.users];
+  await writeDatabase(database);
+  return user;
 }

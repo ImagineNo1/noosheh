@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { adminApi } from '../admin-api';
 import { useEntityList } from '../_components/hooks';
-import { Button, Card, Dialog, EmptyState, Input, Label, Toggle } from '../_components/ui';
+import { AlertDialog, Button, Card, Dialog, EmptyState, Input, Label, Toggle } from '../_components/ui';
 import type { Category } from '../types';
 
 const emptyCategory = { title: '', title_en: '', slug: '', image: '', order: 0, is_active: true };
@@ -15,6 +15,8 @@ export default function Categories() {
   const [form, setForm] = useState<Omit<Category, 'id'>>(emptyCategory);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const close = () => { setDialogOpen(false); setEditing(null); };
   const openCreate = () => { setEditing(null); setForm(emptyCategory); setDialogOpen(true); };
@@ -43,10 +45,13 @@ export default function Categories() {
     close();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('آیا مطمئن هستید؟')) return;
-    await adminApi.delete('Category', id);
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    await adminApi.delete('Category', deleteTarget.id);
     await reload();
+    setDeleteLoading(false);
+    setDeleteTarget(null);
   };
 
   return (
@@ -70,13 +75,24 @@ export default function Categories() {
                 {category.title_en && <p className="admin-muted">{category.title_en}</p>}
                 <div className="admin-actions-row">
                   <Button className="outline grow" onClick={() => openEdit(category)}>✎ ویرایش</Button>
-                  <Button className="outline danger" onClick={() => handleDelete(category.id)}>🗑</Button>
+                  <Button className="outline danger" onClick={() => setDeleteTarget(category)} aria-label={`حذف ${category.title}`}>🗑</Button>
                 </div>
               </div>
             </Card>
           ))}
         </div>
       )}
+
+      <AlertDialog
+        open={!!deleteTarget}
+        title="حذف دسته‌بندی"
+        description={deleteTarget ? <>آیا از حذف دسته‌بندی <b>{deleteTarget.title}</b> مطمئن هستید؟ محصولات این دسته حذف نمی‌شوند.</> : ''}
+        confirmText="حذف دسته‌بندی"
+        danger
+        loading={deleteLoading}
+        onConfirm={handleDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
 
       <Dialog open={dialogOpen} title={editing ? 'ویرایش دسته‌بندی' : 'افزودن دسته‌بندی'} onClose={close}>
         <div className="admin-form">

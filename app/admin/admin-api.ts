@@ -31,8 +31,8 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export const adminApi = {
-  async login(secret: string) {
-    const result = await request<{ token: string }>('/api/admin/auth', { method: 'POST', body: JSON.stringify({ secret }) });
+  async login(credentials: { email: string; password: string }) {
+    const result = await request<{ token: string }>('/api/admin/auth', { method: 'POST', body: JSON.stringify(credentials) });
     setAdminToken(result.token);
     return result;
   },
