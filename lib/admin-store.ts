@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { MongoClient } from 'mongodb';
 import { hashPassword } from '@/lib/password';
 
 export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users';
@@ -92,8 +93,6 @@ function stripMongoId(record: AnyRecord) {
 async function getMongoCollection(entity: EntityName): Promise<MongoCollection | null> {
   if (!process.env.MONGODB_URI) return null;
   try {
-    const req = eval('require') as NodeRequire;
-    const { MongoClient } = req('mongodb');
     if (!mongoClientPromise) {
       const client = new MongoClient(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
       mongoClientPromise = client.connect();
@@ -116,8 +115,6 @@ export async function checkMongoHealth(): Promise<{ ok: boolean; error?: string 
     return { ok: false, error: 'MONGODB_URI is not configured' };
   }
   try {
-    const req = eval('require') as NodeRequire;
-    const { MongoClient } = req('mongodb');
     if (!mongoClientPromise) {
       const client = new MongoClient(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
       mongoClientPromise = client.connect();
