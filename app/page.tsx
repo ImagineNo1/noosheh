@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import type { Metadata } from 'next';
 import StoreHeader from '@/components/store/StoreHeader';
 import Footer from '@/components/store/Footer';
