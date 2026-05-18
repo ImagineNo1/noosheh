@@ -224,8 +224,11 @@ export function normalizeEntityForModel(entity: string, input: AnyRecord, option
     record.complete_the_look = record.complete_the_look || record.complete_the_look_ids || [];
     record.similar_product_ids = record.similar_product_ids || record.similar_products || [];
     record.similar_products = record.similar_products || record.similar_product_ids || [];
-    record.images = Array.isArray(record.images) ? record.images : [];
-    record.cover_image = record.cover_image || (typeof record.images[0] === 'string' ? record.images[0] : record.images[0]?.url) || '';
+    const normalizedImages = Array.isArray(record.images)
+      ? record.images.map((image: AnyRecord | string) => typeof image === 'string' ? image : image?.url).filter(Boolean)
+      : [];
+    record.images = normalizedImages;
+    record.cover_image = record.cover_image || normalizedImages[0] || '';
   }
 
   if (modelName === 'Category') {
