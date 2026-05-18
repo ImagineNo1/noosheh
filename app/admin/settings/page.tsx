@@ -64,6 +64,11 @@ function TextField({ config, value, onChange }: { config: FieldConfig; value: st
   return <div className="space-y-1.5"><Label>{config.label}</Label><Input value={value} placeholder={config.placeholder} dir={config.dir || 'rtl'} onChange={(event) => onChange(event.target.value)} />{config.hint && <p className="text-xs text-muted-foreground">{config.hint}</p>}</div>;
 }
 
+function isMissingRecordError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || '');
+  return message.includes('Record not found');
+}
+
 function ImageField({ config, value, uploading, onUpload, onRemove }: { config: FieldConfig; value: string; uploading: boolean; onUpload: (file: File) => Promise<void>; onRemove: () => void }) {
   return (
     <div className="space-y-2">
@@ -95,9 +100,19 @@ export default function SiteSettings() {
 
   const upsert = async (key: string, value: string, type: SettingType) => {
     const existing = values[key]?.id ? values[key] : settingsMap[key];
-    const saved = existing?.id
-      ? await adminApi.update<SiteSetting>('SiteSettings', existing.id, { key, value, type })
-      : await adminApi.create<SiteSetting>('SiteSettings', { key, value, type });
+    let saved: SiteSetting;
+
+    if (existing?.id) {
+      try {
+        saved = await adminApi.update<SiteSetting>('SiteSettings', existing.id, { key, value, type });
+      } catch (error) {
+        if (!isMissingRecordError(error)) throw error;
+        saved = await adminApi.create<SiteSetting>('SiteSettings', { key, value, type });
+      }
+    } else {
+      saved = await adminApi.create<SiteSetting>('SiteSettings', { key, value, type });
+    }
+
     setValues((current) => ({ ...current, [key]: saved }));
   };
 
