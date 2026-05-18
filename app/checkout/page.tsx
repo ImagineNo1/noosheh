@@ -7,8 +7,8 @@ import { useCart } from '@/lib/cart-context';
 import { storeApi } from '@/lib/store-api';
 
 const provinces = ['تهران', 'اصفهان', 'فارس', 'خراسان رضوی', 'آذربایجان شرقی', 'مازندران', 'گیلان', 'کرمان', 'خوزستان', 'البرز', 'قم', 'سمنان', 'یزد', 'هرمزگان', 'بوشهر', 'سایر'];
-const steps = ['سبد خرید', 'خرید و تسویه حساب', 'کارورد'];
-const formatPrice = (price: number) => price.toLocaleString('fa-IR') + ' تومان';
+const steps = ['سبد خرید', 'خرید و تسویه حساب', 'ثبت نهایی'];
+const formatPrice = (price: number) => price.toLocaleString('fa-IR') + ' ریال';
 
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
@@ -49,7 +49,7 @@ export default function Checkout() {
           </div></section>
           <button className="store-primary-btn big full" disabled={isSubmitting}>🔒 {isSubmitting ? 'در حال ثبت سفارش...' : 'ثبت سفارش'}</button>
         </form>
-        <aside className="store-checkout-summary"><section className="store-panel"><h2>سفارش شما</h2>{items.map((item) => <div className="store-summary-item" key={item.key}>{item.image && <img src={item.image} alt={item.title} />}<div><p>{item.title}</p><small>{item.quantity} عدد{item.size && ` - سایز ${item.size}`}</small></div><b>{formatPrice(item.price * item.quantity)}</b></div>)}<div className="store-summary-total"><span>مجموع:</span><b>{formatPrice(totalPrice)}</b></div></section><div className="store-note">کاربر گرامی: تمامی سفارشات ما پس از پرداخت در بازه سه روزه ارسال می‌گردد.</div></aside>
+        <aside className="store-checkout-summary"><section className="store-panel"><h2>سفارش شما</h2>{items.map((item) => <div className="store-summary-item" key={item.key}>{item.image && <img src={item.image} alt={item.title} />}<div><p>{item.title}</p><small>{item.quantity} عدد{item.color && ` - رنگ ${item.color}`}{item.size && ` - سایز ${item.size}`}{item.cup && ` - کاپ ${item.cup}`}</small></div><b>{formatPrice(item.price * item.quantity)}</b></div>)}<div className="store-summary-total"><span>مجموع:</span><b>{formatPrice(totalPrice)}</b></div></section><div className="store-note">کاربر گرامی: تمامی سفارشات ما پس از پرداخت در بازه سه روزه ارسال می‌گردد.</div></aside>
       </main>
     </div>
   );

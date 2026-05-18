@@ -27,7 +27,7 @@ export default function StoreHeader() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [promoClosed, setPromoClosed] = useState(false);
-  const [promoText, setPromoText] = useState('🔥 تخفیف ویژه تا ۴۰٪ روی محصولات منتخب! همین حالا خرید کن|ارسال رایگان سفارشات بالای ۵۰۰ هزار تومان');
+  const [promoText, setPromoText] = useState('🔥 تخفیف ویژه تا ۴۰٪ روی محصولات منتخب! همین حالا خرید کن|ارسال رایگان سفارشات بالای ۵۰۰ هزار ریال');
   const [logoText, setLogoText] = useState('NOOSHEH');
 
   useEffect(() => {

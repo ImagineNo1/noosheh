@@ -59,6 +59,17 @@ export const modelSchemas = {
     },
     required: ['items', 'total']
   },
+
+  ProductAttribute: {
+    name: 'ProductAttribute',
+    type: 'object',
+    properties: {
+      type: { type: 'string', enum: ['size', 'color', 'cup'] },
+      name: { type: 'string' },
+      value: { type: 'string' }
+    },
+    required: ['type', 'name']
+  },
   Product: {
     name: 'Product',
     type: 'object',
@@ -68,7 +79,7 @@ export const modelSchemas = {
       brand: { type: 'string', description: 'Brand name' },
       short_description: { type: 'string', description: 'Short description' },
       description: { type: 'string', description: 'Full product description (rich text)' },
-      price: { type: 'number', description: 'Base price in Toman' },
+      price: { type: 'number', description: 'Base price in Rial' },
       compare_at_price: { type: 'number', description: 'Original price before discount' },
       category: { type: 'string', description: 'Product category' },
       collection: { type: 'string', description: 'Product collection' },
@@ -160,7 +171,8 @@ const entityToModel = {
   addresses: 'Address',
   cart_items: 'CartItem',
   return_requests: 'ReturnRequest',
-  wishlists: 'Wishlist'
+  wishlists: 'Wishlist',
+  product_attributes: 'ProductAttribute'
 } as const;
 
 const aliases: Record<string, Record<string, string>> = {
@@ -203,6 +215,10 @@ export function normalizeEntityForModel(entity: string, input: AnyRecord, option
 
   for (const [key, config] of Object.entries(schema.properties)) {
     if (!options.partial && record[key] === undefined && 'default' in config) record[key] = config.default;
+  }
+
+  if (modelName === 'ProductAttribute') {
+    record.value = record.value || record.name || '';
   }
 
   if (modelName === 'Product') {

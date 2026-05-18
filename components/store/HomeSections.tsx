@@ -94,7 +94,7 @@ export function StoreHome() {
         <div className="mx-auto max-w-7xl px-4 py-5">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {[
-              { icon: '🚚', label: 'ارسال سریع', sub: 'سفارشات بالای ۵۰۰ هزار تومان رایگان' },
+              { icon: '🚚', label: 'ارسال سریع', sub: 'سفارشات بالای ۵۰۰ هزار ریال رایگان' },
               { icon: '↩', label: 'تعویض آسان', sub: 'تا ۷ روز امکان مرجوعی' },
               { icon: '📦', label: 'کیفیت اصل', sub: 'ضمانت اصالت کالا' },
               { icon: '💗', label: 'پشتیبانی ۲۴/۷', sub: 'همیشه در کنار شما' }

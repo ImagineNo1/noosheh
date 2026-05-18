@@ -1,4 +1,4 @@
-export type AdminEntity = 'Product' | 'Order' | 'Category' | 'SiteSettings' | 'Review' | 'Address' | 'CartItem' | 'ReturnRequest' | 'Wishlist';
+export type AdminEntity = 'Product' | 'Order' | 'Category' | 'SiteSettings' | 'Review' | 'Address' | 'CartItem' | 'ReturnRequest' | 'Wishlist' | 'ProductAttribute';
 
 const tokenKey = 'noosheh-admin-token';
 

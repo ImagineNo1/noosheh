@@ -34,7 +34,7 @@ export default function Dashboard() {
 
   return (
     <div className="admin-page">
-      <div className="admin-page-header"><div><h1 className="admin-title">داشبورد</h1><p className="admin-muted small">نمای کلی محصولات، سفارشات و نظرات فروشگاه</p></div><strong className="admin-price">درآمد پرداخت‌شده: {formatPrice(totalRevenue)} تومان</strong></div>
+      <div className="admin-page-header"><div><h1 className="admin-title">داشبورد</h1><p className="admin-muted small">نمای کلی محصولات، سفارشات و نظرات فروشگاه</p></div><strong className="admin-price">درآمد پرداخت‌شده: {formatPrice(totalRevenue)} ریال</strong></div>
 
       <div className="admin-stats-grid">
         {stats.map((stat) => (
@@ -50,7 +50,7 @@ export default function Dashboard() {
       <Card>
         <div className="admin-card-header"><h2>آخرین سفارشات</h2></div>
         {orders.length === 0 ? <p className="admin-muted center pad-lg">هنوز سفارشی ثبت نشده</p> : (
-          <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>شماره</th><th>مشتری</th><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th></tr></thead><tbody>{orders.slice(0, 10).map((order) => <tr key={order.id}><td className="bold">{order.order_number}</td><td>{order.customer_name} {order.customer_family}</td><td>{formatPrice(order.total_amount)} تومان</td><td><StatusBadge status={order.status} /></td><td className="admin-muted">{formatDate(order.created_date)}</td></tr>)}</tbody></table></div>
+          <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>شماره</th><th>مشتری</th><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th></tr></thead><tbody>{orders.slice(0, 10).map((order) => <tr key={order.id}><td className="bold">{order.order_number}</td><td>{order.customer_name} {order.customer_family}</td><td>{formatPrice(order.total_amount)} ریال</td><td><StatusBadge status={order.status} /></td><td className="admin-muted">{formatDate(order.created_date)}</td></tr>)}</tbody></table></div>
         )}
       </Card>
     </div>

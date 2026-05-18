@@ -29,6 +29,8 @@ export async function POST(request: Request, { params }: { params: { entity: str
     if (message.startsWith('VALIDATION:')) {
       return NextResponse.json({ error: message.replace('VALIDATION:', '') }, { status: 400 });
     }
+    if (message === 'OUT_OF_STOCK') return NextResponse.json({ error: 'موجودی وریانت انتخاب‌شده کافی نیست.' }, { status: 400 });
+    if (message === 'VARIANT_NOT_FOUND') return NextResponse.json({ error: 'وریانت انتخاب‌شده پیدا نشد.' }, { status: 400 });
     throw error;
   }
 }

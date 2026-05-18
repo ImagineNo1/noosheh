@@ -86,7 +86,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
           color,
           cup,
           variant_id: variantId,
-          sku: product.variants?.find((variant) => variant.id === variantId)?.sku,
+          product_variant_id: variantId,
+          sku: product.variants?.find((variant) => variant.id === variantId || variant.product_variant_id === variantId)?.sku,
           image: productImageToUrl(product.images?.[0])
         }];
       });
