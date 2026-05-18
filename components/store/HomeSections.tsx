@@ -29,7 +29,6 @@ function ProductGrid({ products, isLoading, count = 4 }: { products: Product[]; 
 export function StoreHome() {
   const [products, setProducts] = useState<Product[]>([]);
   const [heroRectImage, setHeroRectImage] = useState('');
-  const [heroCircleImage, setHeroCircleImage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -50,7 +49,6 @@ export function StoreHome() {
         if (!mounted) return;
         const map = Object.fromEntries(items.map((item) => [item.key, item.value]));
         setHeroRectImage(map.home_hero_rect_image || '');
-        setHeroCircleImage(map.home_hero_circle_image || '');
       })
       .catch(() => {});
     return () => { mounted = false; };
@@ -87,9 +85,6 @@ export function StoreHome() {
           <div className="relative flex flex-1 justify-center">
             <div className="relative flex h-80 w-64 items-center justify-center overflow-hidden rounded-3xl bg-primary/10 shadow-inner md:h-96 md:w-80">
               {heroRectImage ? <img src={heroRectImage} alt="تصویر هیرو صفحه اصلی" className="h-full w-full object-cover" /> : <span className="text-6xl">👗</span>}
-            </div>
-            <div className="absolute -bottom-6 -left-4 h-24 w-24 overflow-hidden rounded-full border-4 border-background bg-primary/10 shadow-md md:h-28 md:w-28">
-              {heroCircleImage ? <img src={heroCircleImage} alt="تصویر دایره‌ای هیرو" className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-3xl">✨</div>}
             </div>
           </div>
         </div>
