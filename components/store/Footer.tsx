@@ -1,28 +1,32 @@
 import Link from 'next/link';
 
-const features = [
-  { icon: '🚚', title: 'ارسال رایگان', desc: 'بیشتر از ۱ میلیون و صد هزار تومان' },
-  { icon: '↻', title: 'گارانتی برگشت وجه', desc: '۷ روز گارانتی بازگشت وجه' },
-  { icon: '🛡', title: 'اصالت کالا', desc: 'تضمین اصالت کالا' },
-  { icon: '💳', title: 'پرداخت آنلاین', desc: 'با تمامی درگاه‌های بانکی' }
-];
-
 export default function Footer() {
   return (
-    <footer className="store-footer-new" dir="rtl">
-      <div className="store-footer-features">
-        <div className="store-container">
-          {features.map((feature) => <div key={feature.title}><span>{feature.icon}</span><div><b>{feature.title}</b><p>{feature.desc}</p></div></div>)}
+    <footer className="mt-20 bg-foreground text-background" dir="rtl">
+      <div className="mx-auto max-w-7xl px-4 py-12">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
+          <div>
+            <h3 className="mb-4 text-lg font-bold">N<span className="text-primary">♥</span>OSHEH</h3>
+            <p className="text-sm leading-relaxed text-background/60">فروشگاه آنلاین لباس و پوشاک زنانه با بهترین کیفیت و قیمت مناسب</p>
+          </div>
+          <div>
+            <h4 className="mb-4 text-sm font-semibold">دسترسی سریع</h4>
+            <nav className="flex flex-col gap-2">
+              <Link href="/" className="text-sm text-background/60 transition-colors hover:text-primary">خانه</Link>
+              <Link href="/category/all" className="text-sm text-background/60 transition-colors hover:text-primary">دسته‌بندی‌ها</Link>
+              <Link href="/faq" className="text-sm text-background/60 transition-colors hover:text-primary">سوالات متداول</Link>
+              <Link href="/contact" className="text-sm text-background/60 transition-colors hover:text-primary">تماس با ما</Link>
+            </nav>
+          </div>
+          <div>
+            <h4 className="mb-4 text-sm font-semibold">ارتباط با ما</h4>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2 text-sm text-background/60"><span>☎</span><span dir="ltr">۰۹۱۲۳۴۵۶۷۸۹</span></div>
+              <div className="flex items-center gap-2 text-sm text-background/60"><span>✉</span><span>info@noosheh.com</span></div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="store-footer-main">
-        <div className="store-container">
-          <section><h3>درباره ما</h3><p>نوشه پوش یکی از شرکت‌های پیشرو در تولید لباس زیر زنانه با بیش از ۱۲ سال سابقه در عرصه تولید لباس زیر است.</p></section>
-          <section><h3>راهنمای فروشگاه</h3><Link href="/faq">نحوه ثبت سفارش</Link><Link href="/faq">رویه ارسال</Link><Link href="/faq">شرایط بازگشت</Link><Link href="/faq">سوالات متداول</Link></section>
-          <section><h3>لینک‌های مفید</h3><Link href="/">خانه</Link><Link href="/category/all">محصولات</Link><Link href="/contact">تماس با ما</Link></section>
-          <section><h3>نظر مشتریان</h3><div className="store-footer-review"><p>★★★★★</p><span>خرید آنلاین کار با نوشه‌پوش بی‌نظیره. محصولاتشون واقعاً باکیفیته.</span></div></section>
-        </div>
-        <p className="store-footer-copy">تمامی حقوق مادی و معنوی این سایت متعلق به نوشه‌پوش می‌باشد.</p>
+        <div className="mt-10 border-t border-background/10 pt-6 text-center text-xs text-background/40">© ۱۴۰۴ نوشه. تمامی حقوق محفوظ است.</div>
       </div>
     </footer>
   );

@@ -2,111 +2,150 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import ProductCard from '@/components/store/ProductCard';
-import ProductReviews from '@/components/store/ProductReviews';
+import AddToCartButton from '@/components/product/AddToCartButton';
+import ColorSelector from '@/components/product/ColorSelector';
+import CompleteTheLook from '@/components/product/CompleteTheLook';
+import CupSelector from '@/components/product/CupSelector';
+import ProductBadges from '@/components/product/ProductBadges';
+import ProductGallery from '@/components/product/ProductGallery';
+import ProductTabs from '@/components/product/ProductTabs';
+import QuantitySelector from '@/components/product/QuantitySelector';
+import SimilarProducts from '@/components/product/SimilarProducts';
+import SizeSelector from '@/components/product/SizeSelector';
+import TrustBadges from '@/components/product/TrustBadges';
+import { colorImageUrls, colorValue, formatPrice, normalizeColors, normalizeList, variantAvailable, variantStock, type ProductColor } from '@/components/product/product-utils';
 import StoreHeader from '@/components/store/StoreHeader';
 import { useCart } from '@/lib/cart-context';
 import { storeApi } from '@/lib/store-api';
 import type { Product } from '@/app/admin/types';
 
-const formatPrice = (price?: number) => (price || 0).toLocaleString('fa-IR');
-
 export default function ProductDetail({ params }: { params: { id: string } }) {
   const { addItem } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [selectedColor, setSelectedColor] = useState<ProductColor | null>(null);
   const [selectedSize, setSelectedSize] = useState('');
-  const [selectedColor, setSelectedColor] = useState('');
   const [selectedCup, setSelectedCup] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [currentImage, setCurrentImage] = useState(0);
-  const [activeTab, setActiveTab] = useState('details');
-  const [added, setAdded] = useState(false);
-  const [error, setError] = useState('');
+  const [notifyMessage, setNotifyMessage] = useState('');
 
-  useEffect(() => { storeApi.products().then(setProducts).finally(() => setIsLoading(false)); }, []);
+  useEffect(() => {
+    let mounted = true;
+    storeApi.products()
+      .then((data) => mounted && setProducts(data))
+      .catch(() => mounted && setLoadError('خطا در دریافت اطلاعات محصول.'))
+      .finally(() => mounted && setIsLoading(false));
+    return () => { mounted = false; };
+  }, []);
 
-  const product = products.find((item) => item.id === params.id);
-  const completeTheLook = useMemo(() => products.filter((p) => (product?.complete_the_look_ids || []).includes(p.id)), [products, product]);
-  const similarProducts = useMemo(() => {
-    const ids = product?.similar_product_ids || [];
-    if (ids.length) return products.filter((p) => ids.includes(p.id));
-    return products.filter((item) => item.category === product?.category && item.id !== product?.id && item.is_active !== false).slice(0, 8);
-  }, [products, product]);
-
-  const colorSwatches = product?.color_swatches?.filter((c) => c.active !== false).sort((a, b) => (a.order || 0) - (b.order || 0)) || [];
-  const fallbackImages = product?.images || [];
-  const activeColor = colorSwatches.find((c) => c.value === selectedColor) || colorSwatches[0];
-  const images = activeColor?.images?.length ? activeColor.images : fallbackImages;
-  const sizes = product?.sizes || [];
-  const cups = product?.has_cup_option ? (product.cups || []) : [];
+  const product = useMemo(() => products.find((item) => item.id === params.id || item.code === params.id), [products, params.id]);
+  const colorOptions = useMemo(() => normalizeColors(product), [product]);
 
   useEffect(() => {
     if (!product) return;
-    if (!selectedColor && colorSwatches[0]) setSelectedColor(colorSwatches[0].value);
-    if (!selectedSize && sizes.length === 1) setSelectedSize(sizes[0]);
-    if (product.has_cup_option && !selectedCup && cups.length === 1) setSelectedCup(cups[0]);
-  }, [product, selectedColor, selectedSize, selectedCup, colorSwatches, sizes, cups]);
+    if (!selectedColor && colorOptions[0]) setSelectedColor(colorOptions.find((color) => color.active !== false && color.is_active !== false) || colorOptions[0]);
+    if (!selectedSize && product.sizes?.length === 1) setSelectedSize(product.sizes[0]);
+    if (product.has_cup_option && !selectedCup && product.cups?.length === 1) setSelectedCup(product.cups[0]);
+  }, [product, colorOptions, selectedColor, selectedSize, selectedCup]);
 
-  const variant = useMemo(() => product?.variants?.find((v) => (!selectedColor || v.color === selectedColor) && (!selectedSize || v.size === selectedSize) && (!product?.has_cup_option || !selectedCup || v.cup === selectedCup)), [product, selectedColor, selectedSize, selectedCup]);
-  const variantStock = variant?.stock ?? product?.stock ?? 0;
-  const isOutOfStock = variantStock <= 0;
-  const hasDiscount = !!(variant?.discount_price ?? product?.discount_price) && (variant?.discount_price ?? 0) < (variant?.price ?? product?.price ?? 0);
-  const effectivePrice = variant?.price ?? product?.price;
-  const effectiveDiscountPrice = variant?.discount_price ?? product?.discount_price;
+  const galleryImages = useMemo(() => {
+    const selectedImages = colorImageUrls(selectedColor);
+    return selectedImages.length ? selectedImages : (product?.images || []);
+  }, [selectedColor, product]);
 
-  if (isLoading) return <div className="store-container store-detail-skeleton" dir="rtl"><div className="store-skeleton square" /><div><div className="store-skeleton line" /><div className="store-skeleton line short" /><div className="store-skeleton block" /></div></div>;
-  if (!product) return <div className="store-page" dir="rtl"><StoreHeader /><div className="store-container store-empty">محصول یافت نشد<Link href="/">بازگشت به خانه</Link></div></div>;
+  const availableSizes = useMemo(() => {
+    if (!product?.variants?.length) return normalizeList(product?.sizes);
+    const sizes = product.variants
+      .filter((variant) => (!selectedColor || variant.color === colorValue(selectedColor)) && variantAvailable(variant))
+      .map((variant) => variant.size)
+      .filter(Boolean) as string[];
+    return [...new Set(sizes.length ? sizes : normalizeList(product.sizes))];
+  }, [product, selectedColor]);
 
-  const onAdd = (target: Product, opts?: { size?: string; color?: string; cup?: string }) => {
-    const size = opts?.size ?? selectedSize;
-    const color = opts?.color ?? selectedColor;
-    const cup = opts?.cup ?? selectedCup;
-    if (target.sizes?.length && !size) return setError('لطفاً سایز را انتخاب کنید.');
-    if (target.has_cup_option && !cup) return setError('لطفاً کاپ را انتخاب کنید.');
-    setError('');
-    addItem(target, 1, size, color, cup, variant?.id);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1800);
+  const availableCups = useMemo(() => {
+    if (!product?.has_cup_option) return [];
+    if (!product.variants?.length) return normalizeList(product.cups);
+    const cups = product.variants
+      .filter((variant) => (!selectedColor || variant.color === colorValue(selectedColor)) && (!selectedSize || variant.size === selectedSize) && variantAvailable(variant))
+      .map((variant) => variant.cup)
+      .filter(Boolean) as string[];
+    return [...new Set(cups.length ? cups : normalizeList(product.cups))];
+  }, [product, selectedColor, selectedSize]);
+
+  const currentVariant = useMemo(() => product?.variants?.find((variant) =>
+    (!selectedColor || variant.color === colorValue(selectedColor)) &&
+    (!selectedSize || variant.size === selectedSize) &&
+    (!product.has_cup_option || !selectedCup || variant.cup === selectedCup)
+  ), [product, selectedColor, selectedSize, selectedCup]);
+
+  if (isLoading) {
+    return <div className="store-page" dir="rtl"><StoreHeader /><div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-8 lg:grid-cols-2"><ProductGallery isLoading /><div className="space-y-4"><div className="h-8 w-56 animate-pulse rounded bg-secondary" /><div className="h-6 w-36 animate-pulse rounded bg-secondary" /><div className="h-12 w-full animate-pulse rounded bg-secondary" /></div></div></div>;
+  }
+
+  if (loadError || !product) {
+    return <div className="store-page" dir="rtl"><StoreHeader /><div className="mx-auto max-w-7xl px-4 py-20 text-center"><h1 className="mb-2 text-xl font-bold">محصول یافت نشد</h1><p className="mb-4 text-sm text-muted-foreground">{loadError || 'این محصول وجود ندارد یا حذف شده است.'}</p><Link href="/" className="text-sm text-primary hover:underline">بازگشت به خانه</Link></div></div>;
+  }
+
+  const currentPrice = currentVariant?.discount_price || currentVariant?.price || product.discount_price || product.price;
+  const comparePrice = currentVariant?.compare_at_price || (currentVariant?.discount_price ? currentVariant.price : product.discount_price ? product.price : undefined);
+  const stock = currentVariant ? variantStock(currentVariant) : product.stock ?? 99;
+  const hasConfiguredVariants = Boolean(product.variants?.length);
+  const isAvailable = hasConfiguredVariants ? variantAvailable(currentVariant) : (product.stock ?? 1) > 0;
+  const hasDiscount = Boolean(comparePrice && comparePrice > currentPrice);
+  const discountPercent = hasDiscount ? Math.round((1 - currentPrice / (comparePrice || currentPrice)) * 100) : 0;
+  const features = product.features || [];
+  const completeTheLook = products.filter((item) => (product.complete_the_look_ids || []).includes(item.id));
+  const similarProducts = (product.similar_product_ids?.length ? products.filter((item) => product.similar_product_ids?.includes(item.id)) : products.filter((item) => item.category === product.category && item.id !== product.id && item.is_active !== false)).slice(0, 8);
+  const validationErrors = [
+    ...(product.sizes?.length && !selectedSize ? ['لطفاً سایز را انتخاب کنید'] : []),
+    ...(product.has_cup_option && product.cups?.length && !selectedCup ? ['لطفاً کاپ را انتخاب کنید'] : [])
+  ];
+  const selectedImage = galleryImages[0] || product.images?.[0] || '';
+
+  const addConfiguredProduct = (target: Product, size = '', color = '', cup = '', variantId = '', image = target.images?.[0] || '', price = target.discount_price || target.price) => {
+    addItem({ ...target, price, discount_price: undefined, images: image ? [image, ...(target.images || []).filter((item) => item !== image)] : target.images }, quantity, size, color, cup, variantId);
   };
 
+  const handleAdd = () => addConfiguredProduct(product, selectedSize, selectedColor ? colorValue(selectedColor) : '', selectedCup, currentVariant?.id || '', selectedImage, currentPrice);
+
   return (
-    <div className="store-page" dir="rtl">
+    <div className="store-page pb-20" dir="rtl">
       <StoreHeader />
-      <div className="store-container store-breadcrumb"><Link href="/">خانه</Link><span>‹</span>{product.category && <><Link href={`/category/${product.category}`}>{product.category}</Link><span>‹</span></>}<b>{product.title}</b></div>
-      <main className="store-container store-product-detail">
-        <section className="store-gallery">
-          <div className="store-gallery-main">{images[currentImage] ? <img src={images[currentImage]} alt={`${product.title} - ${currentImage + 1}`} /> : <span>بدون تصویر</span>}</div>
-          {!!images.length && <div className="store-thumbs">{images.map((image, index) => <button key={image + index} onClick={() => setCurrentImage(index)} className={currentImage === index ? 'active' : ''}><img src={image} alt={`نمای ${index + 1}`} /></button>)}</div>}
-        </section>
+      <div className="mx-auto max-w-7xl px-4 py-3">
+        <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Link href="/" className="transition-colors hover:text-primary">خانه</Link><span>‹</span>
+          {product.category && <><Link href={`/category/${product.category}`} className="transition-colors hover:text-primary">{product.category}</Link><span>‹</span></>}
+          <span className="font-medium text-foreground">{product.title}</span>
+        </nav>
+      </div>
 
-        <section className="store-detail-info">
-          <div><h1>{product.title}</h1><div className="store-meta">{product.brand && <p>برند: {product.brand}</p>}{product.collection && <p>کالکشن: {product.collection}</p>}</div></div>
-          <div className="store-detail-price">{hasDiscount ? <><strong>{formatPrice(effectiveDiscountPrice)} تومان</strong><del>{formatPrice(effectivePrice)} تومان</del></> : <strong>{formatPrice(effectivePrice)} تومان</strong>} {isOutOfStock ? <span className="store-status danger">ناموجود</span> : <span className="store-status success">موجود</span>}</div>
-          {product.short_description && <p>{product.short_description}</p>}
+      <main className="mx-auto max-w-7xl px-4">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
+          <section className="lg:sticky lg:top-28 lg:self-start"><ProductGallery images={galleryImages} title={product.title} /></section>
+          <section className="space-y-5">
+            <ProductBadges badges={product.badges} isAvailable={isAvailable} />
+            <div><h1 className="text-2xl font-bold md:text-3xl">{product.title}</h1>{(product.brand || product.collection) && <p className="mt-2 text-xs text-muted-foreground">{product.brand && <>برند: {product.brand}</>}{product.brand && product.collection && ' | '}{product.collection && <>کالکشن: {product.collection}</>}</p>}</div>
+            <div className="flex flex-wrap items-baseline gap-3"><span className="text-2xl font-bold text-primary">{formatPrice(currentPrice)} تومان</span>{hasDiscount && <><span className="text-sm text-muted-foreground line-through">{formatPrice(comparePrice)} تومان</span><span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">{discountPercent}٪ تخفیف</span></>}</div>
+            {product.short_description && <p className="text-sm leading-relaxed text-muted-foreground">{product.short_description}</p>}
+            {features.length > 0 && <ul className="space-y-1">{features.map((feature) => <li key={feature} className="flex items-start gap-2 text-sm text-foreground/80"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />{feature}</li>)}</ul>}
 
-          {!!colorSwatches.length && <div><p className="store-option-title">رنگ: {activeColor?.name || selectedColor}</p><div className="store-choice-row">{colorSwatches.map((c) => <button key={c.value} className={selectedColor === c.value ? 'active' : ''} onClick={() => { setSelectedColor(c.value); setCurrentImage(0); }} aria-label={`انتخاب رنگ ${c.name}`}>{c.hex ? <span className="store-color-dot" style={{ background: c.hex }} /> : null}{c.name}</button>)}</div></div>}
-          {!!sizes.length && <div><p className="store-option-title">سایز</p><div className="store-choice-row">{sizes.map((size) => <button key={size} className={selectedSize === size ? 'active' : ''} onClick={() => setSelectedSize(size)}>{size}</button>)}</div></div>}
-          {!!cups.length && <div><p className="store-option-title">کاپ</p><div className="store-choice-row">{cups.map((cup) => <button key={cup} className={selectedCup === cup ? 'active' : ''} onClick={() => setSelectedCup(cup)}>{cup}</button>)}</div></div>}
-
-          <div><p className="store-option-title">تعداد</p><div className="store-quantity"><button onClick={() => setQuantity((q) => q + 1)}>+</button><span>{quantity.toLocaleString('fa-IR')}</span><button onClick={() => setQuantity((q) => Math.max(1, q - 1))}>−</button></div></div>
-          {!!error && <p className="store-error-inline">{error}</p>}
-          <button className="store-primary-btn big" disabled={isOutOfStock} onClick={() => { for (let i=0;i<quantity;i++) onAdd(product); }}>🛍 {added ? 'به سبد اضافه شد' : isOutOfStock ? 'ناموجود' : 'افزودن به سبد خرید'}</button>
-        </section>
+            <div className="space-y-5 border-t border-border pt-5">
+              <ColorSelector colors={colorOptions} selectedColor={selectedColor} onSelect={(color) => { setSelectedColor(color); setSelectedSize(''); setSelectedCup(''); setNotifyMessage(''); }} />
+              <SizeSelector sizes={product.sizes} selectedSize={selectedSize} availableSizes={availableSizes} onSelect={(size) => { setSelectedSize(size); setSelectedCup(''); setNotifyMessage(''); }} sizeGuide={product.size_fit} />
+              <CupSelector cups={product.cups} selectedCup={selectedCup} availableCups={availableCups} onSelect={(cup) => { setSelectedCup(cup); setNotifyMessage(''); }} />
+              <QuantitySelector value={quantity} max={Math.max(1, stock || 99)} onChange={setQuantity} />
+              {notifyMessage && <p className="rounded-xl bg-primary/10 p-3 text-sm text-primary">{notifyMessage}</p>}
+              <AddToCartButton isAvailable={isAvailable} isValid={validationErrors.length === 0} validationErrors={validationErrors} onAdd={handleAdd} onNotify={() => setNotifyMessage('درخواست اطلاع‌رسانی شما ثبت شد.')} />
+            </div>
+            <TrustBadges />
+          </section>
+        </div>
+        <ProductTabs product={product} />
       </main>
 
-      <section className="store-container store-tabs" id="reviews">
-        <div className="store-tab-list">{[['details','Product Details'],['size','Size & Fit'],['fabric','Fabric & Care'],['shipping','Shipping & Returns'],['reviews','Reviews']].map(([k,l]) => <button key={k} className={activeTab===k?'active':''} onClick={()=>setActiveTab(k)}>{l}</button>)}</div>
-        {activeTab==='details' && <div className="store-tab-content"><p>{product.details || product.description || '—'}</p></div>}
-        {activeTab==='size' && <div className="store-tab-content"><p>{product.size_fit || 'راهنمای سایز به‌زودی اضافه می‌شود.'}</p></div>}
-        {activeTab==='fabric' && <div className="store-tab-content"><p>{product.fabric_care || product.material || '—'}</p></div>}
-        {activeTab==='shipping' && <div className="store-tab-content"><p>{product.shipping_returns || 'ارسال سریع و امکان تعویض تا ۷ روز.'}</p></div>}
-        {activeTab==='reviews' && <div className="store-tab-content"><ProductReviews productId={product.id} /></div>}
-      </section>
-
-      <section className="store-container store-related"><div className="store-section-heading"><h2>Complete the Look</h2></div>{completeTheLook.length ? <div className="store-product-grid store-horizontal-scroll">{completeTheLook.map((item) => <article key={item.id} className="store-product-card"><ProductCard product={item} /><button className="store-outline-btn" onClick={() => onAdd(item, { color: selectedColor })}>افزودن سریع</button></article>)}</div> : <div className="store-empty bordered">پیشنهاد مکملی ثبت نشده است.</div>}</section>
-
-      <section className="store-container store-related"><div className="store-section-heading"><h2>محصولات مشابه</h2></div>{similarProducts.length ? <div className="store-product-grid">{similarProducts.filter((i)=>i.id!==product.id).map((item) => <ProductCard key={item.id} product={item} />)}</div> : <div className="store-empty bordered">محصول مشابهی یافت نشد.</div>}</section>
+      {completeTheLook.length > 0 && <CompleteTheLook products={completeTheLook} currentColor={selectedColor} onAddToCart={addConfiguredProduct} />}
+      {similarProducts.length > 0 && <SimilarProducts products={similarProducts} />}
     </div>
   );
 }

@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/clean-next-build.mjs && next build && node scripts/verify-css-build.mjs",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "verify:css": "node scripts/verify-css-build.mjs",
+    "clean:next": "node scripts/clean-next-build.mjs"
   },
   "dependencies": {
     "next": "14.2.5",
@@ -21,6 +23,7 @@
     "typescript": "5.5.3",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
-    "autoprefixer": "^10.4.20"
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49"
   }
 }

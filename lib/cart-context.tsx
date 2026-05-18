@@ -6,15 +6,19 @@ import type { Product } from '@/app/admin/types';
 export type CartItem = {
   key: string;
   product_id: string;
-  title: string;
-  price: number;
-  original_price: number;
-  quantity: number;
-  size?: string;
+  product_name: string;
+  product_image?: string;
   color?: string;
+  size?: string;
   cup?: string;
-  variant_id?: string;
+  sku?: string;
+  price: number;
+  quantity: number;
+  user_email?: string;
+  title: string;
   image?: string;
+  original_price: number;
+  variant_id?: string;
 };
 
 type CartContextValue = {
@@ -32,6 +36,10 @@ type CartContextValue = {
 const CartContext = createContext<CartContextValue | null>(null);
 const storageKey = 'cart';
 const legacyStorageKey = 'noosheh-cart';
+
+function productImageToUrl(image?: string) {
+  return image || '';
+}
 
 function readInitialCart(): CartItem[] {
   if (typeof window === 'undefined') return [];
@@ -68,7 +76,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return [...current, {
           key,
           product_id: product.id,
-          title: product.title,
+          product_name: product.name || product.title,
+          product_image: productImageToUrl(product.images?.[0]),
+          title: product.title || product.name || '',
           price,
           original_price: product.price,
           quantity,
@@ -76,7 +86,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
           color,
           cup,
           variant_id: variantId,
-          image: product.images?.[0] || ''
+          sku: product.variants?.find((variant) => variant.id === variantId)?.sku,
+          image: productImageToUrl(product.images?.[0])
         }];
       });
       setIsOpen(true);

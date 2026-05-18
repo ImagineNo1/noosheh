@@ -1,13 +1,24 @@
 'use client';
-import { useEffect, useState } from 'react';
+
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import type { Order } from '@/app/admin/types';
-import { storeApi } from '@/lib/store-api';
+import { accountApi } from '@/components/account/account-api';
+
+const badge: Record<string, string> = { pending: 'bg-amber-100 text-amber-700', processing: 'bg-blue-100 text-blue-700', shipped: 'bg-purple-100 text-purple-700', delivered: 'bg-green-100 text-green-700', cancelled: 'bg-red-100 text-red-700' };
+const labels: Record<string, string> = { pending: 'در انتظار پرداخت', processing: 'در حال پردازش', shipped: 'ارسال‌شده', delivered: 'تحویل‌داده‌شده', cancelled: 'لغوشده' };
+const timeline = [{ key: 'pending', label: 'ثبت سفارش' }, { key: 'processing', label: 'تایید و پردازش' }, { key: 'shipped', label: 'ارسال' }, { key: 'delivered', label: 'تحویل' }];
 
 export default function OrderDetailsPage() {
   const params = useParams<{ id: string }>();
   const [order, setOrder] = useState<Order | null>(null);
-  useEffect(() => { storeApi.orders().then((orders) => setOrder(orders.find((x) => x.id === params.id) || null)); }, [params.id]);
-  if (!order) return <div className="admin-card">سفارش پیدا نشد.</div>;
-  return <div className="admin-card"><h2>سفارش {order.order_number}</h2><p>وضعیت: {order.status}</p><p>مبلغ: {(order.total_amount || 0).toLocaleString('fa-IR')} تومان</p><ul>{order.items?.map((item, i) => <li key={i}>{item.title} × {item.quantity}</li>)}</ul></div>;
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { accountApi.orders().then((orders) => setOrder(orders.find((item) => item.id === params.id) || null)).finally(() => setLoading(false)); }, [params.id]);
+  if (loading) return <div className="store-account-panel">در حال بارگذاری...</div>;
+  if (!order) return <div className="py-20 text-center"><p className="mb-4 text-muted-foreground">سفارش یافت نشد</p><Link href="/account/orders" className="text-sm text-primary hover:underline">بازگشت به سفارش‌ها</Link></div>;
+  const currentStep = timeline.findIndex((item) => item.key === order.status);
+  const address = [order.province, order.city, order.address].filter(Boolean).join('، ');
+
+  return <div className="max-w-3xl space-y-5"><div className="flex items-center gap-3"><Link href="/account/orders" className="text-muted-foreground hover:text-foreground">→</Link><div><h1 className="text-xl font-bold">جزئیات سفارش</h1><p className="text-xs text-muted-foreground">#{order.order_number || order.id.slice(-8).toUpperCase()} · {order.created_date ? new Date(order.created_date).toLocaleDateString('fa-IR') : '—'}</p></div><span className={`mr-auto rounded-full px-3 py-1 text-xs font-medium ${badge[order.status] || 'bg-secondary'}`}>{labels[order.status] || order.status}</span></div>{order.status !== 'cancelled' && <section className="rounded-xl border border-border bg-card p-5"><div className="flex items-start">{timeline.map((step, index) => { const done = currentStep >= index; return <div key={step.key} className="relative flex flex-1 flex-col items-center"><div className={`z-10 flex h-8 w-8 items-center justify-center rounded-full ${done ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>✓</div><p className={`mt-2 text-center text-[10px] ${done ? 'font-medium text-primary' : 'text-muted-foreground'}`}>{step.label}</p>{index < timeline.length - 1 && <div className={`absolute top-4 right-1/2 h-0.5 w-full ${currentStep > index ? 'bg-primary' : 'bg-border'}`} />}</div>; })}</div></section>}<section className="rounded-xl border border-border bg-card"><div className="border-b p-4"><h2 className="font-semibold">محصولات سفارش</h2></div><div className="space-y-3 p-4">{(order.items || []).map((item, index) => <div key={index} className="flex items-center gap-3 rounded-lg bg-secondary/30 p-3">{item.image ? <img src={item.image} alt={item.title} className="h-14 w-14 rounded-md object-cover" /> : <div className="flex h-14 w-14 items-center justify-center rounded-md bg-secondary">▣</div>}<div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{item.title}</p><p className="mt-1 text-xs text-muted-foreground">تعداد: {item.quantity}{item.size ? ` · سایز ${item.size}` : ''}{item.color ? ` · رنگ ${item.color}` : ''}</p></div><div className="text-left"><p className="text-sm font-bold text-primary">{(item.price * item.quantity).toLocaleString('fa-IR')}</p><p className="text-[10px] text-muted-foreground">تومان</p></div></div>)}</div></section><div className="grid grid-cols-1 gap-4 md:grid-cols-2"><section className="rounded-xl border border-border bg-card p-4"><h2 className="mb-3 font-semibold">خلاصه پرداخت</h2><div className="space-y-2 text-sm"><div className="flex justify-between"><span className="text-muted-foreground">جمع کالاها</span><span>{(order.total_amount || 0).toLocaleString('fa-IR')} تومان</span></div><div className="flex justify-between"><span className="text-muted-foreground">هزینه ارسال</span><span>رایگان</span></div><div className="flex justify-between border-t pt-2 font-bold"><span>مبلغ کل</span><span className="text-primary">{(order.total_amount || 0).toLocaleString('fa-IR')} تومان</span></div></div></section><section className="rounded-xl border border-border bg-card p-4"><h2 className="mb-3 font-semibold">آدرس ارسال</h2><p className="text-sm leading-7 text-muted-foreground">{address || 'آدرس ثبت نشده'}</p>{order.tracking_code && <div className="mt-3 rounded-lg bg-primary/5 p-2"><p className="text-xs text-muted-foreground">کد رهگیری:</p><p className="font-mono text-sm font-medium">{order.tracking_code}</p></div>}</section></div></div>;
 }

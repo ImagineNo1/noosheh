@@ -21,6 +21,14 @@ export async function POST(request: Request, { params }: { params: { entity: str
     return NextResponse.json({ error: 'Admin authentication required' }, { status: 401 });
   }
   const payload = await request.json();
-  const record = await createEntity(entity, payload);
-  return NextResponse.json(record, { status: 201 });
+  try {
+    const record = await createEntity(entity, payload);
+    return NextResponse.json(record, { status: 201 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Invalid payload';
+    if (message.startsWith('VALIDATION:')) {
+      return NextResponse.json({ error: message.replace('VALIDATION:', '') }, { status: 400 });
+    }
+    throw error;
+  }
 }
