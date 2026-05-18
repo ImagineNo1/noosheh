@@ -197,6 +197,13 @@ export async function createUser(data: { name?: string; email: string; password_
   return user;
 }
 
+export async function updateUserPassword(email: string, password_hash: string): Promise<boolean> {
+  const normalized = email.trim().toLowerCase();
+  const collection = await getRequiredMongoCollection('users');
+  const result = await collection.findOneAndUpdate({ email: normalized }, { $set: { password_hash, updated_date: now() } }, { returnDocument: 'after' });
+  return Boolean(result && ('value' in result ? result.value : result));
+}
+
 export async function ensureDefaultAdminUser(): Promise<UserRecord | null> {
   const collection = await getRequiredMongoCollection('users');
   const admins = await collection.find({ role: 'admin' }).sort({ created_date: -1 }).limit(1).toArray();

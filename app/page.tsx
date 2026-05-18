@@ -1,22 +1,18 @@
 import type { Metadata } from 'next';
 import StoreHeader from '@/components/store/StoreHeader';
 import Footer from '@/components/store/Footer';
-import { CategorySection, FeaturedProducts, FlashSaleSection, HeroBanner, QuoteSection, WhyUsSection } from '@/components/store/HomeSections';
+import { StoreHome } from '@/components/store/HomeSections';
 
-export const metadata: Metadata = { title: 'فروشگاه نوشه پوش | صفحه اصلی', description: 'خرید آنلاین محصولات جدید، پرفروش و تخفیف‌دار نوشه پوش' };
+export const metadata: Metadata = {
+  title: 'فروشگاه نوشه پوش | صفحه اصلی',
+  description: 'خرید آنلاین محصولات جدید، پرفروش و تخفیف‌دار نوشه پوش'
+};
 
 export default function Home() {
   return (
     <main>
       <StoreHeader />
-      <HeroBanner />
-      <CategorySection />
-      <FeaturedProducts title="کالکشن فانتزی" titleEn="Fantasy Collection" collection="fantasy" />
-      <QuoteSection />
-      <FlashSaleSection />
-      <FeaturedProducts title="محصولات پرفروش" titleEn="Best Sellers" />
-      <WhyUsSection />
-      <FeaturedProducts title="جدیدترین محصولات" titleEn="New Arrivals" collection="new" limit={4} />
+      <StoreHome />
       <Footer />
     </main>
   );

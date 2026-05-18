@@ -10,7 +10,10 @@ const items = [
   { href: '/account/orders', label: 'سفارش‌ها' },
   { href: '/account/profile', label: 'پروفایل' },
   { href: '/account/addresses', label: 'آدرس‌ها' },
-  { href: '/account/wishlist', label: 'علاقه‌مندی‌ها' }
+  { href: '/account/wishlist', label: 'علاقه‌مندی‌ها' },
+  { href: '/account/reviews', label: 'نظرات من' },
+  { href: '/account/returns', label: 'مرجوعی' },
+  { href: '/account/security', label: 'امنیت' }
 ];
 
 export default function AccountShell({ children }: { children: ReactNode }) {

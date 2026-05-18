@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   if (!payload?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = await findUserByEmail(String(payload.email));
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  return NextResponse.json({ name: user.name || '', email: user.email });
+  return NextResponse.json({ name: user.name || '', email: user.email, created_date: user.created_date });
 }
 
 export async function PUT(request: Request) {
@@ -17,5 +17,5 @@ export async function PUT(request: Request) {
   const user = await findUserByEmail(String(payload.email));
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
   const updated = await updateEntity('users', user.id, { ...user, name: String(body.name || user.name || '') });
-  return NextResponse.json({ name: updated?.name || '', email: updated?.email || user.email });
+  return NextResponse.json({ name: updated?.name || '', email: updated?.email || user.email, created_date: updated?.created_date || user.created_date });
 }

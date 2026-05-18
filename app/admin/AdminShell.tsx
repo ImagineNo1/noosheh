@@ -10,6 +10,7 @@ const menuItems = [
   { label: 'محصولات', path: '/admin/products', icon: '▣' },
   { label: 'سفارشات', path: '/admin/orders', icon: '◈' },
   { label: 'دسته‌بندی‌ها', path: '/admin/categories', icon: '▤' },
+  { label: 'نظرات', path: '/admin/reviews', icon: '☷' },
   { label: 'تنظیمات سایت', path: '/admin/settings', icon: '⚙' }
 ];
 

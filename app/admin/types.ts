@@ -6,6 +6,13 @@ export type Product = {
   discount_price?: number;
   description?: string;
   short_description?: string;
+  product_type?: string;
+  tags?: string[];
+  features?: string[];
+  weight?: number;
+  avg_rating?: number;
+  review_count?: number;
+  complete_the_look_enabled?: boolean;
   images?: string[];
   category?: string;
   collection?: string;
@@ -14,8 +21,8 @@ export type Product = {
   cup_size?: string;
   has_cup_option?: boolean;
   cups?: string[];
-  color_swatches?: { name: string; value: string; hex?: string; image?: string; active?: boolean; order?: number; images?: string[] }[];
-  variants?: { id?: string; color?: string; size?: string; cup?: string; sku?: string; price?: number; discount_price?: number; stock?: number; image?: string }[];
+  color_swatches?: { name: string; value?: string; slug?: string; hex?: string; swatch_image?: string; image?: string; active?: boolean; is_active?: boolean; order?: number; sort_order?: number; images?: (string | { url?: string; alt?: string })[] }[];
+  variants?: { id?: string; color?: string; size?: string; cup?: string; sku?: string; price?: number; discount_price?: number; compare_at_price?: number; stock?: number; inventory?: number; is_available?: boolean; image?: string }[];
   badges?: string[];
   details?: string;
   size_fit?: string;
@@ -46,6 +53,8 @@ export type Category = {
 export type OrderItem = {
   title: string;
   image?: string;
+  product_name?: string;
+  product_image?: string;
   quantity: number;
   price: number;
   size?: string;
@@ -70,6 +79,10 @@ export type Order = {
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | string;
   payment_status: 'unpaid' | 'paid' | 'refunded' | string;
   tracking_code?: string;
+  tracking_number?: string;
+  total?: number;
+  shipping_address?: string;
+  user_email?: string;
   created_date?: string;
 };
 
@@ -78,4 +91,21 @@ export type SiteSetting = {
   key: string;
   value: string;
   type: 'text' | 'image' | string;
+};
+
+
+export type Review = {
+  id: string;
+  product_id?: string;
+  user_email?: string;
+  user_name?: string;
+  rating?: number;
+  comment?: string;
+  status?: string;
+  purchased_color?: string;
+  purchased_size?: string;
+  purchased_cup?: string;
+  admin_reply?: string;
+  is_verified_purchase?: boolean;
+  created_date?: string;
 };
