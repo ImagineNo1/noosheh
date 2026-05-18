@@ -20,8 +20,7 @@ type FieldConfig = {
 const imageFields: FieldConfig[] = [
   { key: 'logo', label: 'لوگو سایت', type: 'image', hint: 'در هدر سایت نمایش داده می‌شود' },
   { key: 'site_icon', label: 'آیکون سایت (Favicon)', type: 'image', hint: 'در تب مرورگر نمایش داده می‌شود' },
-  { key: 'home_hero_rect_image', label: 'عکس مستطیلی هیرو صفحه اصلی', type: 'image', hint: 'در بخش هیرو صفحه اصلی نمایش داده می‌شود' },
-  { key: 'home_hero_circle_image', label: 'عکس دایره‌ای هیرو صفحه اصلی', type: 'image', hint: 'عکس دایره‌ای روی کارت هیرو صفحه اصلی' }
+  { key: 'home_hero_rect_image', label: 'عکس مستطیلی هیرو صفحه اصلی', type: 'image', hint: 'در بخش هیرو صفحه اصلی نمایش داده می‌شود' }
 ];
 
 const generalFields: FieldConfig[] = [
@@ -67,7 +66,7 @@ function TextField({ config, value, onChange }: { config: FieldConfig; value: st
   );
 }
 
-function ImageField({ config, value, uploading, onUpload }: { config: FieldConfig; value: string; uploading: boolean; onUpload: (file: File) => Promise<void> }) {
+function ImageField({ config, value, uploading, onUpload, onRemove }: { config: FieldConfig; value: string; uploading: boolean; onUpload: (file: File) => Promise<void>; onRemove: () => void }) {
   return (
     <div className="space-y-2">
       <Label>{config.label}</Label>
@@ -83,10 +82,13 @@ function ImageField({ config, value, uploading, onUpload }: { config: FieldConfi
               <p className="truncate text-xs text-muted-foreground" dir="ltr">{value}</p>
               <p className="mt-0.5 text-xs text-green-600">آپلود شد</p>
             </div>
-            <label className="cursor-pointer">
-              <input type="file" hidden accept="image/*" disabled={uploading} onChange={(event) => event.target.files?.[0] && onUpload(event.target.files[0])} />
-              <span className="admin-btn outline">{uploading ? 'در حال آپلود...' : 'تغییر'}</span>
-            </label>
+            <div className="flex items-center gap-2">
+              <label className="cursor-pointer">
+                <input type="file" hidden accept="image/*" disabled={uploading} onChange={(event) => event.target.files?.[0] && onUpload(event.target.files[0])} />
+                <span className="admin-btn outline">{uploading ? 'در حال آپلود...' : 'تغییر'}</span>
+              </label>
+              <Button type="button" className="outline" onClick={onRemove} disabled={uploading}>حذف عکس</Button>
+            </div>
           </div>
         ) : (
           <label className="block cursor-pointer p-5 text-center">
@@ -106,7 +108,12 @@ export default function SiteSettings() {
   const [savingAll, setSavingAll] = useState(false);
 
   const settingsMap = useMemo(() => Object.fromEntries(settings.map((item) => [item.key, item])), [settings]);
-  useEffect(() => setValues(settingsMap), [settingsMap]);
+  useEffect(() => {
+    setValues((current) => {
+      if (!Object.keys(settingsMap).length && Object.keys(current).length) return current;
+      return { ...current, ...settingsMap };
+    });
+  }, [settingsMap]);
 
   const allFields = [...imageFields, ...generalFields, ...contactFields, ...bannerFields];
 
@@ -162,10 +169,10 @@ export default function SiteSettings() {
         <Card><div className="p-8 text-center admin-muted">در حال بارگذاری تنظیمات...</div></Card>
       ) : (
         <div className="space-y-5">
-          <Section title="تصاویر سایت" description="لوگو و فاوآیکون برند">
+          <Section title="تصاویر سایت" description="لوگو، فاوآیکون و تصویر هیرو">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {imageFields.map((field) => (
-                <ImageField key={field.key} config={field} value={values[field.key]?.value || ''} uploading={!!uploading[field.key]} onUpload={(file) => handleImageUpload(field.key, file)} />
+                <ImageField key={field.key} config={field} value={values[field.key]?.value || ''} uploading={!!uploading[field.key]} onUpload={(file) => handleImageUpload(field.key, file)} onRemove={() => setFieldValue(field.key, '', 'image')} />
               ))}
             </div>
           </Section>
