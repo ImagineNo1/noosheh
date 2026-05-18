@@ -63,6 +63,7 @@ function TextField({ config, value, onChange, onBlur }: { config: FieldConfig; v
         onChange={(event) => onChange(event.target.value)}
         onBlur={(event) => onBlur(event.target.value)}
       />
+      <p className="text-xs text-muted-foreground">مقدار فعلی: {value ? value : 'تنظیم نشده'}</p>
       {config.hint && <p className="text-xs text-muted-foreground">{config.hint}</p>}
     </div>
   );
@@ -81,6 +82,7 @@ function ImageField({ config, value, uploading, onUpload }: { config: FieldConfi
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs text-muted-foreground">{value.split('/').pop()}</p>
+              <p className="truncate text-xs text-muted-foreground" dir="ltr">{value}</p>
               <p className="mt-0.5 text-xs text-green-600">آپلود شد</p>
             </div>
             <label className="cursor-pointer">
@@ -103,12 +105,9 @@ export default function SiteSettings() {
   const { data: settings, isLoading, reload } = useEntityList<SiteSetting>('SiteSettings');
   const [values, setValues] = useState<Record<string, SiteSetting>>({});
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
-  const [savingAll, setSavingAll] = useState(false);
 
   const settingsMap = useMemo(() => Object.fromEntries(settings.map((item) => [item.key, item])), [settings]);
   useEffect(() => setValues(settingsMap), [settingsMap]);
-
-  const allFields = [...imageFields, ...generalFields, ...contactFields, ...bannerFields];
 
   const upsert = async (key: string, value: string, type: SettingType) => {
     const existing = values[key];
@@ -116,19 +115,6 @@ export default function SiteSettings() {
       ? await adminApi.update<SiteSetting>('SiteSettings', existing.id, { value, type })
       : await adminApi.create<SiteSetting>('SiteSettings', { key, value, type });
     setValues((current) => ({ ...current, [key]: saved }));
-  };
-
-  const saveAll = async () => {
-    setSavingAll(true);
-    try {
-      for (const field of allFields) {
-        const value = values[field.key]?.value || '';
-        await upsert(field.key, value, field.type);
-      }
-      await reload();
-    } finally {
-      setSavingAll(false);
-    }
   };
 
   const setFieldValue = (key: string, value: string, type: SettingType) => {
@@ -157,7 +143,6 @@ export default function SiteSettings() {
           <h1 className="admin-title">تنظیمات سایت</h1>
           <p className="admin-muted">تصاویر، اطلاعات تماس و محتوای ثابت سایت را مدیریت کنید.</p>
         </div>
-        <Button className="primary" onClick={saveAll} disabled={savingAll || isLoading}>{savingAll ? 'در حال ذخیره...' : 'ذخیره تغییرات'}</Button>
       </div>
 
       {isLoading ? (
@@ -193,10 +178,6 @@ export default function SiteSettings() {
               <TextField key={field.key} config={field} value={values[field.key]?.value || ''} onChange={(value) => setFieldValue(field.key, value, 'text')} onBlur={(value) => upsert(field.key, value, 'text')} />
             ))}
           </Section>
-
-          <div className="flex justify-end pb-8">
-            <Button className="primary" onClick={saveAll} disabled={savingAll}>{savingAll ? 'در حال ذخیره...' : 'ذخیره تمام تغییرات'}</Button>
-          </div>
         </div>
       )}
     </div>

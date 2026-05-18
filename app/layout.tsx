@@ -10,7 +10,13 @@ export async function generateMetadata(): Promise<Metadata> {
     title: settings.site_title || 'Noosheh Poosh',
     description: settings.site_tagline || 'فروشگاه آنلاین نوشه پوش',
     manifest: '/manifest.json',
-    icons: settings.site_icon ? { icon: settings.site_icon } : undefined
+    icons: settings.site_icon
+      ? {
+          icon: settings.site_icon,
+          shortcut: settings.site_icon,
+          apple: settings.site_icon
+        }
+      : undefined
   };
 }
 
