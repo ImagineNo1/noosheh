@@ -19,7 +19,9 @@ type FieldConfig = {
 
 const imageFields: FieldConfig[] = [
   { key: 'logo', label: 'لوگو سایت', type: 'image', hint: 'در هدر سایت نمایش داده می‌شود' },
-  { key: 'site_icon', label: 'آیکون سایت (Favicon)', type: 'image', hint: 'در تب مرورگر نمایش داده می‌شود' }
+  { key: 'site_icon', label: 'آیکون سایت (Favicon)', type: 'image', hint: 'در تب مرورگر نمایش داده می‌شود' },
+  { key: 'home_hero_rect_image', label: 'عکس مستطیلی هیرو صفحه اصلی', type: 'image', hint: 'در بخش هیرو صفحه اصلی نمایش داده می‌شود' },
+  { key: 'home_hero_circle_image', label: 'عکس دایره‌ای هیرو صفحه اصلی', type: 'image', hint: 'عکس دایره‌ای روی کارت هیرو صفحه اصلی' }
 ];
 
 const generalFields: FieldConfig[] = [
