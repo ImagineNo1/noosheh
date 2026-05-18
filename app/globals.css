@@ -743,8 +743,8 @@ body {
 .store-mobile-menu a { padding: .8rem 1rem; border-radius: .75rem; }
 .store-mobile-menu a:hover { background: var(--store-secondary); }
 
-.store-cart-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 80; display: flex; justify-content: flex-start; }
-.store-cart-sidebar { width: min(420px, 100%); background: #fff; height: 100%; display: flex; flex-direction: column; box-shadow: 18px 0 60px rgba(0,0,0,.18); animation: cart-in .22s ease; }
+.store-cart-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 80; display: flex; justify-content: flex-start; direction: ltr; }
+.store-cart-sidebar { width: min(420px, 100%); background: #fff; height: 100%; display: flex; flex-direction: column; box-shadow: 18px 0 60px rgba(0,0,0,.18); animation: cart-in .22s ease; margin-right: auto; }
 @keyframes cart-in { from { translate: -100% 0; } }
 .store-cart-sidebar header { display: flex; align-items: center; justify-content: space-between; padding: 1rem; border-bottom: 1px solid var(--store-border); background: rgba(246,238,243,.55); }
 .store-cart-sidebar h2 { margin: 0; font-size: 1.05rem; display: flex; align-items: center; gap: .5rem; }
