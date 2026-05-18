@@ -16,7 +16,7 @@ const statusLabels: Record<string, { label: string; cls: string }> = {
   pending: { label: 'در انتظار تایید', cls: 'warning' }, processing: { label: 'در حال پردازش', cls: 'info' }, shipped: { label: 'ارسال شده', cls: 'purple' }, delivered: { label: 'تحویل داده شده', cls: 'success' }, cancelled: { label: 'لغو شده', cls: 'danger' }
 };
 const paymentLabels: Record<string, string> = { unpaid: 'پرداخت نشده', paid: 'پرداخت شده', refunded: 'بازگشت وجه' };
-const formatPrice = (price?: number) => (price || 0).toLocaleString('fa-IR') + ' تومان';
+const formatPrice = (price?: number) => (price || 0).toLocaleString('fa-IR') + ' ریال';
 
 function Tracker({ status }: { status: string }) {
   if (status === 'cancelled') return <div className="store-cancelled">✕ این سفارش لغو شده است</div>;

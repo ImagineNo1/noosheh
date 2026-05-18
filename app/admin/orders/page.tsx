@@ -58,7 +58,7 @@ export default function Orders() {
                     <tr key={order.id}>
                       <td className="bold">{order.order_number}</td>
                       <td>{order.customer_name} {order.customer_family}</td>
-                      <td>{formatPrice(order.total_amount)} ت</td>
+                      <td>{formatPrice(order.total_amount)} ریال</td>
                       <td><Badge item={status} /></td>
                       <td><Badge item={payment} /></td>
                       <td className="admin-muted small">{formatDate(order.created_date)}</td>
@@ -90,12 +90,12 @@ export default function Orders() {
                 {(selectedOrder.items || []).map((item, index) => (
                   <div key={`${item.title}-${index}`} className="admin-order-item">
                     {item.image && <img src={item.image} alt="" />}
-                    <div><p>{item.title}</p><small>{item.quantity} عدد × {formatPrice(item.price)} ت{item.size && ` | سایز: ${item.size}`}</small></div>
-                    <strong>{formatPrice(item.price * item.quantity)} ت</strong>
+                    <div><p>{item.title}</p><small>{item.quantity} عدد × {formatPrice(item.price)} ریال{item.color && ` | رنگ: ${item.color}`}{item.size && ` | سایز: ${item.size}`}</small></div>
+                    <strong>{formatPrice(item.price * item.quantity)} ریال</strong>
                   </div>
                 ))}
               </div>
-              <p className="admin-total">مجموع: {formatPrice(selectedOrder.total_amount)} تومان</p>
+              <p className="admin-total">مجموع: {formatPrice(selectedOrder.total_amount)} ریال</p>
             </div>
 
             <div className="admin-form-grid">

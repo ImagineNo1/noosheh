@@ -3,7 +3,7 @@ import { MongoClient } from 'mongodb';
 import { hashPassword } from '@/lib/password';
 import { normalizeEntityForModel } from '@/lib/model-schemas';
 
-export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users' | 'addresses' | 'cart_items' | 'return_requests' | 'wishlists';
+export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users' | 'addresses' | 'cart_items' | 'return_requests' | 'wishlists' | 'product_attributes';
 
 export const entityMap = {
   Product: 'products',
@@ -14,7 +14,8 @@ export const entityMap = {
   Address: 'addresses',
   CartItem: 'cart_items',
   ReturnRequest: 'return_requests',
-  Wishlist: 'wishlists'
+  Wishlist: 'wishlists',
+  ProductAttribute: 'product_attributes'
 } as const;
 
 export type ApiEntity = keyof typeof entityMap;
@@ -39,6 +40,7 @@ type MongoCollection = {
   insertOne: (record: AnyRecord) => Promise<unknown>;
   find: (filter?: AnyRecord) => { sort: (sort: AnyRecord) => { limit: (limit: number) => { toArray: () => Promise<AnyRecord[]> } } };
   findOneAndUpdate: (filter: AnyRecord, update: AnyRecord, options: AnyRecord) => Promise<AnyRecord | { value?: AnyRecord | null } | null>;
+  updateOne?: (filter: AnyRecord, update: AnyRecord) => Promise<unknown>;
   createIndex?: (keys: AnyRecord, options?: AnyRecord) => Promise<unknown>;
   deleteOne: (filter: AnyRecord) => Promise<{ deletedCount?: number }>;
 };
@@ -55,7 +57,8 @@ const initialDatabase: Record<EntityName, AnyRecord[]> = {
   addresses: [],
   cart_items: [],
   return_requests: [],
-  wishlists: []
+  wishlists: [],
+  product_attributes: []
 };
 
 let mongoClientPromise: Promise<any> | null = null;
@@ -164,19 +167,75 @@ export async function listEntity(entity: EntityName, sort?: string | null, limit
   return records.map(stripMongoId);
 }
 
+function variantStockTotal(product: AnyRecord) {
+  return Array.isArray(product.variants) ? product.variants.reduce((sum: number, variant: AnyRecord) => sum + Number(variant.stock ?? variant.inventory ?? 0), 0) : 0;
+}
+
+function normalizeProductVariants(record: AnyRecord) {
+  if (!Array.isArray(record.variants)) record.variants = [];
+  record.variants = record.variants.map((variant: AnyRecord) => {
+    const id = variant.id || variant.product_variant_id || [record.id, variant.color || 'default', variant.size || 'default', variant.cup || ''].join('-');
+    const stock = Number(variant.stock ?? variant.inventory ?? 0);
+    return { ...variant, id, product_variant_id: id, stock, inventory: stock };
+  });
+  record.stock = variantStockTotal(record);
+  return record;
+}
+
+async function ensureOrderedVariantStock(order: AnyRecord) {
+  if (!Array.isArray(order.items) || !order.items.length) return;
+  const collection = await getRequiredMongoCollection('products');
+  for (const item of order.items) {
+    const productId = item.product_id;
+    const variantId = item.product_variant_id || item.variant_id;
+    if (!productId || !variantId) continue;
+    const products = await collection.find({ id: productId }).sort({ created_date: -1 }).limit(1).toArray();
+    const product = products[0];
+    const variant = product?.variants?.find((variant: AnyRecord) => (variant.id || variant.product_variant_id) === variantId);
+    if (!variant) throw new Error('VARIANT_NOT_FOUND');
+    if (variant.is_available === false || Number(variant.stock ?? variant.inventory ?? 0) < Number(item.quantity || 0)) throw new Error('OUT_OF_STOCK');
+  }
+}
+
+async function decrementOrderedVariantStock(order: AnyRecord) {
+  if (!Array.isArray(order.items) || !order.items.length) return;
+  const collection = await getRequiredMongoCollection('products');
+  for (const item of order.items) {
+    const productId = item.product_id;
+    const variantId = item.product_variant_id || item.variant_id;
+    if (!productId || !variantId) continue;
+    const products = await collection.find({ id: productId }).sort({ created_date: -1 }).limit(1).toArray();
+    const product = products[0];
+    if (!product || !Array.isArray(product.variants)) continue;
+    const quantity = Math.max(0, Number(item.quantity) || 0);
+    let changed = false;
+    const variants = product.variants.map((variant: AnyRecord) => {
+      const id = variant.id || variant.product_variant_id;
+      if (id !== variantId) return variant;
+      const nextStock = Math.max(0, Number(variant.stock ?? variant.inventory ?? 0) - quantity);
+      changed = true;
+      return { ...variant, id, product_variant_id: id, stock: nextStock, inventory: nextStock };
+    });
+    if (changed && collection.updateOne) await collection.updateOne({ id: productId }, { $set: { variants, stock: variantStockTotal({ variants }), updated_date: now() } });
+  }
+}
+
 export async function createEntity(entity: EntityName, data: AnyRecord) {
   const normalized = normalizeEntityForModel(entity, data);
   if (normalized.errors.length) throw new Error(`VALIDATION:${normalized.errors.join(', ')}`);
-  const record = { ...normalized.record, id: data.id || randomUUID(), created_date: data.created_date || now(), updated_date: now() };
+  const record = entity === 'products' ? normalizeProductVariants({ ...normalized.record, id: data.id || randomUUID(), created_date: data.created_date || now(), updated_date: now() }) : { ...normalized.record, id: data.id || randomUUID(), created_date: data.created_date || now(), updated_date: now() };
+  if (entity === 'orders') await ensureOrderedVariantStock(record);
   const collection = await getRequiredMongoCollection(entity);
   await collection.insertOne(record);
+  if (entity === 'orders') await decrementOrderedVariantStock(record);
   return record;
 }
 
 export async function updateEntity(entity: EntityName, id: string, data: AnyRecord) {
   const normalized = normalizeEntityForModel(entity, data, { partial: true });
   const collection = await getRequiredMongoCollection(entity);
-  const result = await collection.findOneAndUpdate({ id }, { $set: { ...normalized.record, id, updated_date: now() } }, { returnDocument: 'after' });
+  const updateRecord = entity === 'products' ? normalizeProductVariants({ ...normalized.record, id }) : normalized.record;
+  const result = await collection.findOneAndUpdate({ id }, { $set: { ...updateRecord, id, updated_date: now() } }, { returnDocument: 'after' });
   const record = result && 'value' in result ? result.value : result;
   return record ? stripMongoId(record as AnyRecord) : null;
 }
