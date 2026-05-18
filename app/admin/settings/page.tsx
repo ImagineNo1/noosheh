@@ -24,7 +24,8 @@ const imageFields: FieldConfig[] = [
 ];
 
 const generalFields: FieldConfig[] = [
-  { key: 'site_title', label: 'عنوان سایت', type: 'text', placeholder: 'مثلاً: نوشه — لباس زیر زنانه' },
+  { key: 'site_title', label: 'عنوان سایت (هدر)', type: 'text', placeholder: 'مثلاً: نوشه' },
+  { key: 'site_meta_title', label: 'تایتل سایت (<title>)', type: 'text', placeholder: 'مثلاً: نوشه — لباس زیر زنانه' },
   { key: 'site_tagline', label: 'شعار سایت (فوتر)', type: 'text', placeholder: 'مثلاً: راحتی و سبک‌پوشی' },
   { key: 'footer_copyright', label: 'متن کپی‌رایت فوتر', type: 'text', placeholder: '© ۱۴۰۴ نوشه. تمامی حقوق محفوظ است.' }
 ];
@@ -149,7 +150,16 @@ export default function SiteSettings() {
     setUploading((current) => ({ ...current, [key]: true }));
     try {
       const { file_url } = await adminApi.upload(file);
-      setFieldValue(key, file_url, 'image');
+      await upsert(key, file_url, 'image');
+    } finally {
+      setUploading((current) => ({ ...current, [key]: false }));
+    }
+  };
+
+  const handleImageRemove = async (key: string) => {
+    setUploading((current) => ({ ...current, [key]: true }));
+    try {
+      await upsert(key, '', 'image');
     } finally {
       setUploading((current) => ({ ...current, [key]: false }));
     }
@@ -172,12 +182,12 @@ export default function SiteSettings() {
           <Section title="تصاویر سایت" description="لوگو، فاوآیکون و تصویر هیرو">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {imageFields.map((field) => (
-                <ImageField key={field.key} config={field} value={values[field.key]?.value || ''} uploading={!!uploading[field.key]} onUpload={(file) => handleImageUpload(field.key, file)} onRemove={() => setFieldValue(field.key, '', 'image')} />
+                <ImageField key={field.key} config={field} value={values[field.key]?.value || ''} uploading={!!uploading[field.key]} onUpload={(file) => handleImageUpload(field.key, file)} onRemove={() => void handleImageRemove(field.key)} />
               ))}
             </div>
           </Section>
 
-          <Section title="اطلاعات عمومی" description="عنوان و متن‌های ثابت سایت">
+          <Section title="اطلاعات عمومی" description="عنوان هدر، عنوان تب مرورگر و متن‌های ثابت سایت">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {generalFields.map((field) => (
                 <TextField key={field.key} config={field} value={values[field.key]?.value || ''} onChange={(value) => setFieldValue(field.key, value, 'text')} />
