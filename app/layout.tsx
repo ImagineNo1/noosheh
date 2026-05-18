@@ -8,11 +8,12 @@ import { getSiteSettings } from '@/lib/site-settings';
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
-  const siteTitle = settings.site_title || 'Noosheh Poosh';
+  const siteTitle = settings.site_title || 'Noosheh';
+  const siteMetaTitle = settings.site_meta_title || siteTitle || 'Noosheh Poosh';
   return {
     title: {
-      default: siteTitle,
-      template: `%s | ${siteTitle}`
+      default: siteMetaTitle,
+      template: `%s | ${siteMetaTitle}`
     },
     description: settings.site_tagline || 'فروشگاه آنلاین نوشه پوش',
     manifest: '/manifest.json',
