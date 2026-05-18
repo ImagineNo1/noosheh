@@ -81,12 +81,11 @@ export default function StoreHeader() {
 
           <div className="flex items-center gap-2">
             <button type="button" className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:hidden" onClick={() => setSearchOpen((open) => !open)} aria-label="جستجو">⌕</button>
-            <Link href={isAuthenticated ? '/account/wishlist' : '/login'} className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" aria-label="علاقه‌مندی‌ها">♡</Link>
             <Link href={isAuthenticated ? '/account' : '/login'} className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" aria-label={isAuthenticated ? 'حساب کاربری' : 'ورود / ساخت حساب'}>
               {isAuthenticated ? 'حساب کاربری' : 'ورود / ساخت حساب'}
             </Link>
-            <button type="button" onClick={() => setIsOpen(true)} className="relative rounded-md p-2 text-2xl text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" aria-label="سبد خرید">
-              🛒
+            <button type="button" onClick={() => setIsOpen(true)} className="relative rounded-md p-2 text-2xl text-primary transition-colors hover:bg-secondary hover:text-primary/80" aria-label="سبد خرید">
+              🧺
               {totalItems > 0 && <span className="absolute -left-1 -top-1 grid min-w-5 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">{totalItems.toLocaleString('fa-IR')}</span>}
             </button>
           </div>

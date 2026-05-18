@@ -11,7 +11,8 @@ const navItems = [
   { path: '/admin/orders', label: 'سفارشات', icon: '◈' },
   { path: '/admin/reviews', label: 'نظرات', icon: '☷' },
   { path: '/admin/categories', label: 'دسته‌بندی‌ها', icon: '▤' },
-  { path: '/admin/settings', label: 'تنظیمات', icon: '⚙' }
+  { path: '/admin/settings', label: 'تنظیمات', icon: '⚙' },
+  { path: '/', label: 'صفحه اصلی', icon: '⌂', exact: true }
 ];
 
 function isActivePath(pathname: string, item: { path: string; exact?: boolean }) {
