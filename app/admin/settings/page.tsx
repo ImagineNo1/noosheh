@@ -7,13 +7,15 @@ import { Card, Input, Label } from '../_components/ui';
 import type { SiteSetting } from '../types';
 
 const settingsConfig = [
-  { key: 'hero_banner', label: 'بنر اصلی صفحه اول', type: 'image' },
+  { key: 'site_icon', label: 'آیکون سایت (favicon)', type: 'image' },
   { key: 'logo', label: 'لوگو سایت', type: 'image' },
-  { key: 'phone', label: 'شماره تلفن مشاوره', type: 'text' },
-  { key: 'free_shipping_min', label: 'حداقل مبلغ ارسال رایگان (تومان)', type: 'text' },
+  { key: 'site_title', label: 'عنوان سایت', type: 'text' },
+  { key: 'site_tagline', label: 'شعار سایت (فوتر)', type: 'text' },
+  { key: 'phone', label: 'شماره سایت', type: 'text' },
+  { key: 'site_email', label: 'ایمیل سایت', type: 'text' },
   { key: 'instagram', label: 'لینک اینستاگرام', type: 'text' },
-  { key: 'telegram', label: 'لینک تلگرام', type: 'text' },
-  { key: 'about_text', label: 'متن درباره ما', type: 'text' }
+  { key: 'footer_copyright', label: 'متن کپی‌رایت فوتر', type: 'text' },
+  { key: 'promo_banner_text', label: 'متن بنر بالای سایت', type: 'text' }
 ];
 
 export default function SiteSettings() {
@@ -58,7 +60,7 @@ export default function SiteSettings() {
                 <label className="admin-upload-button dashed">↥ {uploading[config.key] ? 'در حال آپلود...' : 'آپلود تصویر'}<input type="file" accept="image/*,image/gif" hidden disabled={uploading[config.key]} onChange={(event) => handleImageUpload(config.key, event)} /></label>
               </div>
             ) : (
-              <div><Label>{config.label}</Label><Input defaultValue={values[config.key]?.value || ''} onBlur={(event) => saveSetting(config.key, event.target.value, 'text')} dir={['instagram', 'telegram'].includes(config.key) ? 'ltr' : 'rtl'} /></div>
+              <div><Label>{config.label}</Label><Input value={values[config.key]?.value || ''} onChange={(event) => setValues((current) => ({ ...current, [config.key]: { ...(current[config.key] || { id: '', key: config.key, type: 'text' }), value: event.target.value } }))} onBlur={(event) => saveSetting(config.key, event.target.value, 'text')} dir={['instagram', 'site_email'].includes(config.key) ? 'ltr' : 'rtl'} /></div>
             )}
           </Card>
         ))}
