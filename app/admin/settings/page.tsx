@@ -40,31 +40,28 @@ const bannerFields: FieldConfig[] = [
   { key: 'promo_banner_text', label: 'متن نوار بالای سایت', type: 'text', placeholder: 'مثلاً: ارسال رایگان ... | تخفیف ویژه ...', hint: 'برای دو بخش بنر از | استفاده کنید. خالی بگذارید تا مخفی شود.' }
 ];
 
+function pickLatestSettings(items: SiteSetting[]) {
+  const byKey = new Map<string, SiteSetting>();
+  for (const item of items) {
+    if (!item?.key) continue;
+    const prev = byKey.get(item.key);
+    if (!prev) {
+      byKey.set(item.key, item);
+      continue;
+    }
+    const prevDate = new Date((prev as any).updated_date || (prev as any).created_date || 0).getTime();
+    const nextDate = new Date((item as any).updated_date || (item as any).created_date || 0).getTime();
+    if (nextDate >= prevDate) byKey.set(item.key, item);
+  }
+  return Object.fromEntries(Array.from(byKey.entries()));
+}
+
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
-  return (
-    <Card className="p-0 overflow-hidden">
-      <div className="border-b border-border/60 px-5 py-4">
-        <h2 className="text-base font-semibold">{title}</h2>
-        {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
-      </div>
-      <div className="space-y-4 px-5 py-5">{children}</div>
-    </Card>
-  );
+  return <Card className="p-0 overflow-hidden"><div className="border-b border-border/60 px-5 py-4"><h2 className="text-base font-semibold">{title}</h2>{description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}</div><div className="space-y-4 px-5 py-5">{children}</div></Card>;
 }
 
 function TextField({ config, value, onChange }: { config: FieldConfig; value: string; onChange: (value: string) => void }) {
-  return (
-    <div className="space-y-1.5">
-      <Label>{config.label}</Label>
-      <Input
-        value={value}
-        placeholder={config.placeholder}
-        dir={config.dir || 'rtl'}
-        onChange={(event) => onChange(event.target.value)}
-      />
-      {config.hint && <p className="text-xs text-muted-foreground">{config.hint}</p>}
-    </div>
-  );
+  return <div className="space-y-1.5"><Label>{config.label}</Label><Input value={value} placeholder={config.placeholder} dir={config.dir || 'rtl'} onChange={(event) => onChange(event.target.value)} />{config.hint && <p className="text-xs text-muted-foreground">{config.hint}</p>}</div>;
 }
 
 function ImageField({ config, value, uploading, onUpload, onRemove }: { config: FieldConfig; value: string; uploading: boolean; onUpload: (file: File) => Promise<void>; onRemove: () => void }) {
@@ -73,30 +70,7 @@ function ImageField({ config, value, uploading, onUpload, onRemove }: { config: 
       <Label>{config.label}</Label>
       {config.hint && <p className="text-xs text-muted-foreground">{config.hint}</p>}
       <div className="rounded-xl border-2 border-dashed border-border bg-secondary/20 p-3">
-        {value ? (
-          <div className="flex items-center gap-3">
-            <div className="h-16 w-16 overflow-hidden rounded-lg border border-border bg-white">
-              <img src={value} alt={config.label} className="h-full w-full object-contain" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs text-muted-foreground">{value.split('/').pop()}</p>
-              <p className="truncate text-xs text-muted-foreground" dir="ltr">{value}</p>
-              <p className="mt-0.5 text-xs text-green-600">آپلود شد</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="cursor-pointer">
-                <input type="file" hidden accept="image/*" disabled={uploading} onChange={(event) => event.target.files?.[0] && onUpload(event.target.files[0])} />
-                <span className="admin-btn outline">{uploading ? 'در حال آپلود...' : 'تغییر'}</span>
-              </label>
-              <Button type="button" className="outline" onClick={onRemove} disabled={uploading}>حذف عکس</Button>
-            </div>
-          </div>
-        ) : (
-          <label className="block cursor-pointer p-5 text-center">
-            <input type="file" hidden accept="image/*" disabled={uploading} onChange={(event) => event.target.files?.[0] && onUpload(event.target.files[0])} />
-            <p className="text-sm font-medium">{uploading ? 'در حال آپلود...' : 'آپلود تصویر'}</p>
-          </label>
-        )}
+        {value ? <div className="flex items-center gap-3"><div className="h-16 w-16 overflow-hidden rounded-lg border border-border bg-white"><img src={value} alt={config.label} className="h-full w-full object-contain" /></div><div className="min-w-0 flex-1"><p className="truncate text-xs text-muted-foreground">{value.split('/').pop()}</p><p className="truncate text-xs text-muted-foreground" dir="ltr">{value}</p><p className="mt-0.5 text-xs text-green-600">آپلود شد</p></div><div className="flex items-center gap-2"><label className="cursor-pointer"><input type="file" hidden accept="image/*" disabled={uploading} onChange={(event) => event.target.files?.[0] && onUpload(event.target.files[0])} /><span className="admin-btn outline">{uploading ? 'در حال آپلود...' : 'تغییر'}</span></label><Button type="button" className="outline" onClick={onRemove} disabled={uploading}>حذف عکس</Button></div></div> : <label className="block cursor-pointer p-5 text-center"><input type="file" hidden accept="image/*" disabled={uploading} onChange={(event) => event.target.files?.[0] && onUpload(event.target.files[0])} /><p className="text-sm font-medium">{uploading ? 'در حال آپلود...' : 'آپلود تصویر'}</p></label>}
       </div>
     </div>
   );
@@ -107,8 +81,9 @@ export default function SiteSettings() {
   const [values, setValues] = useState<Record<string, SiteSetting>>({});
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [savingAll, setSavingAll] = useState(false);
+  const [status, setStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const settingsMap = useMemo(() => Object.fromEntries(settings.map((item) => [item.key, item])), [settings]);
+  const settingsMap = useMemo(() => pickLatestSettings(settings), [settings]);
   useEffect(() => {
     setValues((current) => {
       if (!Object.keys(settingsMap).length && Object.keys(current).length) return current;
@@ -119,28 +94,30 @@ export default function SiteSettings() {
   const allFields = [...imageFields, ...generalFields, ...contactFields, ...bannerFields];
 
   const upsert = async (key: string, value: string, type: SettingType) => {
-    const existing = values[key];
+    const existing = values[key]?.id ? values[key] : settingsMap[key];
     const saved = existing?.id
-      ? await adminApi.update<SiteSetting>('SiteSettings', existing.id, { value, type })
+      ? await adminApi.update<SiteSetting>('SiteSettings', existing.id, { key, value, type })
       : await adminApi.create<SiteSetting>('SiteSettings', { key, value, type });
     setValues((current) => ({ ...current, [key]: saved }));
   };
 
   const setFieldValue = (key: string, value: string, type: SettingType) => {
-    setValues((current) => ({
-      ...current,
-      [key]: { ...(current[key] || { id: '', key, type }), value }
-    }));
+    setStatus(null);
+    setValues((current) => ({ ...current, [key]: { ...(current[key] || settingsMap[key] || { id: '', key, type }), value } }));
   };
 
   const saveAll = async () => {
     setSavingAll(true);
+    setStatus(null);
     try {
       for (const field of allFields) {
         const value = values[field.key]?.value || '';
         await upsert(field.key, value, field.type);
       }
       await reload();
+      setStatus({ type: 'success', text: 'تنظیمات با موفقیت ذخیره شد.' });
+    } catch (error) {
+      setStatus({ type: 'error', text: error instanceof Error ? error.message : 'ذخیره تنظیمات با خطا مواجه شد.' });
     } finally {
       setSavingAll(false);
     }
@@ -148,18 +125,13 @@ export default function SiteSettings() {
 
   const handleImageUpload = async (key: string, file: File) => {
     setUploading((current) => ({ ...current, [key]: true }));
+    setStatus(null);
     try {
       const { file_url } = await adminApi.upload(file);
       await upsert(key, file_url, 'image');
-    } finally {
-      setUploading((current) => ({ ...current, [key]: false }));
-    }
-  };
-
-  const handleImageRemove = async (key: string) => {
-    setUploading((current) => ({ ...current, [key]: true }));
-    try {
-      await upsert(key, '', 'image');
+      setStatus({ type: 'success', text: 'تصویر با موفقیت ذخیره شد.' });
+    } catch (error) {
+      setStatus({ type: 'error', text: error instanceof Error ? error.message : 'آپلود تصویر با خطا مواجه شد.' });
     } finally {
       setUploading((current) => ({ ...current, [key]: false }));
     }
@@ -167,49 +139,9 @@ export default function SiteSettings() {
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 admin-page">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="admin-title">تنظیمات سایت</h1>
-          <p className="admin-muted">تصاویر، اطلاعات تماس و محتوای ثابت سایت را مدیریت کنید.</p>
-        </div>
-        <Button className="primary" onClick={saveAll} disabled={savingAll || isLoading || Object.values(uploading).some(Boolean)}>{savingAll ? 'در حال ذخیره...' : 'ذخیره تغییرات'}</Button>
-      </div>
-
-      {isLoading ? (
-        <Card><div className="p-8 text-center admin-muted">در حال بارگذاری تنظیمات...</div></Card>
-      ) : (
-        <div className="space-y-5">
-          <Section title="تصاویر سایت" description="لوگو، فاوآیکون و تصویر هیرو">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {imageFields.map((field) => (
-                <ImageField key={field.key} config={field} value={values[field.key]?.value || ''} uploading={!!uploading[field.key]} onUpload={(file) => handleImageUpload(field.key, file)} onRemove={() => void handleImageRemove(field.key)} />
-              ))}
-            </div>
-          </Section>
-
-          <Section title="اطلاعات عمومی" description="عنوان هدر، عنوان تب مرورگر و متن‌های ثابت سایت">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {generalFields.map((field) => (
-                <TextField key={field.key} config={field} value={values[field.key]?.value || ''} onChange={(value) => setFieldValue(field.key, value, 'text')} />
-              ))}
-            </div>
-          </Section>
-
-          <Section title="اطلاعات تماس و شبکه‌های اجتماعی" description="شماره، ایمیل و اینستاگرام نمایش داده‌شده در سایت">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {contactFields.map((field) => (
-                <TextField key={field.key} config={field} value={values[field.key]?.value || ''} onChange={(value) => setFieldValue(field.key, value, 'text')} />
-              ))}
-            </div>
-          </Section>
-
-          <Section title="بنر اطلاع‌رسانی" description="متن نوار بالای سایت">
-            {bannerFields.map((field) => (
-              <TextField key={field.key} config={field} value={values[field.key]?.value || ''} onChange={(value) => setFieldValue(field.key, value, 'text')} />
-            ))}
-          </Section>
-        </div>
-      )}
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="admin-title">تنظیمات سایت</h1><p className="admin-muted">تصاویر، اطلاعات تماس و محتوای ثابت سایت را مدیریت کنید.</p></div><Button className="primary" onClick={saveAll} disabled={savingAll || isLoading || Object.values(uploading).some(Boolean)}>{savingAll ? 'در حال ذخیره...' : 'ذخیره تغییرات'}</Button></div>
+      {status && <Card><div className={`p-3 text-sm ${status.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>{status.text}</div></Card>}
+      {isLoading ? <Card><div className="p-8 text-center admin-muted">در حال بارگذاری تنظیمات...</div></Card> : <div className="space-y-5"><Section title="تصاویر سایت" description="لوگو، فاوآیکون و تصویر هیرو"><div className="grid grid-cols-1 gap-4 md:grid-cols-2">{imageFields.map((field) => <ImageField key={field.key} config={field} value={values[field.key]?.value || ''} uploading={!!uploading[field.key]} onUpload={(file) => handleImageUpload(field.key, file)} onRemove={() => void upsert(field.key, '', 'image')} />)}</div></Section><Section title="اطلاعات عمومی" description="عنوان هدر، عنوان تب مرورگر و متن‌های ثابت سایت"><div className="grid grid-cols-1 gap-4 md:grid-cols-2">{generalFields.map((field) => <TextField key={field.key} config={field} value={values[field.key]?.value || ''} onChange={(value) => setFieldValue(field.key, value, 'text')} />)}</div></Section><Section title="اطلاعات تماس و شبکه‌های اجتماعی" description="شماره، ایمیل و اینستاگرام نمایش داده‌شده در سایت"><div className="grid grid-cols-1 gap-4 md:grid-cols-2">{contactFields.map((field) => <TextField key={field.key} config={field} value={values[field.key]?.value || ''} onChange={(value) => setFieldValue(field.key, value, 'text')} />)}</div></Section><Section title="بنر اطلاع‌رسانی" description="متن نوار بالای سایت">{bannerFields.map((field) => <TextField key={field.key} config={field} value={values[field.key]?.value || ''} onChange={(value) => setFieldValue(field.key, value, 'text')} />)}</Section></div>}
     </div>
   );
 }
