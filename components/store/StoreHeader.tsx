@@ -1,14 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useCart } from '@/lib/cart-context';
-import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from '@/components/ui/command';
-import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { getStoredUser } from '@/lib/user-auth';
 import CartSidebar from './CartSidebar';
-import DiscountBanner from './DiscountBanner';
-import TopBar from './TopBar';
 
 const navLinks = [
   { label: 'خانه', path: '/' },
@@ -18,34 +14,21 @@ const navLinks = [
 ];
 
 const categoryLinks = [
-  { label: 'همه محصولات', path: '/category/all', hint: 'نمایش کامل کالکشن' },
-  { label: 'ست لباس زیر', path: '/category/sets', hint: 'ست‌های جدید نوشه' },
-  { label: 'سوتین', path: '/category/bra', hint: 'انتخاب بر اساس سایز و فرم' }
+  { label: 'همه محصولات', path: '/category/all' },
+  { label: 'ست لباس زیر', path: '/category/sets' },
+  { label: 'سوتین', path: '/category/bra' }
 ];
 
 export default function StoreHeader() {
   const { totalItems, setIsOpen } = useCart();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const commandLinks = useMemo(() => [...categoryLinks, ...navLinks], []);
-  const filteredCommandLinks = commandLinks.filter((link) => link.label.includes(searchQuery.trim()) || link.path.includes(searchQuery.trim()));
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const handleShortcut = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        setSearchOpen(true);
-      }
-    };
-    window.addEventListener('keydown', handleShortcut);
-    return () => window.removeEventListener('keydown', handleShortcut);
+    setIsAuthenticated(Boolean(getStoredUser()));
   }, []);
-
-  const goTo = (path: string) => {
-    window.location.href = path;
-  };
 
   const submitSearch = (event?: FormEvent) => {
     event?.preventDefault();
@@ -54,83 +37,75 @@ export default function StoreHeader() {
     window.location.href = `/search?q=${encodeURIComponent(query)}`;
   };
 
+  const searchForm = (compact = false) => (
+    <form onSubmit={submitSearch} className="relative">
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">⌕</span>
+      <input
+        value={searchQuery}
+        onChange={(event) => setSearchQuery(event.target.value)}
+        placeholder="جستجوی محصولات..."
+        className={`w-full rounded-lg bg-secondary/50 pr-10 text-sm outline-none transition focus:ring-2 focus:ring-primary/20 ${compact ? 'h-10 border border-border pl-3' : 'h-11 border-0 pl-3'}`}
+        autoFocus={compact}
+      />
+    </form>
+  );
+
   return (
     <>
-      <DiscountBanner />
-      <TopBar />
-      <header className="store-navbar" dir="rtl">
-        <div className="store-container">
-          <div className="store-navbar-main">
-            <Link href="/" className="store-logo">N<span>♥</span>OSHEH</Link>
-            <button type="button" onClick={() => setSearchOpen(true)} className="store-search-trigger" aria-label="باز کردن جستجو">
-              <span>⌕</span>
-              <b>جستجوی محصولات...</b>
-              <kbd>⌘K</kbd>
-            </button>
-            <div className="store-navbar-actions">
-              <button onClick={() => setIsOpen(true)} className="store-cart-button" aria-label="سبد خرید">🛍{totalItems > 0 && <span>{totalItems.toLocaleString('fa-IR')}</span>}</button>
-              <button className="store-menu-button" onClick={() => setMobileMenuOpen(true)} aria-label="باز کردن منو">☰</button>
-            </div>
-          </div>
-          <nav className="store-navbar-links">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild><button className="store-nav-dropdown-trigger">دسته‌بندی‌ها <span>⌄</span></button></DropdownMenuTrigger>
-              <DropdownMenuContent className="store-nav-dropdown-content">
-                <DropdownMenuLabel>کالکشن‌های فروشگاه</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {categoryLinks.map((link) => (
-                  <DropdownMenuItem key={link.path} onClick={() => goTo(link.path)}>
-                    <span>{link.label}</span>
-                    <small>{link.hint}</small>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {navLinks.map((link) => <Link key={link.path} href={link.path}>{link.label}</Link>)}
-          </nav>
+      <header className="sticky top-0 z-50 border-b border-border bg-background" dir="rtl">
+        <div className="bg-primary px-4 py-2 text-center text-xs font-medium text-primary-foreground">
+          <span>🔥 تخفیف ویژه تا ۴۰٪ روی محصولات منتخب! همین حالا خرید کن</span>
+          <span className="mx-4 hidden md:inline">|</span>
+          <span className="hidden md:inline">ارسال رایگان سفارشات بالای ۵۰۰ هزار تومان</span>
         </div>
+
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
+          <button type="button" className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:hidden" onClick={() => setMobileOpen(true)} aria-label="باز کردن منو">☰</button>
+
+          <Link href="/" className="shrink-0">
+            <h1 className="text-xl font-bold tracking-tight md:text-2xl">N<span className="text-primary">♥</span>OSHEH</h1>
+          </Link>
+
+          <div className="mx-auto hidden max-w-md flex-1 md:block">{searchForm()}</div>
+
+          <div className="flex items-center gap-1">
+            <button type="button" className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:hidden" onClick={() => setSearchOpen((open) => !open)} aria-label="جستجو">⌕</button>
+            <Link href={isAuthenticated ? '/account/wishlist' : '/login'} className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" aria-label="علاقه‌مندی‌ها">♡</Link>
+            <Link href={isAuthenticated ? '/account' : '/login'} className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" aria-label="حساب کاربری">♙</Link>
+            <button type="button" onClick={() => setIsOpen(true)} className="relative rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" aria-label="سبد خرید">
+              🛍
+              {totalItems > 0 && <span className="absolute -left-1 -top-1 grid min-w-5 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">{totalItems.toLocaleString('fa-IR')}</span>}
+            </button>
+          </div>
+        </div>
+
+        <nav className="hidden border-t border-border md:block">
+          <div className="mx-auto flex max-w-7xl items-center justify-center gap-8 px-4 py-2.5">
+            <Link href="/category/all" className="flex items-center gap-1 text-sm font-medium text-foreground/80 transition-colors hover:text-primary">دسته‌بندی‌ها <span className="text-xs">⌄</span></Link>
+            {navLinks.map((link) => <Link key={link.path} href={link.path} className="text-sm font-medium text-foreground/80 transition-colors hover:text-primary">{link.label}</Link>)}
+          </div>
+        </nav>
+
+        {searchOpen && <div className="px-4 pb-3 md:hidden">{searchForm(true)}</div>}
       </header>
 
-      <CommandDialog open={searchOpen} onOpenChange={setSearchOpen}>
-        <form onSubmit={submitSearch}>
-          <CommandInput placeholder="نام محصول، دسته یا کد را جستجو کنید..." value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} autoFocus />
-        </form>
-        <CommandList>
-          {searchQuery.trim() && (
-            <CommandGroup heading="جستجو">
-              <CommandItem onClick={() => submitSearch()}>
-                <span>جستجو برای «{searchQuery.trim()}»</span>
-                <CommandShortcut>Enter</CommandShortcut>
-              </CommandItem>
-            </CommandGroup>
-          )}
-          {searchQuery.trim() && <CommandSeparator />}
-          <CommandGroup heading="دسترسی سریع">
-            {(searchQuery.trim() ? filteredCommandLinks : commandLinks).map((link) => (
-              <CommandItem key={link.path} onClick={() => goTo(link.path)}>
-                <span>{link.label}</span>
-                <CommandShortcut>{link.path}</CommandShortcut>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-          {searchQuery.trim() && filteredCommandLinks.length === 0 && <CommandEmpty>مورد مشابهی پیدا نشد؛ Enter را برای جستجو بزنید.</CommandEmpty>}
-        </CommandList>
-      </CommandDialog>
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden" dir="rtl">
+          <button type="button" className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} aria-label="بستن منو" />
+          <aside className="absolute right-0 top-0 h-full w-72 bg-card p-4 shadow-xl">
+            <div className="mb-6 flex items-center justify-between border-b border-border pb-4">
+              <span className="font-semibold">منوی نوشه پوش</span>
+              <button type="button" className="rounded-md p-2 text-muted-foreground hover:bg-secondary" onClick={() => setMobileOpen(false)} aria-label="بستن">×</button>
+            </div>
+            <nav className="flex flex-col gap-1">
+              {[...categoryLinks, ...navLinks].map((link) => (
+                <Link key={link.path} href={link.path} onClick={() => setMobileOpen(false)} className="border-b border-border py-3 text-sm font-medium transition-colors hover:text-primary">{link.label}</Link>
+              ))}
+            </nav>
+          </aside>
+        </div>
+      )}
 
-      <Drawer open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <DrawerContent className="store-mobile-drawer">
-          <DrawerHeader>
-            <DrawerTitle>منوی نوشه پوش</DrawerTitle>
-            <DrawerDescription>دسترسی سریع به دسته‌بندی‌ها، پیگیری سفارش و پشتیبانی</DrawerDescription>
-          </DrawerHeader>
-          <button type="button" className="store-mobile-search" onClick={() => { setMobileMenuOpen(false); setSearchOpen(true); }}>⌕ جستجوی محصولات...</button>
-          <nav>
-            {[...categoryLinks, ...navLinks].map((link) => (
-              <DrawerClose asChild key={link.path}><Link href={link.path}>{link.label}</Link></DrawerClose>
-            ))}
-          </nav>
-        </DrawerContent>
-      </Drawer>
       <CartSidebar />
     </>
   );
