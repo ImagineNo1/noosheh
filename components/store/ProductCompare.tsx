@@ -65,13 +65,13 @@ function CompareBar() {
 }
 
 const fields: Array<{ key: keyof Product; label: string; render?: (product: Product) => ReactNode }> = [
-  { key: 'price', label: 'قیمت', render: (p) => `${(p.discount_price || p.price).toLocaleString('fa-IR')} تومان` },
+  { key: 'price', label: 'قیمت', render: (p) => `${(p.discount_price || p.price).toLocaleString('fa-IR')} ریال` },
   { key: 'brand', label: 'برند' },
   { key: 'material', label: 'جنس پارچه' },
   { key: 'sizes', label: 'سایزها', render: (p) => p.sizes?.join('، ') || '—' },
   { key: 'colors', label: 'رنگ‌ها', render: (p) => p.colors?.join('، ') || '—' },
   { key: 'cup_size', label: 'سایز کاپ' },
-  { key: 'stock', label: 'موجودی', render: (p) => p.stock && p.stock > 0 ? `${p.stock.toLocaleString('fa-IR')} عدد` : 'ناموجود' },
+  { key: 'stock', label: 'موجودی', render: (p) => { const stock = p.variants?.length ? p.variants.reduce((sum, variant) => sum + Number(variant.stock ?? variant.inventory ?? 0), 0) : Number(p.stock ?? 0); return stock > 0 ? `${stock.toLocaleString('fa-IR')} عدد` : 'ناموجود'; } },
   { key: 'is_featured', label: 'محصول ویژه', render: (p) => p.is_featured ? '✓' : '—' }
 ];
 

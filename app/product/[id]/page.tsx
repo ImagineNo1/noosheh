@@ -89,9 +89,10 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
 
   const currentPrice = currentVariant?.discount_price || currentVariant?.price || product.discount_price || product.price;
   const comparePrice = currentVariant?.compare_at_price || (currentVariant?.discount_price ? currentVariant.price : product.discount_price ? product.price : undefined);
-  const stock = currentVariant ? variantStock(currentVariant) : product.stock ?? 99;
+  const totalStock = product.variants?.length ? product.variants.reduce((sum, variant) => sum + variantStock(variant), 0) : Number(product.stock ?? 0);
+  const stock = currentVariant ? variantStock(currentVariant) : totalStock;
   const hasConfiguredVariants = Boolean(product.variants?.length);
-  const isAvailable = hasConfiguredVariants ? variantAvailable(currentVariant) : (product.stock ?? 1) > 0;
+  const isAvailable = hasConfiguredVariants ? Boolean(currentVariant && variantAvailable(currentVariant)) : totalStock > 0;
   const hasDiscount = Boolean(comparePrice && comparePrice > currentPrice);
   const discountPercent = hasDiscount ? Math.round((1 - currentPrice / (comparePrice || currentPrice)) * 100) : 0;
   const features = product.features || [];
@@ -126,7 +127,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
           <section className="space-y-5">
             <ProductBadges badges={product.badges} isAvailable={isAvailable} />
             <div><h1 className="text-2xl font-bold md:text-3xl">{product.title}</h1>{(product.brand || product.collection) && <p className="mt-2 text-xs text-muted-foreground">{product.brand && <>برند: {product.brand}</>}{product.brand && product.collection && ' | '}{product.collection && <>کالکشن: {product.collection}</>}</p>}</div>
-            <div className="flex flex-wrap items-baseline gap-3"><span className="text-2xl font-bold text-primary">{formatPrice(currentPrice)} تومان</span>{hasDiscount && <><span className="text-sm text-muted-foreground line-through">{formatPrice(comparePrice)} تومان</span><span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">{discountPercent}٪ تخفیف</span></>}</div>
+            <div className="flex flex-wrap items-baseline gap-3"><span className="text-2xl font-bold text-primary">{formatPrice(currentPrice)} ریال</span>{hasDiscount && <><span className="text-sm text-muted-foreground line-through">{formatPrice(comparePrice)} ریال</span><span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">{discountPercent}٪ تخفیف</span></>}</div>
             {product.short_description && <p className="text-sm leading-relaxed text-muted-foreground">{product.short_description}</p>}
             {features.length > 0 && <ul className="space-y-1">{features.map((feature) => <li key={feature} className="flex items-start gap-2 text-sm text-foreground/80"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />{feature}</li>)}</ul>}
 
@@ -135,6 +136,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
               <SizeSelector sizes={product.sizes} selectedSize={selectedSize} availableSizes={availableSizes} onSelect={(size) => { setSelectedSize(size); setSelectedCup(''); setNotifyMessage(''); }} sizeGuide={product.size_fit} />
               <CupSelector cups={product.cups} selectedCup={selectedCup} availableCups={availableCups} onSelect={(cup) => { setSelectedCup(cup); setNotifyMessage(''); }} />
               <QuantitySelector value={quantity} max={Math.max(1, stock || 99)} onChange={setQuantity} />
+              {hasConfiguredVariants && selectedSize && (!product.has_cup_option || selectedCup) && !isAvailable && <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">این حالت محصول ناموجود است.</p>}
               {notifyMessage && <p className="rounded-xl bg-primary/10 p-3 text-sm text-primary">{notifyMessage}</p>}
               <AddToCartButton isAvailable={isAvailable} isValid={validationErrors.length === 0} validationErrors={validationErrors} onAdd={handleAdd} onNotify={() => setNotifyMessage('درخواست اطلاع‌رسانی شما ثبت شد.')} />
             </div>

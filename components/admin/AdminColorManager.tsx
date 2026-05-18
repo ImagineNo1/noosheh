@@ -26,12 +26,17 @@ function normalizeColor(color: ColorSwatch): ColorSwatch {
   };
 }
 
-export default function AdminColorManager({ colors = [], onChange }: { colors?: ColorSwatch[]; onChange: (colors: ColorSwatch[]) => void }) {
+export default function AdminColorManager({ colors = [], colorOptions = [], onChange }: { colors?: ColorSwatch[]; colorOptions?: string[]; onChange: (colors: ColorSwatch[]) => void }) {
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [error, setError] = useState('');
 
   const setColorAt = (index: number, nextColor: ColorSwatch) => {
     onChange(colors.map((color, colorIndex) => colorIndex === index ? normalizeColor(nextColor) : color));
+  };
+
+  const addPresetColor = (name: string) => {
+    if (colors.some((color) => (color.name || color.value || color.slug) === name)) return;
+    onChange([...colors, normalizeColor({ name, hex: '#000000', slug: slugify(name), value: slugify(name), swatch_image: '', active: true, is_active: true, order: colors.length, sort_order: colors.length, images: [] })]);
   };
 
   const addColor = () => {
@@ -108,6 +113,7 @@ export default function AdminColorManager({ colors = [], onChange }: { colors?: 
       </div>
       <div className="admin-card-body manager-list">
         {error && <div className="admin-alert destructive">{error}</div>}
+        {colorOptions.length > 0 && <div><Label>انتخاب رنگ‌های پیش‌فرض</Label><div className="admin-actions-row">{colorOptions.map((option) => <label key={option} className="admin-inline small"><input type="checkbox" checked={colors.some((color) => (color.name || color.value || color.slug) === option)} onChange={(event) => event.target.checked ? addPresetColor(option) : onChange(colors.filter((color) => (color.name || color.value || color.slug) !== option))} /> {option}</label>)}</div></div>}
         {colors.map((rawColor, index) => {
           const color = normalizeColor(rawColor);
           const images = (color.images || []) as ColorImage[];

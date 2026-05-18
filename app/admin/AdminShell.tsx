@@ -8,6 +8,7 @@ import { adminApi, clearAdminToken } from './admin-api';
 const navItems = [
   { path: '/admin', label: 'داشبورد', icon: '▦', exact: true },
   { path: '/admin/products', label: 'محصولات', icon: '▣' },
+  { path: '/admin/attributes', label: 'پیش‌فرض‌ها', icon: '☷' },
   { path: '/admin/orders', label: 'سفارشات', icon: '◈' },
   { path: '/admin/reviews', label: 'نظرات', icon: '☷' },
   { path: '/admin/categories', label: 'دسته‌بندی‌ها', icon: '▤' },

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCart } from '@/lib/cart-context';
 
-const formatPrice = (price: number) => price.toLocaleString('fa-IR') + ' تومان';
+const formatPrice = (price: number) => price.toLocaleString('fa-IR') + ' ریال';
 
 export default function CartSidebar() {
   const { items, isOpen, setIsOpen, removeItem, updateQuantity, totalPrice, totalItems } = useCart();

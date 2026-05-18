@@ -5,7 +5,8 @@ import type { Product } from '@/app/admin/types';
 import { useCart } from '@/lib/cart-context';
 import { useCompare } from './ProductCompare';
 
-const formatPrice = (price?: number) => (price || 0).toLocaleString('fa-IR');
+const formatPrice = (price?: number) => `${(price || 0).toLocaleString('fa-IR')} ریال`;
+const totalStock = (product: Product) => product.variants?.length ? product.variants.reduce((sum, variant) => sum + Number(variant.stock ?? variant.inventory ?? 0), 0) : Number(product.stock ?? 0);
 
 function activeColors(product: Product) {
   if (product.color_swatches?.length) {
@@ -23,7 +24,9 @@ export default function ProductCard({ product }: { product: Product }) {
   const discountPercent = hasDiscount ? Math.round((1 - (product.discount_price || 0) / product.price) * 100) : 0;
   const currentPrice = hasDiscount ? product.discount_price : product.price;
   const cover = product.images?.[0];
-  const inStock = (product.stock ?? 1) > 0;
+  const stock = totalStock(product);
+  const inStock = stock > 0;
+  const needsVariantSelection = Boolean(product.variants?.length);
   const compare = useCompare();
   const { addItem } = useCart();
   const colors = activeColors(product);
@@ -61,10 +64,10 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
 
         <div className="flex flex-wrap items-baseline gap-2 pt-0.5">
-          <strong className="text-sm text-primary">{formatPrice(currentPrice)} تومان</strong>
+          <strong className="text-sm text-primary">{formatPrice(currentPrice)}</strong>
           {hasDiscount && <del className="text-xs text-muted-foreground">{formatPrice(product.price)}</del>}
         </div>
-        <p className="text-[11px] text-muted-foreground">{inStock ? 'موجود در انبار' : 'ناموجود'}</p>
+        <p className="text-[11px] text-muted-foreground">{inStock ? `موجودی کل: ${stock.toLocaleString('fa-IR')}` : 'ناموجود'}</p>
 
         <div className="grid grid-cols-[1fr_auto_auto] gap-2 pt-1">
           <Link href={`/product/${product.id}`} className="inline-flex h-9 items-center justify-center rounded-full border border-border px-3 text-xs font-medium hover:border-primary hover:text-primary">
@@ -73,10 +76,10 @@ export default function ProductCard({ product }: { product: Product }) {
           <button
             type="button"
             className="inline-flex h-9 items-center justify-center rounded-full bg-primary px-3 text-xs font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={!inStock}
-            onClick={() => inStock && addItem(product, 1)}
+            disabled={!inStock || needsVariantSelection}
+            onClick={() => inStock && !needsVariantSelection && addItem(product, 1)}
           >
-            افزودن
+            {needsVariantSelection ? 'انتخاب حالت' : 'افزودن'}
           </button>
           {compare && (
             <button

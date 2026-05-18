@@ -16,6 +16,7 @@ export type ProductColor = {
 
 export type ProductVariant = {
   id?: string;
+  product_variant_id?: string;
   color?: string;
   size?: string;
   cup?: string;
@@ -27,6 +28,9 @@ export type ProductVariant = {
   discount_price?: number;
   stock?: number;
   image?: string;
+  color_id?: string;
+  size_id?: string;
+  cup_id?: string;
 };
 
 export type ProductBadge = 'new' | 'sale' | 'final_sale' | 'best_seller' | 'limited' | string;
@@ -110,6 +114,8 @@ export type OrderItem = {
   size?: string;
   cup?: string;
   sku?: string;
+  variant_id?: string;
+  product_variant_id?: string;
   quantity: number;
   price: number;
 };
@@ -201,6 +207,7 @@ export type CartItem = {
   image?: string;
   original_price?: number;
   variant_id?: string;
+  product_variant_id?: string;
 };
 
 export type ReturnRequest = {
@@ -212,6 +219,15 @@ export type ReturnRequest = {
   reason: 'defective' | 'wrong_item' | 'size_issue' | 'changed_mind' | 'other' | string;
   description?: string;
   status?: 'submitted' | 'reviewing' | 'approved' | 'rejected' | 'refunded' | 'exchanged' | string;
+  created_date?: string;
+  updated_date?: string;
+};
+
+export type ProductAttribute = {
+  id: string;
+  type: 'size' | 'color' | 'cup' | string;
+  name: string;
+  value?: string;
   created_date?: string;
   updated_date?: string;
 };
