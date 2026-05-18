@@ -16,7 +16,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   let updated: any = null;
   let next = current.map((address) => {
     if (address.id !== params.id) return body.is_default ? { ...address, is_default: false } : address;
-    updated = { ...address, ...body, text: body.text ?? body.address ?? address.text, address: body.address ?? address.address, is_default: body.is_default ?? address.is_default };
+    updated = { ...address, ...body, user_email: (user as any).email, text: body.text ?? body.address ?? address.text, address: body.address ?? address.address, is_default: body.is_default ?? address.is_default };
     return updated;
   });
   if (!updated) return NextResponse.json({ error: 'Address not found' }, { status: 404 });

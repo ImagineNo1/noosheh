@@ -20,6 +20,7 @@ export async function POST(request: Request) {
   const orderId = String(body.order_id || '');
   const item = {
     id: randomUUID(),
+    user_email: String(payload.email),
     order_id: orderId,
     order_number: String(body.order_number || orderId.slice(-8).toUpperCase()),
     product_name: String(body.product_name || ''),

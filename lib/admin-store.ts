@@ -1,15 +1,20 @@
 import { randomUUID } from 'crypto';
 import { MongoClient } from 'mongodb';
 import { hashPassword } from '@/lib/password';
+import { normalizeEntityForModel } from '@/lib/model-schemas';
 
-export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users';
+export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users' | 'addresses' | 'cart_items' | 'return_requests' | 'wishlists';
 
 export const entityMap = {
   Product: 'products',
   Order: 'orders',
   Category: 'categories',
   SiteSettings: 'settings',
-  Review: 'reviews'
+  Review: 'reviews',
+  Address: 'addresses',
+  CartItem: 'cart_items',
+  ReturnRequest: 'return_requests',
+  Wishlist: 'wishlists'
 } as const;
 
 export type ApiEntity = keyof typeof entityMap;
@@ -34,6 +39,7 @@ type MongoCollection = {
   insertOne: (record: AnyRecord) => Promise<unknown>;
   find: (filter?: AnyRecord) => { sort: (sort: AnyRecord) => { limit: (limit: number) => { toArray: () => Promise<AnyRecord[]> } } };
   findOneAndUpdate: (filter: AnyRecord, update: AnyRecord, options: AnyRecord) => Promise<AnyRecord | { value?: AnyRecord | null } | null>;
+  createIndex?: (keys: AnyRecord, options?: AnyRecord) => Promise<unknown>;
   deleteOne: (filter: AnyRecord) => Promise<{ deletedCount?: number }>;
 };
 
@@ -45,7 +51,11 @@ const initialDatabase: Record<EntityName, AnyRecord[]> = {
   orders: [],
   settings: [],
   reviews: [],
-  users: []
+  users: [],
+  addresses: [],
+  cart_items: [],
+  return_requests: [],
+  wishlists: []
 };
 
 let mongoClientPromise: Promise<any> | null = null;
@@ -155,15 +165,18 @@ export async function listEntity(entity: EntityName, sort?: string | null, limit
 }
 
 export async function createEntity(entity: EntityName, data: AnyRecord) {
-  const record = { ...data, id: data.id || randomUUID(), created_date: data.created_date || now(), updated_date: now() };
+  const normalized = normalizeEntityForModel(entity, data);
+  if (normalized.errors.length) throw new Error(`VALIDATION:${normalized.errors.join(', ')}`);
+  const record = { ...normalized.record, id: data.id || randomUUID(), created_date: data.created_date || now(), updated_date: now() };
   const collection = await getRequiredMongoCollection(entity);
   await collection.insertOne(record);
   return record;
 }
 
 export async function updateEntity(entity: EntityName, id: string, data: AnyRecord) {
+  const normalized = normalizeEntityForModel(entity, data, { partial: true });
   const collection = await getRequiredMongoCollection(entity);
-  const result = await collection.findOneAndUpdate({ id }, { $set: { ...data, id, updated_date: now() } }, { returnDocument: 'after' });
+  const result = await collection.findOneAndUpdate({ id }, { $set: { ...normalized.record, id, updated_date: now() } }, { returnDocument: 'after' });
   const record = result && 'value' in result ? result.value : result;
   return record ? stripMongoId(record as AnyRecord) : null;
 }

@@ -3,10 +3,11 @@ import { NextResponse } from 'next/server';
 import { getBearerToken, verifyJwt } from '@/lib/jwt';
 import { findUserByEmail, updateEntity } from '@/lib/admin-store';
 
-function normalizeAddress(body: any) {
+function normalizeAddress(body: any, userEmail: string) {
   const address = String(body.address || body.text || '');
   return {
     id: body.id || randomUUID(),
+    user_email: userEmail,
     label: String(body.label || 'آدرس'),
     text: String(body.text || address),
     full_name: String(body.full_name || ''),
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
   const body = await request.json().catch(() => ({}));
   const current = (user as any).addresses || [];
-  const item = normalizeAddress({ ...body, is_default: body.is_default || current.length === 0 });
+  const item = normalizeAddress({ ...body, is_default: body.is_default || current.length === 0 }, String(payload.email));
   const next = item.is_default ? current.map((address: any) => ({ ...address, is_default: false })) : current;
   await updateEntity('users', user.id, { ...(user as any), addresses: [item, ...next] });
   return NextResponse.json(item, { status: 201 });
