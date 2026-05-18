@@ -8,11 +8,10 @@ import { getSiteSettings } from '@/lib/site-settings';
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
-  const siteTitle = settings.site_title || 'نوشه پوش';
   const siteTagline = settings.site_tagline || 'خرید آنلاین محصولات جدید، پرفروش و تخفیف‌دار نوشه پوش';
 
   return {
-    title: `${siteTitle} | صفحه اصلی`,
+    title: 'صفحه اصلی',
     description: siteTagline
   };
 }
