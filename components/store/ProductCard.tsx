@@ -10,7 +10,7 @@ const formatPrice = (price?: number) => (price || 0).toLocaleString('fa-IR');
 function activeColors(product: Product) {
   if (product.color_swatches?.length) {
     return product.color_swatches.filter((color) => color.active !== false && color.is_active !== false).map((color) => ({
-      key: color.value || color.slug || color.name,
+      key: color.slug || (color.value?.startsWith('#') ? '' : color.value) || color.name,
       name: color.name,
       hex: color.hex || color.value || color.slug
     }));

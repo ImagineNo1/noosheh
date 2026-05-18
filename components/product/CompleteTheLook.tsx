@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { Product } from '@/app/admin/types';
-import { colorImageUrls, colorValue, formatPrice, imageUrl, normalizeColors, normalizeList, variantAvailable, type ProductColor } from './product-utils';
+import { colorImageUrls, colorValue, formatPrice, normalizeColors, normalizeList, variantAvailable, type ProductColor } from './product-utils';
 
 function ProductMiniCard({ product, preferredColor, onAddToCart }: { product: Product; preferredColor?: ProductColor | null; onAddToCart: (product: Product, size?: string, color?: string, cup?: string, variantId?: string, image?: string, price?: number) => void }) {
   const colors = normalizeColors(product);

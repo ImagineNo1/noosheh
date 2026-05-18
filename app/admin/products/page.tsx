@@ -75,7 +75,7 @@ export default function Products() {
         similar_product_ids: form.similar_product_ids || [],
         has_cup_option: !!cupsInput.trim(),
         variants: (form.variants || []).map((variant) => ({ ...variant, stock: variant.inventory ?? variant.stock ?? 0, discount_price: variant.discount_price || undefined })),
-        color_swatches: (form.color_swatches || []).map((color) => ({ ...color, value: color.value || color.slug || color.name, active: color.active !== false && color.is_active !== false }))
+        color_swatches: (form.color_swatches || []).map((color) => ({ ...color, value: color.slug || (color.value?.startsWith('#') ? '' : color.value) || color.name, active: color.active !== false && color.is_active !== false }))
       };
       if (editingProduct) await adminApi.update<Product>('Product', editingProduct.id, data);
       else await adminApi.create<Product>('Product', data);

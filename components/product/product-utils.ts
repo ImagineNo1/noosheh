@@ -7,14 +7,14 @@ export const normalizeList = (values?: string[]) => values?.filter(Boolean) || [
 export const formatPrice = (price?: number) => (price || 0).toLocaleString('fa-IR');
 
 export function colorValue(color?: ProductColor | null) {
-  return color?.value || color?.slug || color?.name || '';
+  return color?.slug || (color?.value?.startsWith('#') ? '' : color?.value) || color?.name || '';
 }
 
 export function normalizeColors(product?: Product): ProductColor[] {
   if (!product) return [];
   if (product.color_swatches?.length) {
     return product.color_swatches
-      .map((color) => ({ ...color, value: color.value || color.slug || color.name }))
+      .map((color) => ({ ...color, value: color.slug || (color.value?.startsWith('#') ? '' : color.value) || color.name }))
       .sort((a, b) => (a.order ?? a.sort_order ?? 0) - (b.order ?? b.sort_order ?? 0));
   }
   return normalizeList(product.colors).map((color) => ({ name: color, value: color, active: true }));
