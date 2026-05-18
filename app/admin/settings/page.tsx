@@ -52,7 +52,7 @@ function Section({ title, description, children }: { title: string; description?
   );
 }
 
-function TextField({ config, value, onChange, onBlur }: { config: FieldConfig; value: string; onChange: (value: string) => void; onBlur: (value: string) => void }) {
+function TextField({ config, value, onChange }: { config: FieldConfig; value: string; onChange: (value: string) => void }) {
   return (
     <div className="space-y-1.5">
       <Label>{config.label}</Label>
@@ -61,7 +61,6 @@ function TextField({ config, value, onChange, onBlur }: { config: FieldConfig; v
         placeholder={config.placeholder}
         dir={config.dir || 'rtl'}
         onChange={(event) => onChange(event.target.value)}
-        onBlur={(event) => onBlur(event.target.value)}
       />
       {config.hint && <p className="text-xs text-muted-foreground">{config.hint}</p>}
     </div>
@@ -81,6 +80,7 @@ function ImageField({ config, value, uploading, onUpload }: { config: FieldConfi
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs text-muted-foreground">{value.split('/').pop()}</p>
+              <p className="truncate text-xs text-muted-foreground" dir="ltr">{value}</p>
               <p className="mt-0.5 text-xs text-green-600">آپلود شد</p>
             </div>
             <label className="cursor-pointer">
@@ -118,6 +118,13 @@ export default function SiteSettings() {
     setValues((current) => ({ ...current, [key]: saved }));
   };
 
+  const setFieldValue = (key: string, value: string, type: SettingType) => {
+    setValues((current) => ({
+      ...current,
+      [key]: { ...(current[key] || { id: '', key, type }), value }
+    }));
+  };
+
   const saveAll = async () => {
     setSavingAll(true);
     try {
@@ -131,20 +138,11 @@ export default function SiteSettings() {
     }
   };
 
-  const setFieldValue = (key: string, value: string, type: SettingType) => {
-    setValues((current) => ({
-      ...current,
-      [key]: { ...(current[key] || { id: '', key, type }), value }
-    }));
-  };
-
   const handleImageUpload = async (key: string, file: File) => {
     setUploading((current) => ({ ...current, [key]: true }));
     try {
       const { file_url } = await adminApi.upload(file);
       setFieldValue(key, file_url, 'image');
-      await upsert(key, file_url, 'image');
-      await reload();
     } finally {
       setUploading((current) => ({ ...current, [key]: false }));
     }
@@ -157,7 +155,7 @@ export default function SiteSettings() {
           <h1 className="admin-title">تنظیمات سایت</h1>
           <p className="admin-muted">تصاویر، اطلاعات تماس و محتوای ثابت سایت را مدیریت کنید.</p>
         </div>
-        <Button className="primary" onClick={saveAll} disabled={savingAll || isLoading}>{savingAll ? 'در حال ذخیره...' : 'ذخیره تغییرات'}</Button>
+        <Button className="primary" onClick={saveAll} disabled={savingAll || isLoading || Object.values(uploading).some(Boolean)}>{savingAll ? 'در حال ذخیره...' : 'ذخیره تغییرات'}</Button>
       </div>
 
       {isLoading ? (
@@ -175,7 +173,7 @@ export default function SiteSettings() {
           <Section title="اطلاعات عمومی" description="عنوان و متن‌های ثابت سایت">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {generalFields.map((field) => (
-                <TextField key={field.key} config={field} value={values[field.key]?.value || ''} onChange={(value) => setFieldValue(field.key, value, 'text')} onBlur={(value) => upsert(field.key, value, 'text')} />
+                <TextField key={field.key} config={field} value={values[field.key]?.value || ''} onChange={(value) => setFieldValue(field.key, value, 'text')} />
               ))}
             </div>
           </Section>
@@ -183,20 +181,16 @@ export default function SiteSettings() {
           <Section title="اطلاعات تماس و شبکه‌های اجتماعی" description="شماره، ایمیل و اینستاگرام نمایش داده‌شده در سایت">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {contactFields.map((field) => (
-                <TextField key={field.key} config={field} value={values[field.key]?.value || ''} onChange={(value) => setFieldValue(field.key, value, 'text')} onBlur={(value) => upsert(field.key, value, 'text')} />
+                <TextField key={field.key} config={field} value={values[field.key]?.value || ''} onChange={(value) => setFieldValue(field.key, value, 'text')} />
               ))}
             </div>
           </Section>
 
           <Section title="بنر اطلاع‌رسانی" description="متن نوار بالای سایت">
             {bannerFields.map((field) => (
-              <TextField key={field.key} config={field} value={values[field.key]?.value || ''} onChange={(value) => setFieldValue(field.key, value, 'text')} onBlur={(value) => upsert(field.key, value, 'text')} />
+              <TextField key={field.key} config={field} value={values[field.key]?.value || ''} onChange={(value) => setFieldValue(field.key, value, 'text')} />
             ))}
           </Section>
-
-          <div className="flex justify-end pb-8">
-            <Button className="primary" onClick={saveAll} disabled={savingAll}>{savingAll ? 'در حال ذخیره...' : 'ذخیره تمام تغییرات'}</Button>
-          </div>
         </div>
       )}
     </div>

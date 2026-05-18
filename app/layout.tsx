@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { CartProvider } from '@/lib/cart-context';
@@ -6,11 +8,21 @@ import { getSiteSettings } from '@/lib/site-settings';
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
+  const siteTitle = settings.site_title || 'Noosheh Poosh';
   return {
-    title: settings.site_title || 'Noosheh Poosh',
+    title: {
+      default: siteTitle,
+      template: `%s | ${siteTitle}`
+    },
     description: settings.site_tagline || 'فروشگاه آنلاین نوشه پوش',
     manifest: '/manifest.json',
-    icons: settings.site_icon ? { icon: settings.site_icon } : undefined
+    icons: settings.site_icon
+      ? {
+          icon: settings.site_icon,
+          shortcut: settings.site_icon,
+          apple: settings.site_icon
+        }
+      : undefined
   };
 }
 

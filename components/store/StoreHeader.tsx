@@ -85,7 +85,7 @@ export default function StoreHeader() {
               {isAuthenticated ? 'حساب کاربری' : 'ورود / ساخت حساب'}
             </Link>
             <button type="button" onClick={() => setIsOpen(true)} className="relative rounded-md p-2 text-2xl text-primary transition-colors hover:bg-secondary hover:text-primary/80" aria-label="سبد خرید">
-              🧺
+              🛒
               {totalItems > 0 && <span className="absolute -left-1 -top-1 grid min-w-5 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">{totalItems.toLocaleString('fa-IR')}</span>}
             </button>
           </div>
