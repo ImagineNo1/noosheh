@@ -14,6 +14,12 @@ const navItems = [
   { path: '/admin/categories', label: 'دسته‌بندی‌ها', icon: '▤' },
   { path: '/admin/settings', label: 'تنظیمات', icon: '⚙' },
   { path: '/admin/seo', label: 'SEO', icon: '🔎' },
+  { path: '/admin/blog', label: 'بلاگ', icon: '✎' },
+  { path: '/admin/blog/posts', label: 'پست‌ها', icon: '▤' },
+  { path: '/admin/blog/categories', label: 'دسته‌بلاگ', icon: '◫' },
+  { path: '/admin/blog/tags', label: 'تگ‌ها', icon: '# ' },
+  { path: '/admin/blog/comments', label: 'کامنت‌ها', icon: '☰' },
+  { path: '/admin/blog/pages', label: 'صفحات بلاگ', icon: '☷' },
   { path: '/', label: 'صفحه اصلی', icon: '⌂', exact: true }
 ];
 

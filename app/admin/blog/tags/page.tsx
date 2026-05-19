@@ -1,0 +1,4 @@
+'use client';
+import { useState } from 'react';import { adminApi } from '../../admin-api';import { useEntityList } from '../../_components/hooks';import { Button, Input } from '../../_components/ui';import type { BlogTag } from '../../types';
+export default function BlogTags(){const {data:tags,reload}=useEntityList<BlogTag>('BlogTag','name',200);const [name,setName]=useState('');const create=async()=>{if(!name)return;await adminApi.create('BlogTag',{name,slug:name.toLowerCase().replace(/\s+/g,'-')});setName('');reload();};
+return <div className='admin-page'><h1 className='admin-title mb-4'>تگ‌ها</h1><div className='admin-inline'><Input value={name} onChange={e=>setName(e.target.value)}/><Button onClick={create}>افزودن</Button></div><div className='mt-4 admin-card p-4 flex flex-wrap gap-2'>{tags.map(t=><span key={t.id} className='admin-badge'>#{t.name}</span>)}</div></div>}
