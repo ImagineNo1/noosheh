@@ -12,7 +12,7 @@ import type { Product } from '@/app/admin/types';
 export default function CategoryClient({ params }: { params: { slug: string } }) {
   const categorySlug = decodeURIComponent(params.slug);
   const searchParams = useSearchParams();
-  const collection = searchParams.get('collection') || '';
+  const collection = searchParams?.get('collection') || '';
   const [sort, setSort] = useState('default');
   const [priceRange, setPriceRange] = useState({ min: 0, max: Infinity });
   const [products, setProducts] = useState<Product[]>([]);

@@ -8,6 +8,8 @@ import { sanitizeHtml, formatDate } from '@/lib/blogUtils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DynamicPage() {
+  if (typeof window === 'undefined') return null;
+
   const slug = window.location.pathname.split('/page/')[1];
 
   const { data: pages = [], isLoading } = useQuery({

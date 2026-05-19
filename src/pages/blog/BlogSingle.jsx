@@ -16,6 +16,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function BlogSingle() {
+  if (typeof window === 'undefined') return null;
+
   const slug = window.location.pathname.split('/blog/')[1];
   const queryClient = useQueryClient();
   const { toast } = useToast();

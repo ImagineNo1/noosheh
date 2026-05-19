@@ -18,6 +18,8 @@ import { generateSlug, calculateReadingTime, generateExcerpt } from '@/lib/blogU
 import { useToast } from '@/components/ui/use-toast';
 
 export default function BlogPostEditor() {
+  if (typeof window === 'undefined') return null;
+
   const postId = window.location.pathname.split('/').filter(Boolean).find((_, i, arr) => arr[i - 1] === 'posts' && arr[i + 1] === 'edit') || null;
   const isEdit = !!postId;
   const navigate = useNavigate();

@@ -15,6 +15,8 @@ import { generateSlug } from '@/lib/blogUtils';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function BlogPageEditor() {
+  if (typeof window === 'undefined') return null;
+
   const pageId = window.location.pathname.split('/').filter(Boolean).find((_, i, arr) => arr[i - 1] === 'pages' && arr[i + 1] === 'edit') || null;
   const isEdit = !!pageId;
   const navigate = useNavigate();

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const p = usePathname();
+  const p = usePathname() || "";
   const nav = ['', 'settings', 'redirects', '404', 'robots', 'sitemap', 'analyzer'];
   return (
     <div className='space-y-4'>

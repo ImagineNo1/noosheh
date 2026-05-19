@@ -11,6 +11,8 @@ import { Link } from 'react-router-dom';
 const POSTS_PER_PAGE = 9;
 
 export default function BlogTag() {
+  if (typeof window === 'undefined') return null;
+
   const slug = window.location.pathname.split('/blog/tag/')[1];
   const [page, setPage] = useState(1);
 
