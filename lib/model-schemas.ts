@@ -136,7 +136,7 @@ export const modelSchemas = {
       purchased_color: { type: 'string' },
       purchased_size: { type: 'string' },
       purchased_cup: { type: 'string' },
-      status: { type: 'string', enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+      status: { type: 'string', enum: ['pending', 'approved', 'rejected', 'spam', 'trash'], default: 'pending' },
       admin_reply: { type: 'string' },
       images: { type: 'array', items: { type: 'string' } }
     },
@@ -151,7 +151,11 @@ export const modelSchemas = {
       name: { type: 'string' },
       slug: { type: 'string' },
       description: { type: 'string' },
-      color: { type: 'string' }
+      image: { type: 'string' },
+      color: { type: 'string' },
+      parent_id: { type: 'string' },
+      seo_title: { type: 'string' },
+      seo_description: { type: 'string' }
     },
     required: ['name', 'slug']
   },
@@ -173,7 +177,7 @@ export const modelSchemas = {
       slug: { type: 'string' },
       excerpt: { type: 'string' },
       content: { type: 'string' },
-      status: { type: 'string', enum: ['draft', 'published'], default: 'draft' },
+      status: { type: 'string', enum: ['draft', 'published', 'trash'], default: 'draft' },
       author_name: { type: 'string' },
       featured_image: { type: 'string' },
       featured_image_alt: { type: 'string' },
@@ -193,7 +197,7 @@ export const modelSchemas = {
       title: { type: 'string' },
       slug: { type: 'string' },
       content: { type: 'string' },
-      status: { type: 'string', enum: ['draft', 'published'], default: 'draft' },
+      status: { type: 'string', enum: ['draft', 'published', 'trash'], default: 'draft' },
       template: { type: 'string', enum: ['default', 'full_width'], default: 'default' },
       featured_image: { type: 'string' }
     },
@@ -208,7 +212,7 @@ export const modelSchemas = {
       author_name: { type: 'string' },
       author_email: { type: 'string' },
       content: { type: 'string' },
-      status: { type: 'string', enum: ['pending', 'approved', 'rejected'], default: 'pending' }
+      status: { type: 'string', enum: ['pending', 'approved', 'rejected', 'spam', 'trash'], default: 'pending' }
     },
     required: ['post_id', 'author_name', 'content']
   },
