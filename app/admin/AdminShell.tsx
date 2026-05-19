@@ -13,11 +13,13 @@ const navItems = [
   { path: '/admin/reviews', label: 'نظرات', icon: '☷' },
   { path: '/admin/categories', label: 'دسته‌بندی‌ها', icon: '▤' },
   { path: '/admin/settings', label: 'تنظیمات', icon: '⚙' },
+  { path: '/admin/blog/BlogDashboard', label: 'بلاگ', icon: '✎' },
   { path: '/', label: 'صفحه اصلی', icon: '⌂', exact: true }
 ];
 
-function isActivePath(pathname: string, item: { path: string; exact?: boolean }) {
-  return item.exact ? pathname === item.path : pathname.startsWith(item.path);
+function isActivePath(pathname: string | null, item: { path: string; exact?: boolean }) {
+  const currentPath = pathname ?? '';
+  return item.exact ? currentPath === item.path : currentPath.startsWith(item.path);
 }
 
 export default function AdminShell({ children }: { children: ReactNode }) {

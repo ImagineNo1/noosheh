@@ -21,8 +21,9 @@ function getInitials(name?: string) {
   return name.trim().split(/\s+/).map((word) => word[0]).join('').slice(0, 2);
 }
 
-function isActivePath(pathname: string, item: { href: string; exact?: boolean }) {
-  return item.exact ? pathname === item.href : pathname.startsWith(item.href);
+function isActivePath(pathname: string | null, item: { href: string; exact?: boolean }) {
+  const currentPath = pathname ?? '';
+  return item.exact ? currentPath === item.href : currentPath.startsWith(item.href);
 }
 
 export default function AccountShell({ children }: { children: ReactNode }) {
@@ -33,7 +34,7 @@ export default function AccountShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const current = getStoredUser();
-    if (!current) router.replace('/login?redirect=' + encodeURIComponent(pathname));
+    if (!current) router.replace('/login?redirect=' + encodeURIComponent(pathname ?? '/'));
     else setUser(current);
   }, [pathname, router]);
 

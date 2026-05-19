@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 
 export default function PageNotFound() {
   const pathname = usePathname();
-  const pageName = pathname.replace(/^\//, '') || 'home';
+  const pageName = (pathname ?? '').replace(/^\//, '') || 'home';
   const isAdmin = typeof window !== 'undefined' && Boolean(window.localStorage.getItem('noosheh-admin-token'));
 
   return (

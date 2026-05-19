@@ -7,7 +7,7 @@ import { FormEvent, Suspense, useState } from 'react';
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const resetToken = searchParams.get('token') || '';
+  const resetToken = searchParams?.get('token') || '';
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
