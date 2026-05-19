@@ -19,7 +19,9 @@ async function getCollection(name: string) {
 }
 
 export async function listSeoMeta() {
-  return (await getCollection('seo_meta')).find({}).sort({ updated_date: -1 }).toArray();
+  const collection = await getCollection('seo_meta');
+  await collection.createIndex({ entityType: 1, entityId: 1 }, { unique: true });
+  return collection.find({ deleted_at: { $exists: false } }).sort({ updated_date: -1 }).toArray();
 }
 export async function createSeoMeta(data: AnyRecord) {
   const collection = await getCollection('seo_meta');
@@ -27,9 +29,20 @@ export async function createSeoMeta(data: AnyRecord) {
   await collection.insertOne(record);
   return record;
 }
+export async function getSeoMetaById(id: string) {
+  return (await getCollection('seo_meta')).findOne({ id, deleted_at: { $exists: false } });
+}
+export async function updateSeoMeta(id: string, data: AnyRecord) {
+  return (await getCollection('seo_meta')).findOneAndUpdate({ id }, { $set: { ...data, updated_date: now() } }, { returnDocument: 'after' });
+}
+export async function deleteSeoMeta(id: string) {
+  const result = await (await getCollection('seo_meta')).findOneAndUpdate({ id }, { $set: { deleted_at: now(), updated_date: now() } }, { returnDocument: 'after' });
+  return !!result;
+}
 export async function analyze404(path: string, referrer?: string, userAgent?: string) {
   const collection = await getCollection('not_found_logs');
-  await collection.updateOne({ path }, { $setOnInsert: { id: randomUUID(), firstSeenAt: now(), resolved: false }, $set: { referrer, userAgent, lastSeenAt: now(), updated_date: now() }, $inc: { hitCount: 1 } }, { upsert: true });
+  await collection.createIndex({ path: 1 }, { unique: true });
+  await collection.updateOne({ path }, { $setOnInsert: { id: randomUUID(), firstSeenAt: now(), resolved: false, created_date: now() }, $set: { referrer, userAgent, lastSeenAt: now(), updated_date: now() }, $inc: { hitCount: 1 } }, { upsert: true });
 }
 
 export async function listRedirects() {

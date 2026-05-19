@@ -55,3 +55,13 @@ export function generateSeoMetadata(input: GenerateSeoMetadataInput): Metadata {
     }
   };
 }
+
+export function applyMetaTemplate(template: string, vars: Record<string, string | number | undefined>) {
+  return template.replace(/%([a-z_]+)%/gi, (_m, key: string) => String(vars[key] ?? ''));
+}
+
+export function generateJsonLd(schema: Record<string, unknown> | null | undefined) {
+  if (!schema || typeof schema !== 'object') return null;
+  if (!('@type' in schema) || !('@context' in schema)) return null;
+  return JSON.stringify(schema);
+}
