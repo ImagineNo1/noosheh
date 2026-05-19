@@ -31,3 +31,63 @@ export async function analyze404(path: string, referrer?: string, userAgent?: st
   const collection = await getCollection('not_found_logs');
   await collection.updateOne({ path }, { $setOnInsert: { id: randomUUID(), firstSeenAt: now(), resolved: false }, $set: { referrer, userAgent, lastSeenAt: now(), updated_date: now() }, $inc: { hitCount: 1 } }, { upsert: true });
 }
+
+export async function listRedirects() {
+  const collection = await getCollection('redirects');
+  await collection.createIndex({ fromPath: 1 }, { unique: true });
+  return collection.find({}).sort({ updated_date: -1 }).toArray();
+}
+
+export async function createRedirect(data: AnyRecord) {
+  const collection = await getCollection('redirects');
+  await collection.createIndex({ fromPath: 1 }, { unique: true });
+  const fromPath = String(data.fromPath).toLowerCase();
+  const toPath = data.toPath ? String(data.toPath).toLowerCase() : undefined;
+  const record = { ...data, fromPath, toPath, id: randomUUID(), hitCount: 0, isActive: data.isActive ?? true, created_date: now(), updated_date: now() };
+  await collection.insertOne(record);
+  return record;
+}
+
+export async function updateRedirect(id: string, data: AnyRecord) {
+  const collection = await getCollection('redirects');
+  const fromPath = data.fromPath ? String(data.fromPath).toLowerCase() : undefined;
+  const toPath = data.toPath ? String(data.toPath).toLowerCase() : undefined;
+  const updateData = { ...data, ...(fromPath ? { fromPath } : {}), ...(data.toPath ? { toPath } : {}) };
+  const result = await collection.findOneAndUpdate({ id }, { $set: { ...updateData, updated_date: now() } }, { returnDocument: 'after' });
+  return result;
+}
+
+export async function deleteRedirect(id: string) {
+  const collection = await getCollection('redirects');
+  const result = await collection.deleteOne({ id });
+  return (result.deletedCount ?? 0) > 0;
+}
+
+export async function listNotFoundLogs() {
+  const collection = await getCollection('not_found_logs');
+  return collection.find({}).sort({ hitCount: -1, lastSeenAt: -1 }).toArray();
+}
+
+export async function resolveNotFound(id: string, redirectId?: string) {
+  const collection = await getCollection('not_found_logs');
+  const result = await collection.findOneAndUpdate({ id }, { $set: { resolved: true, redirectId, updated_date: now() } }, { returnDocument: 'after' });
+  return result;
+}
+
+export async function getSeoSettings() {
+  const collection = await getCollection('seo_settings');
+  const settings = await collection.find({}).sort({ updated_date: -1 }).limit(1).toArray();
+  return settings[0] || null;
+}
+
+export async function upsertSeoSettings(data: AnyRecord) {
+  const collection = await getCollection('seo_settings');
+  const existing = await getSeoSettings();
+  if (existing) {
+    const result = await collection.findOneAndUpdate({ id: existing.id }, { $set: { ...data, updated_date: now() } }, { returnDocument: 'after' });
+    return result;
+  }
+  const record = { ...data, id: randomUUID(), created_date: now(), updated_date: now() };
+  await collection.insertOne(record);
+  return record;
+}
