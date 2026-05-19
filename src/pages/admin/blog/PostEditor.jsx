@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -16,7 +18,7 @@ import { toast } from 'sonner';
 import { ArrowRight, Save, Eye, X, Plus } from 'lucide-react';
 
 export default function PostEditor() {
-  const path = window.location.pathname;
+  const path = typeof window !== 'undefined' ? window.location.pathname : '';
   const isNew = path.endsWith('/new');
   const postId = isNew ? null : path.split('/admin/blog/posts/')[1];
   const navigate = useNavigate();

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -6,7 +8,7 @@ import { ChevronLeft, Folder } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default function BlogCategory() {
-  const slug = window.location.pathname.split('/blog/category/')[1];
+  const slug = typeof window !== 'undefined' ? window.location.pathname.split('/blog/category/')[1] : '';
   const [page, setPage] = useState(1);
   const PER_PAGE = 9;
 

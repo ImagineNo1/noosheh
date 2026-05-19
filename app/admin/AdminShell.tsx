@@ -16,8 +16,9 @@ const navItems = [
   { path: '/', label: 'صفحه اصلی', icon: '⌂', exact: true }
 ];
 
-function isActivePath(pathname: string, item: { path: string; exact?: boolean }) {
-  return item.exact ? pathname === item.path : pathname.startsWith(item.path);
+function isActivePath(pathname: string | null, item: { path: string; exact?: boolean }) {
+  const currentPath = pathname ?? '';
+  return item.exact ? currentPath === item.path : currentPath.startsWith(item.path);
 }
 
 export default function AdminShell({ children }: { children: ReactNode }) {
