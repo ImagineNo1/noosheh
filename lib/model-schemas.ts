@@ -142,6 +142,88 @@ export const modelSchemas = {
     },
     required: ['product_id', 'rating']
   },
+
+  SiteSettings: {
+    name: 'SiteSettings',
+    type: 'object',
+    properties: {
+      site_name: { type: 'string' },
+      site_description: { type: 'string' }
+    },
+    required: []
+  },
+  SeoSettings: {
+    name: 'SeoSettings',
+    type: 'object',
+    properties: {
+      site_name: { type: 'string' },
+      site_description: { type: 'string' },
+      site_url: { type: 'string' },
+      default_og_image: { type: 'string' },
+      title_separator: { type: 'string', default: '|' },
+      title_template_product: { type: 'string', default: '%product_title% | خرید با بهترین قیمت | %site_name%' },
+      title_template_category: { type: 'string', default: 'خرید %category_name% | قیمت و مشخصات | %site_name%' },
+      title_template_brand: { type: 'string', default: 'محصولات %brand_name% | %site_name%' },
+      title_template_home: { type: 'string', default: '%site_name% | %site_description%' },
+      desc_template_product: { type: 'string', default: 'خرید %product_title% با قیمت مناسب، مشخصات کامل، نظرات کاربران و ارسال سریع از %site_name%.' },
+      desc_template_category: { type: 'string', default: 'مشاهده و خرید انواع %category_name% با بهترین قیمت و کیفیت از %site_name%.' },
+      robots_disallow: { type: 'array', items: { type: 'string' }, default: ['/admin', '/api', '/cart', '/checkout', '/account'] },
+      robots_txt: { type: 'string' },
+      google_analytics_id: { type: 'string' },
+      google_search_console: { type: 'string' },
+      instagram_url: { type: 'string' },
+      twitter_handle: { type: 'string' },
+      organization_name: { type: 'string' },
+      organization_logo: { type: 'string' },
+      organization_phone: { type: 'string' },
+      organization_address: { type: 'string' }
+    },
+    required: []
+  },
+  SeoMeta: {
+    name: 'SeoMeta',
+    type: 'object',
+    properties: {
+      entity_type: { type: 'string', enum: ['product', 'category', 'brand', 'page', 'home'] },
+      entity_id: { type: 'string' },
+      meta_title: { type: 'string' },
+      meta_description: { type: 'string' },
+      focus_keyword: { type: 'string' },
+      secondary_keywords: { type: 'array', items: { type: 'string' } },
+      canonical_url: { type: 'string' },
+      robots_index: { type: 'boolean', default: true },
+      robots_follow: { type: 'boolean', default: true },
+      robots_noarchive: { type: 'boolean', default: false },
+      robots_nosnippet: { type: 'boolean', default: false },
+      og_title: { type: 'string' },
+      og_description: { type: 'string' },
+      og_image: { type: 'string' },
+      og_type: { type: 'string', default: 'website' },
+      twitter_title: { type: 'string' },
+      twitter_description: { type: 'string' },
+      twitter_image: { type: 'string' },
+      twitter_card: { type: 'string', default: 'summary_large_image' },
+      schema_type: { type: 'string' },
+      custom_schema: { type: 'string' },
+      seo_score: { type: 'number', default: 0 },
+      readability_score: { type: 'number', default: 0 },
+      seo_warnings: { type: 'array', items: { type: 'string' } },
+      seo_suggestions: { type: 'array', items: { type: 'string' } }
+    },
+    required: ['entity_type']
+  },
+  Redirect: {
+    name: 'Redirect',
+    type: 'object',
+    properties: { from_path: { type: 'string' }, to_path: { type: 'string' }, status_code: { type: 'number', default: 301 }, is_active: { type: 'boolean', default: true }, hit_count: { type: 'number', default: 0 }, notes: { type: 'string' } },
+    required: ['from_path', 'to_path']
+  },
+  NotFoundLog: {
+    name: 'NotFoundLog',
+    type: 'object',
+    properties: { path: { type: 'string' }, hit_count: { type: 'number', default: 1 }, resolved: { type: 'boolean', default: false }, referrer: { type: 'string' }, first_seen_at: { type: 'string' }, last_seen_at: { type: 'string' } },
+    required: ['path']
+  },
   Wishlist: {
     name: 'Wishlist',
     type: 'object',
@@ -172,7 +254,11 @@ const entityToModel = {
   cart_items: 'CartItem',
   return_requests: 'ReturnRequest',
   wishlists: 'Wishlist',
-  product_attributes: 'ProductAttribute'
+  product_attributes: 'ProductAttribute',
+  seo_settings: 'SeoSettings',
+  seo_meta: 'SeoMeta',
+  redirects: 'Redirect',
+  not_found_logs: 'NotFoundLog'
 } as const;
 
 const aliases: Record<string, Record<string, string>> = {
