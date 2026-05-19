@@ -1,11 +1,19 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function PageNotFound() {
   const pathname = usePathname();
   const pageName = pathname.replace(/^\//, '') || 'home';
   const isAdmin = typeof window !== 'undefined' && Boolean(window.localStorage.getItem('noosheh-admin-token'));
+  useEffect(() => {
+    fetch('/api/seo/404', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: pathname, referrer: document.referrer || '' })
+    }).catch(() => undefined);
+  }, [pathname]);
 
   return (
     <div className="not-found-page" dir="ltr">
