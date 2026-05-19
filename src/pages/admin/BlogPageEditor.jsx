@@ -13,4 +13,4 @@ import RichTextEditor from '@/components/blog/admin/RichTextEditor';
 import ImageUploader from '@/components/blog/admin/ImageUploader';
 import { generateSlug } from '@/lib/blogUtils';
 import { useToast } from '@/components/ui/use-toast';
-export default function BlogPageEditor(){ return <div />; }
+export default function BlogPageEditor(){ return <div className="space-y-4">...</div>; }

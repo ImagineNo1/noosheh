@@ -10,4 +10,4 @@ import { Check, X, AlertTriangle, Trash2 } from 'lucide-react';
 import { getCommentStatusLabel, getCommentStatusColor, formatDateTime } from '@/lib/blogUtils';
 import { useToast } from '@/components/ui/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-export default function BlogComments(){ return <div />; }
+export default function BlogComments(){ return <div className="space-y-4">...</div>; }

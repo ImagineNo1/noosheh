@@ -11,4 +11,4 @@ import { Plus, MoreHorizontal, Pencil, Eye, Trash2 } from 'lucide-react';
 import { getStatusLabel, getStatusColor, formatDate } from '@/lib/blogUtils';
 import { useToast } from '@/components/ui/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-export default function BlogPages(){ return <div />; }
+export default function BlogPages(){ return <div className="space-y-4">...</div>; }
