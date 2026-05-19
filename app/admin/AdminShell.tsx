@@ -22,7 +22,7 @@ function isActivePath(pathname: string, item: { path: string; exact?: boolean })
 }
 
 export default function AdminShell({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
+  const pathname = usePathname() || "";
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [email, setEmail] = useState('admin');

@@ -14,7 +14,14 @@ export default function OrderDetailsPage() {
   const params = useParams<{ id: string }>();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  useEffect(() => { accountApi.orders().then((orders) => setOrder(orders.find((item) => item.id === params.id) || null)).finally(() => setLoading(false)); }, [params.id]);
+  const orderId = params?.id ?? '';
+  useEffect(() => {
+    if (!orderId) {
+      setLoading(false);
+      return;
+    }
+    accountApi.orders().then((orders) => setOrder(orders.find((item) => item.id === orderId) || null)).finally(() => setLoading(false));
+  }, [orderId]);
   if (loading) return <div className="store-account-panel">در حال بارگذاری...</div>;
   if (!order) return <div className="py-20 text-center"><p className="mb-4 text-muted-foreground">سفارش یافت نشد</p><Link href="/account/orders" className="text-sm text-primary hover:underline">بازگشت به سفارش‌ها</Link></div>;
   const currentStep = timeline.findIndex((item) => item.key === order.status);

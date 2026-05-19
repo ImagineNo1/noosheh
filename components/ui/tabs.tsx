@@ -1,0 +1,1 @@
+import React from 'react'; export const Tabs=({children}:any)=><div>{children}</div>; export const TabsList=(p:any)=><div {...p}/>; export const TabsTrigger=(p:any)=><button {...p}/>; export const TabsContent=(p:any)=><div {...p}/>;

@@ -26,7 +26,7 @@ function isActivePath(pathname: string, item: { href: string; exact?: boolean })
 }
 
 export default function AccountShell({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
+  const pathname = usePathname() || "";
   const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);

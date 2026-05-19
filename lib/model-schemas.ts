@@ -119,6 +119,9 @@ export const modelSchemas = {
       product_name: { type: 'string' },
       reason: { type: 'string', enum: ['defective', 'wrong_item', 'size_issue', 'changed_mind', 'other'] },
       description: { type: 'string' },
+      seo_title: { type: 'string' },
+      seo_description: { type: 'string' },
+      post_count: { type: 'number', default: 0 },
       status: { type: 'string', enum: ['submitted', 'reviewing', 'approved', 'rejected', 'refunded', 'exchanged'], default: 'submitted' }
     },
     required: ['user_email', 'order_id', 'reason']
@@ -136,13 +139,105 @@ export const modelSchemas = {
       purchased_color: { type: 'string' },
       purchased_size: { type: 'string' },
       purchased_cup: { type: 'string' },
-      status: { type: 'string', enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+      status: { type: 'string', enum: ['pending', 'approved', 'rejected', 'spam', 'trash'], default: 'pending' },
       admin_reply: { type: 'string' },
       images: { type: 'array', items: { type: 'string' } }
     },
     required: ['product_id', 'rating']
   },
 
+
+  BlogCategory: {
+    name: 'BlogCategory',
+    type: 'object',
+    properties: {
+      name: { type: 'string' },
+      slug: { type: 'string' },
+      description: { type: 'string' },
+      image: { type: 'string' },
+      color: { type: 'string' },
+      parent_id: { type: 'string' },
+      seo_title: { type: 'string' },
+      seo_description: { type: 'string' },
+      post_count: { type: 'number', default: 0 }
+    },
+    required: ['name', 'slug']
+  },
+  BlogTag: {
+    name: 'BlogTag',
+    type: 'object',
+    properties: {
+      name: { type: 'string' },
+      slug: { type: 'string' },
+      description: { type: 'string' },
+      seo_title: { type: 'string' },
+      seo_description: { type: 'string' },
+      post_count: { type: 'number', default: 0 }
+    },
+    required: ['name', 'slug']
+  },
+  BlogPost: {
+    name: 'BlogPost',
+    type: 'object',
+    properties: {
+      title: { type: 'string' },
+      slug: { type: 'string' },
+      excerpt: { type: 'string' },
+      content: { type: 'string' },
+      featured_image: { type: 'string' },
+      featured_image_alt: { type: 'string' },
+      author_name: { type: 'string' },
+      author_email: { type: 'string' },
+      categories: { type: 'array', items: { type: 'string' }, default: [] },
+      tags: { type: 'array', items: { type: 'string' }, default: [] },
+      status: { type: 'string', enum: ['draft', 'published', 'private', 'scheduled', 'archived', 'trash'], default: 'draft' },
+      publish_at: { type: 'string' },
+      reading_time: { type: 'number' },
+      views_count: { type: 'number', default: 0 },
+      comments_count: { type: 'number', default: 0 },
+      is_featured: { type: 'boolean', default: false },
+      allow_comments: { type: 'boolean', default: true },
+      seo_title: { type: 'string' },
+      seo_description: { type: 'string' },
+      seo_keywords: { type: 'string' },
+      canonical_url: { type: 'string' },
+      og_image: { type: 'string' }
+    },
+    required: ['title', 'slug']
+  },
+  BlogPage: {
+    name: 'BlogPage',
+    type: 'object',
+    properties: {
+      title: { type: 'string' },
+      slug: { type: 'string' },
+      content: { type: 'string' },
+      excerpt: { type: 'string' },
+      featured_image: { type: 'string' },
+      parent_id: { type: 'string' },
+      template: { type: 'string', enum: ['default', 'full_width', 'sidebar', 'contact', 'about', 'custom'], default: 'default' },
+      status: { type: 'string', enum: ['draft', 'published', 'private', 'scheduled'], default: 'draft' },
+      sort_order: { type: 'number', default: 0 },
+      seo_title: { type: 'string' },
+      seo_description: { type: 'string' },
+      seo_keywords: { type: 'string' }
+    },
+    required: ['title', 'slug']
+  },
+  BlogComment: {
+    name: 'BlogComment',
+    type: 'object',
+    properties: {
+      post_id: { type: 'string' },
+      post_title: { type: 'string' },
+      parent_id: { type: 'string' },
+      author_name: { type: 'string' },
+      author_email: { type: 'string' },
+      content: { type: 'string' },
+      status: { type: 'string', enum: ['pending', 'approved', 'rejected', 'spam', 'trash'], default: 'pending' }
+    },
+    required: ['post_id', 'author_name', 'content']
+  },
   SiteSettings: {
     name: 'SiteSettings',
     type: 'object',
@@ -258,7 +353,12 @@ const entityToModel = {
   seo_settings: 'SeoSettings',
   seo_meta: 'SeoMeta',
   redirects: 'Redirect',
-  not_found_logs: 'NotFoundLog'
+  not_found_logs: 'NotFoundLog',
+  blog_categories: 'BlogCategory',
+  blog_tags: 'BlogTag',
+  blog_posts: 'BlogPost',
+  blog_pages: 'BlogPage',
+  blog_comments: 'BlogComment'
 } as const;
 
 const aliases: Record<string, Record<string, string>> = {
