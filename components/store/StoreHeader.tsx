@@ -11,7 +11,8 @@ const navLinks = [
   { label: 'خانه', path: '/' },
   { label: 'پیگیری سفارش', path: '/order-tracking' },
   { label: 'سوالات متداول', path: '/faq' },
-  { label: 'تماس با ما', path: '/contact' }
+  { label: 'تماس با ما', path: '/contact' },
+  { label: 'بلاگ', path: '/blog' }
 ];
 
 const categoryLinks = [

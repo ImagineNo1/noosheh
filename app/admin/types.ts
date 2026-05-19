@@ -243,3 +243,94 @@ export type Wishlist = {
   created_date?: string;
   updated_date?: string;
 };
+
+export type BlogCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  color?: string;
+  is_active?: boolean;
+  posts_count?: number;
+  meta_title?: string;
+  meta_description?: string;
+  created_date?: string;
+  updated_date?: string;
+};
+
+export type BlogComment = {
+  id: string;
+  post_id: string;
+  post_slug?: string;
+  parent_id?: string;
+  author_name: string;
+  author_email: string;
+  content: string;
+  status: 'pending' | 'approved' | 'rejected' | 'spam' | 'trash' | string;
+  is_admin_reply?: boolean;
+  created_date?: string;
+  updated_date?: string;
+};
+
+export type BlogTag = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  posts_count?: number;
+  meta_title?: string;
+  meta_description?: string;
+  created_date?: string;
+  updated_date?: string;
+};
+
+export type BlogPost = {
+  id: string;
+  title: string;
+  slug?: string;
+  excerpt?: string;
+  content?: string;
+  featured_image?: string;
+  author_name?: string;
+  author_email?: string;
+  author_avatar?: string;
+  author_bio?: string;
+  categories?: string[];
+  tags?: string[];
+  status?: 'draft' | 'published' | 'private' | 'scheduled' | 'archived' | string;
+  publish_at?: string;
+  reading_time?: number;
+  views_count?: number;
+  comments_count?: number;
+  is_featured?: boolean;
+  allow_comments?: boolean;
+  is_deleted?: boolean;
+  meta_title?: string;
+  meta_description?: string;
+  focus_keyword?: string;
+  canonical_url?: string;
+  og_image?: string;
+  noindex?: boolean;
+  created_date?: string;
+  updated_date?: string;
+};
+
+export type BlogPage = {
+  id: string;
+  title: string;
+  slug: string;
+  content?: string;
+  excerpt?: string;
+  featured_image?: string;
+  parent_slug?: string;
+  status?: 'draft' | 'published' | 'private' | string;
+  template?: 'default' | 'contact' | 'about' | 'full-width' | string;
+  order?: number;
+  meta_title?: string;
+  meta_description?: string;
+  canonical_url?: string;
+  noindex?: boolean;
+  is_deleted?: boolean;
+  created_date?: string;
+  updated_date?: string;
+};

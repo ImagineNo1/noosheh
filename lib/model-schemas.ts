@@ -143,6 +143,108 @@ export const modelSchemas = {
     required: ['product_id', 'rating']
   },
 
+
+  BlogCategory: {
+    name: 'BlogCategory',
+    type: 'object',
+    properties: {
+      name: { type: 'string' },
+      slug: { type: 'string' },
+      description: { type: 'string' },
+      image: { type: 'string' },
+      color: { type: 'string', default: '#e91e8c' },
+      parent_slug: { type: 'string' },
+      is_active: { type: 'boolean', default: true },
+      posts_count: { type: 'number', default: 0 },
+      meta_title: { type: 'string' },
+      meta_description: { type: 'string' }
+    },
+    required: ['name', 'slug']
+  },
+  BlogTag: {
+    name: 'BlogTag',
+    type: 'object',
+    properties: {
+      name: { type: 'string' },
+      slug: { type: 'string' },
+      description: { type: 'string' },
+      posts_count: { type: 'number', default: 0 },
+      meta_title: { type: 'string' },
+      meta_description: { type: 'string' }
+    },
+    required: ['name', 'slug']
+  },
+  BlogPost: {
+    name: 'BlogPost',
+    type: 'object',
+    properties: {
+      title: { type: 'string' },
+      slug: { type: 'string' },
+      excerpt: { type: 'string' },
+      content: { type: 'string' },
+      featured_image: { type: 'string' },
+      status: { type: 'string', enum: ['draft', 'published', 'private', 'scheduled', 'archived'], default: 'draft' },
+      is_featured: { type: 'boolean', default: false },
+      is_deleted: { type: 'boolean', default: false },
+      publish_at: { type: 'string' },
+      author_name: { type: 'string' },
+      author_email: { type: 'string' },
+      author_avatar: { type: 'string' },
+      author_bio: { type: 'string' },
+      reading_time: { type: 'number', default: 0 },
+      views_count: { type: 'number', default: 0 },
+      comments_count: { type: 'number', default: 0 },
+      allow_comments: { type: 'boolean', default: true },
+      categories: { type: 'array', items: { type: 'string' }, default: [] },
+      tags: { type: 'array', items: { type: 'string' }, default: [] },
+      meta_title: { type: 'string' },
+      meta_description: { type: 'string' },
+      canonical_url: { type: 'string' },
+      og_title: { type: 'string' },
+      og_description: { type: 'string' },
+      focus_keyword: { type: 'string' },
+      og_image: { type: 'string' },
+      noindex: { type: 'boolean', default: false }
+    },
+    required: ['title', 'slug']
+  },
+  BlogComment: {
+    name: 'BlogComment',
+    type: 'object',
+    properties: {
+      post_id: { type: 'string' },
+      post_slug: { type: 'string' },
+      parent_id: { type: 'string' },
+      author_name: { type: 'string' },
+      author_email: { type: 'string' },
+      author_website: { type: 'string' },
+      content: { type: 'string' },
+      status: { type: 'string', enum: ['pending', 'approved', 'spam', 'trash'], default: 'pending' },
+      is_admin_reply: { type: 'boolean', default: false }
+    },
+    required: ['post_id', 'author_name', 'author_email', 'content']
+  },
+  BlogPage: {
+    name: 'BlogPage',
+    type: 'object',
+    properties: {
+      title: { type: 'string' },
+      slug: { type: 'string' },
+      content: { type: 'string' },
+      excerpt: { type: 'string' },
+      featured_image: { type: 'string' },
+      parent_slug: { type: 'string' },
+      status: { type: 'string', enum: ['draft', 'published', 'private'], default: 'draft' },
+      template: { type: 'string', enum: ['default', 'contact', 'about', 'full-width'], default: 'default' },
+      order: { type: 'number', default: 0 },
+      meta_title: { type: 'string' },
+      meta_description: { type: 'string' },
+      canonical_url: { type: 'string' },
+      noindex: { type: 'boolean', default: false },
+      is_deleted: { type: 'boolean', default: false }
+    },
+    required: ['title', 'slug']
+  },
   SiteSettings: {
     name: 'SiteSettings',
     type: 'object',
@@ -258,7 +360,12 @@ const entityToModel = {
   seo_settings: 'SeoSettings',
   seo_meta: 'SeoMeta',
   redirects: 'Redirect',
-  not_found_logs: 'NotFoundLog'
+  not_found_logs: 'NotFoundLog',
+  blog_posts: 'BlogPost',
+  blog_categories: 'BlogCategory',
+  blog_tags: 'BlogTag',
+  blog_comments: 'BlogComment',
+  blog_pages: 'BlogPage'
 } as const;
 
 const aliases: Record<string, Record<string, string>> = {
