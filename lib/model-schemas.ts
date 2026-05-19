@@ -142,6 +142,40 @@ export const modelSchemas = {
     },
     required: ['product_id', 'rating']
   },
+
+  SiteSettings: {
+    name: 'SiteSettings',
+    type: 'object',
+    properties: {
+      site_name: { type: 'string' },
+      site_description: { type: 'string' }
+    },
+    required: []
+  },
+  SeoSettings: {
+    name: 'SeoSettings',
+    type: 'object',
+    properties: { site_name: { type: 'string' }, site_description: { type: 'string' }, site_url: { type: 'string' }, robots_txt: { type: 'string' } },
+    required: []
+  },
+  SeoMeta: {
+    name: 'SeoMeta',
+    type: 'object',
+    properties: { entity_type: { type: 'string' }, entity_id: { type: 'string' }, seo_score: { type: 'number' }, robots_index: { type: 'boolean', default: true } },
+    required: []
+  },
+  Redirect: {
+    name: 'Redirect',
+    type: 'object',
+    properties: { from_path: { type: 'string' }, to_path: { type: 'string' }, status_code: { type: 'number', default: 301 }, is_active: { type: 'boolean', default: true }, hit_count: { type: 'number', default: 0 }, notes: { type: 'string' } },
+    required: ['from_path', 'to_path']
+  },
+  NotFoundLog: {
+    name: 'NotFoundLog',
+    type: 'object',
+    properties: { path: { type: 'string' }, hit_count: { type: 'number', default: 1 }, resolved: { type: 'boolean', default: false }, referrer: { type: 'string' }, first_seen_at: { type: 'string' }, last_seen_at: { type: 'string' } },
+    required: ['path']
+  },
   Wishlist: {
     name: 'Wishlist',
     type: 'object',
@@ -172,7 +206,11 @@ const entityToModel = {
   cart_items: 'CartItem',
   return_requests: 'ReturnRequest',
   wishlists: 'Wishlist',
-  product_attributes: 'ProductAttribute'
+  product_attributes: 'ProductAttribute',
+  seo_settings: 'SeoSettings',
+  seo_meta: 'SeoMeta',
+  redirects: 'Redirect',
+  not_found_logs: 'NotFoundLog'
 } as const;
 
 const aliases: Record<string, Record<string, string>> = {

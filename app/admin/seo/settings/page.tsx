@@ -1,0 +1,4 @@
+'use client';import {useState,useEffect} from 'react';import {useEntityList} from '../../_components/hooks';import {adminApi} from '../../admin-api';
+export default function P(){const {data,reload}=useEntityList<any>('SeoSettings');const [form,setForm]=useState<any>({site_name:'',site_description:'',site_url:'',robots_txt:''});useEffect(()=>{if(data[0])setForm({...form,...data[0]});},[data]);
+const save=async()=>{data[0]?await adminApi.update('SeoSettings',data[0].id,form):await adminApi.create('SeoSettings',form);await reload();alert('ذخیره شد')};
+return <div className='space-y-2 max-w-2xl'>{Object.keys(form).map(k=><input key={k} value={form[k]||''} onChange={e=>setForm((f:any)=>({...f,[k]:e.target.value}))} placeholder={k} className='w-full border rounded p-2'/>) }<button onClick={save} className='px-4 py-2 bg-primary text-primary-foreground rounded'>ذخیره</button></div>}
