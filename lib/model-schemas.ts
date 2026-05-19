@@ -119,6 +119,9 @@ export const modelSchemas = {
       product_name: { type: 'string' },
       reason: { type: 'string', enum: ['defective', 'wrong_item', 'size_issue', 'changed_mind', 'other'] },
       description: { type: 'string' },
+      seo_title: { type: 'string' },
+      seo_description: { type: 'string' },
+      post_count: { type: 'number', default: 0 },
       status: { type: 'string', enum: ['submitted', 'reviewing', 'approved', 'rejected', 'refunded', 'exchanged'], default: 'submitted' }
     },
     required: ['user_email', 'order_id', 'reason']
@@ -155,7 +158,8 @@ export const modelSchemas = {
       color: { type: 'string' },
       parent_id: { type: 'string' },
       seo_title: { type: 'string' },
-      seo_description: { type: 'string' }
+      seo_description: { type: 'string' },
+      post_count: { type: 'number', default: 0 }
     },
     required: ['name', 'slug']
   },
@@ -165,7 +169,10 @@ export const modelSchemas = {
     properties: {
       name: { type: 'string' },
       slug: { type: 'string' },
-      description: { type: 'string' }
+      description: { type: 'string' },
+      seo_title: { type: 'string' },
+      seo_description: { type: 'string' },
+      post_count: { type: 'number', default: 0 }
     },
     required: ['name', 'slug']
   },
@@ -177,18 +184,26 @@ export const modelSchemas = {
       slug: { type: 'string' },
       excerpt: { type: 'string' },
       content: { type: 'string' },
-      status: { type: 'string', enum: ['draft', 'published', 'trash'], default: 'draft' },
-      author_name: { type: 'string' },
       featured_image: { type: 'string' },
       featured_image_alt: { type: 'string' },
+      author_name: { type: 'string' },
+      author_email: { type: 'string' },
       categories: { type: 'array', items: { type: 'string' }, default: [] },
       tags: { type: 'array', items: { type: 'string' }, default: [] },
-      views_count: { type: 'number', default: 0 },
+      status: { type: 'string', enum: ['draft', 'published', 'private', 'scheduled', 'archived', 'trash'], default: 'draft' },
+      publish_at: { type: 'string' },
       reading_time: { type: 'number' },
+      views_count: { type: 'number', default: 0 },
+      comments_count: { type: 'number', default: 0 },
+      is_featured: { type: 'boolean', default: false },
       allow_comments: { type: 'boolean', default: true },
-      publish_at: { type: 'string' }
+      seo_title: { type: 'string' },
+      seo_description: { type: 'string' },
+      seo_keywords: { type: 'string' },
+      canonical_url: { type: 'string' },
+      og_image: { type: 'string' }
     },
-    required: ['title', 'slug', 'content']
+    required: ['title', 'slug']
   },
   BlogPage: {
     name: 'BlogPage',
@@ -197,11 +212,17 @@ export const modelSchemas = {
       title: { type: 'string' },
       slug: { type: 'string' },
       content: { type: 'string' },
-      status: { type: 'string', enum: ['draft', 'published', 'trash'], default: 'draft' },
-      template: { type: 'string', enum: ['default', 'full_width'], default: 'default' },
-      featured_image: { type: 'string' }
+      excerpt: { type: 'string' },
+      featured_image: { type: 'string' },
+      parent_id: { type: 'string' },
+      template: { type: 'string', enum: ['default', 'full_width', 'sidebar', 'contact', 'about', 'custom'], default: 'default' },
+      status: { type: 'string', enum: ['draft', 'published', 'private', 'scheduled'], default: 'draft' },
+      sort_order: { type: 'number', default: 0 },
+      seo_title: { type: 'string' },
+      seo_description: { type: 'string' },
+      seo_keywords: { type: 'string' }
     },
-    required: ['title', 'slug', 'content']
+    required: ['title', 'slug']
   },
   BlogComment: {
     name: 'BlogComment',
@@ -209,6 +230,7 @@ export const modelSchemas = {
     properties: {
       post_id: { type: 'string' },
       post_title: { type: 'string' },
+      parent_id: { type: 'string' },
       author_name: { type: 'string' },
       author_email: { type: 'string' },
       content: { type: 'string' },
