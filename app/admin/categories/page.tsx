@@ -6,7 +6,7 @@ import { useEntityList } from '../_components/hooks';
 import { AlertDialog, Button, Card, Dialog, EmptyState, Input, Label, Toggle } from '../_components/ui';
 import type { Category } from '../types';
 
-const emptyCategory = { title: '', title_en: '', slug: '', image: '', order: 0, is_active: true };
+const emptyCategory = { title: '', title_en: '', slug: '', image: '', order: 0, is_active: true, metaTitle: '', metaDescription: '', focusKeyword: '', canonicalUrl: '' };
 
 export default function Categories() {
   const { data: categories, isLoading, reload } = useEntityList<Category>('Category', 'order', 50);
@@ -22,7 +22,7 @@ export default function Categories() {
   const openCreate = () => { setEditing(null); setForm(emptyCategory); setDialogOpen(true); };
   const openEdit = (category: Category) => {
     setEditing(category);
-    setForm({ title: category.title || '', title_en: category.title_en || '', slug: category.slug || '', image: category.image || '', order: category.order || 0, is_active: category.is_active !== false });
+    setForm({ title: category.title || '', title_en: category.title_en || '', slug: category.slug || '', image: category.image || '', order: category.order || 0, is_active: category.is_active !== false, metaTitle: category.metaTitle || '', metaDescription: category.metaDescription || '', focusKeyword: category.focusKeyword || '', canonicalUrl: category.canonicalUrl || '' });
     setDialogOpen(true);
   };
 
@@ -101,6 +101,10 @@ export default function Categories() {
           <div><Label>اسلاگ (لاتین)</Label><Input value={form.slug} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))} dir="ltr" placeholder="e.g. bra" /></div>
           <div><Label>ترتیب نمایش</Label><Input type="number" value={form.order} onChange={(e) => setForm((f) => ({ ...f, order: Number(e.target.value) }))} dir="ltr" /></div>
           <div className="admin-inline"><Toggle checked={form.is_active !== false} onChange={(value) => setForm((f) => ({ ...f, is_active: value }))} /><Label>فعال</Label></div>
+          <div><Label>Meta Title</Label><Input value={form.metaTitle || ''} onChange={(e) => setForm((f) => ({ ...f, metaTitle: e.target.value }))} /></div>
+          <div><Label>Focus Keyword</Label><Input value={form.focusKeyword || ''} onChange={(e) => setForm((f) => ({ ...f, focusKeyword: e.target.value }))} /></div>
+          <div><Label>Canonical URL</Label><Input dir="ltr" value={form.canonicalUrl || ''} onChange={(e) => setForm((f) => ({ ...f, canonicalUrl: e.target.value }))} /></div>
+          <div><Label>Meta Description</Label><Input value={form.metaDescription || ''} onChange={(e) => setForm((f) => ({ ...f, metaDescription: e.target.value }))} /></div>
           <div>
             <Label>تصویر</Label>
             <div className="admin-upload-row">

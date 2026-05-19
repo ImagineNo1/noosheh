@@ -87,6 +87,20 @@ export type Product = {
   wash_instructions?: string;
   created_date?: string;
   updated_date?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  focusKeyword?: string;
+  canonicalUrl?: string;
+  robotsIndex?: boolean;
+  robotsFollow?: boolean;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  twitterImage?: string;
+  schemaType?: string;
+  customSchema?: string;
 };
 
 export type Category = {
@@ -102,6 +116,10 @@ export type Category = {
   is_active?: boolean;
   created_date?: string;
   updated_date?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  focusKeyword?: string;
+  canonicalUrl?: string;
 };
 
 export type OrderItem = {

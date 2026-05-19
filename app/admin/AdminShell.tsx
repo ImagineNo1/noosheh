@@ -12,6 +12,7 @@ const navItems = [
   { path: '/admin/orders', label: 'سفارشات', icon: '◈' },
   { path: '/admin/reviews', label: 'نظرات', icon: '☷' },
   { path: '/admin/categories', label: 'دسته‌بندی‌ها', icon: '▤' },
+  { path: '/admin/seo', label: 'سئو', icon: '◎' },
   { path: '/admin/settings', label: 'تنظیمات', icon: '⚙' },
   { path: '/', label: 'صفحه اصلی', icon: '⌂', exact: true }
 ];
