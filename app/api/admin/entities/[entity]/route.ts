@@ -3,7 +3,7 @@ import { createEntity, listEntity, resolveEntity } from '@/lib/admin-store';
 import { isAdminRequest, isJwtConfigured } from '@/lib/jwt';
 
 function canCreatePublicly(entityName: string) {
-  return entityName === 'Order' || entityName === 'Review';
+  return entityName === 'Order' || entityName === 'Review' || entityName === 'BlogComment';
 }
 
 export async function GET(request: Request, { params }: { params: { entity: string } }) {
