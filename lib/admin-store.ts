@@ -3,7 +3,7 @@ import { MongoClient } from 'mongodb';
 import { hashPassword } from '@/lib/password';
 import { normalizeEntityForModel } from '@/lib/model-schemas';
 
-export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users' | 'addresses' | 'cart_items' | 'return_requests' | 'wishlists' | 'product_attributes' | 'seo_settings' | 'seo_meta' | 'redirects' | 'not_found_logs';
+export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users' | 'addresses' | 'cart_items' | 'return_requests' | 'wishlists' | 'product_attributes' | 'seo_settings' | 'seo_meta' | 'redirects' | 'not_found_logs' | 'blog_categories' | 'blog_tags' | 'blog_posts' | 'blog_pages' | 'blog_comments';
 
 export const entityMap = {
   Product: 'products',
@@ -19,7 +19,12 @@ export const entityMap = {
   SeoSettings: 'seo_settings',
   SeoMeta: 'seo_meta',
   Redirect: 'redirects',
-  NotFoundLog: 'not_found_logs'
+  NotFoundLog: 'not_found_logs',
+  BlogCategory: 'blog_categories',
+  BlogTag: 'blog_tags',
+  BlogPost: 'blog_posts',
+  BlogPage: 'blog_pages',
+  BlogComment: 'blog_comments'
 } as const;
 
 export type ApiEntity = keyof typeof entityMap;
@@ -66,7 +71,12 @@ const initialDatabase: Record<EntityName, AnyRecord[]> = {
   seo_settings: [],
   seo_meta: [],
   redirects: [],
-  not_found_logs: []
+  not_found_logs: [],
+  blog_categories: [],
+  blog_tags: [],
+  blog_posts: [],
+  blog_pages: [],
+  blog_comments: []
 };
 
 let mongoClientPromise: Promise<any> | null = null;
