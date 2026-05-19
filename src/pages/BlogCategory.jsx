@@ -1,0 +1,3 @@
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+export default function BlogCategory() { const [posts,setPosts]=useState([]); const slug=typeof window!=='undefined'?window.location.pathname.split('/blog/category/')[1]:''; useEffect(()=>{fetch('/api/admin/entities/BlogPost?sort=-publish_at&limit=100').then(r=>r.json()).then(setPosts).catch(()=>setPosts([]));},[]); const filtered=posts.filter((p)=>p.categories?.includes(slug)); return <div dir="rtl" className="p-6"><h1 className="font-bold mb-4">دسته: {slug}</h1>{filtered.map((p)=><Link key={p.id} href={`/blog/${p.slug}`} className="block p-2 border rounded mb-2">{p.title}</Link>)}</div>; }
