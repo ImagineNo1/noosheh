@@ -1,0 +1,1 @@
+import React from 'react'; export const Card=(p:any)=><div {...p}/>; export const CardHeader=(p:any)=><div {...p}/>; export const CardTitle=(p:any)=><h3 {...p}/>; export const CardContent=(p:any)=><div {...p}/>;

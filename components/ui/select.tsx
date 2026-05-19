@@ -1,0 +1,1 @@
+import React from 'react'; export const Select=({children}:any)=><div>{children}</div>; export const SelectTrigger=(p:any)=><div {...p}/>; export const SelectValue=(p:any)=><span {...p}/>; export const SelectContent=(p:any)=><div {...p}/>; export const SelectItem=(p:any)=><div {...p}/>;

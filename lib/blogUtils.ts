@@ -1,0 +1,10 @@
+export const generateSlug = (s='') => s.toLowerCase().trim().replace(/\s+/g,'-').replace(/[^\w\-\u0600-\u06FF]/g,'');
+export const calculateReadingTime = (html='') => Math.max(1, Math.ceil((html.replace(/<[^>]+>/g,'').split(/\s+/).length)/200));
+export const generateExcerpt = (html='') => html.replace(/<[^>]+>/g,'').slice(0,160);
+export const formatDate = (d?:string) => d ? new Date(d).toLocaleDateString('fa-IR') : '-';
+export const formatDateTime = (d?:string) => d ? new Date(d).toLocaleString('fa-IR') : '-';
+export const sanitizeHtml = (h='') => h;
+export const getStatusLabel = (s='') => s;
+export const getStatusColor = (_='') => 'bg-muted text-foreground';
+export const getCommentStatusLabel = (s='') => s;
+export const getCommentStatusColor = (_='') => 'bg-muted text-foreground';
