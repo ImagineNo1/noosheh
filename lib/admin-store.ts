@@ -314,7 +314,8 @@ async function ensureEntitySeoMeta(entity: EntityName, record: AnyRecord) {
   if (!entityType || !record?.id) return;
 
   const seoCollection = await getRequiredMongoCollection('seo_meta');
-  const auto = generateAutoSeoMeta({ entity: record, entityType });
+  const siteUrl = await resolveSeoSiteUrl();
+  const auto = generateAutoSeoMeta({ entity: record, entityType, siteUrl });
   const existingRecords = await seoCollection.find({ entity_type: entityType, entity_id: record.id }).sort({ created_date: -1 }).limit(1).toArray();
   const existing = existingRecords[0] ? stripMongoId(existingRecords[0]) : null;
 
@@ -331,6 +332,13 @@ async function ensureEntitySeoMeta(entity: EntityName, record: AnyRecord) {
     return;
   }
   await seoCollection.insertOne({ ...merged, id: randomUUID(), created_date: now(), updated_date: now() });
+}
+
+async function resolveSeoSiteUrl() {
+  const settingsCollection = await getRequiredMongoCollection('seo_settings');
+  const settings = await settingsCollection.find({}).sort({ updated_date: -1, created_date: -1 }).limit(1).toArray();
+  const siteUrl = String(settings[0]?.site_url || process.env.NEXT_PUBLIC_SITE_URL || '').trim();
+  return siteUrl.replace(/\/$/, '');
 }
 
 export async function deleteEntity(entity: EntityName, id: string) {

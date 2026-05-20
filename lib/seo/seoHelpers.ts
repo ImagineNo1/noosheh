@@ -9,7 +9,7 @@ function truncate(value: string, max: number) {
   return `${value.slice(0, Math.max(0, max - 1)).trim()}…`;
 }
 
-export function generateAutoSeoMeta({ entity, entityType }: { entity?: Record<string, any>; entityType: string }) {
+export function generateAutoSeoMeta({ entity, entityType, siteUrl }: { entity?: Record<string, any>; entityType: string; siteUrl?: string }) {
   const title = String(entity?.title || entity?.name || '').trim();
   const shortDescription = stripHtml(String(entity?.short_description || entity?.excerpt || entity?.description || entity?.content || ''));
   const siteName = 'نوشه';
@@ -22,11 +22,13 @@ export function generateAutoSeoMeta({ entity, entityType }: { entity?: Record<st
     160
   );
 
+  const normalizedSiteUrl = String(siteUrl || process.env.NEXT_PUBLIC_SITE_URL || '').trim().replace(/\/$/, '');
+
   return {
     meta_title: metaTitle,
     meta_description: metaDescription,
     focus_keyword: keyword,
-    canonical_url: slug ? `https://example.com/${canonicalPath}` : '',
+    canonical_url: slug && normalizedSiteUrl ? `${normalizedSiteUrl}/${canonicalPath}` : '',
     og_title: metaTitle,
     og_description: metaDescription,
     og_image: entity?.cover_image || entity?.image || entity?.images?.[0] || '',
