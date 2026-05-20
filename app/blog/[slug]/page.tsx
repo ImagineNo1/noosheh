@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import BlogHeader from '@/components/blog/BlogHeader';
 import { listEntity } from '@/lib/admin-store';
+import CommentsSection from '@/components/blog/CommentsSection';
 
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {
   const posts = await listEntity('blog_posts', '-created_date');
@@ -18,6 +19,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         <div className="prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: post.content }} />
         <div className="mt-8"><Link href="/blog" className="text-rose-500">ادامه مطلب ←</Link></div>
         {related.length > 0 && <div className="mt-12"><h3 className="font-bold mb-4">مقالات مرتبط</h3><div className="grid sm:grid-cols-3 gap-4">{related.map((r:any)=><Link key={r.id} href={`/blog/${r.slug}`} className="p-3 bg-white border rounded-xl">{r.title}</Link>)}</div></div>}
+        <CommentsSection postId={post.id} allowComments={post.allow_comments !== false} />
       </article>
     </div>
   );
