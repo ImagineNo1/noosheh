@@ -3,7 +3,7 @@ import { MongoClient } from 'mongodb';
 import { hashPassword } from '@/lib/password';
 import { normalizeEntityForModel } from '@/lib/model-schemas';
 
-export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users' | 'addresses' | 'cart_items' | 'return_requests' | 'wishlists' | 'product_attributes' | 'seo_settings' | 'seo_meta' | 'redirects' | 'not_found_logs' | 'blog_posts' | 'blog_categories';
+export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users' | 'addresses' | 'cart_items' | 'return_requests' | 'wishlists' | 'product_attributes' | 'seo_settings' | 'seo_meta' | 'redirects' | 'not_found_logs' | 'blog_posts' | 'blog_categories' | 'blog_tags' | 'blog_pages' | 'blog_comments' | 'blog_media' | 'blog_revisions';
 
 export const entityMap = {
   Product: 'products',
@@ -21,7 +21,12 @@ export const entityMap = {
   Redirect: 'redirects',
   NotFoundLog: 'not_found_logs',
   BlogPost: 'blog_posts',
-  BlogCategory: 'blog_categories'
+  BlogCategory: 'blog_categories',
+  BlogTag: 'blog_tags',
+  BlogPage: 'blog_pages',
+  BlogComment: 'blog_comments',
+  BlogMedia: 'blog_media',
+  BlogRevision: 'blog_revisions'
 } as const;
 
 export type ApiEntity = keyof typeof entityMap;
@@ -77,7 +82,12 @@ const initialDatabase: Record<EntityName, AnyRecord[]> = {
     { id: randomUUID(), name: 'آموزش', slug: 'learning', created_date: now(), updated_date: now() },
     { id: randomUUID(), name: 'مد و فشن', slug: 'fashion', created_date: now(), updated_date: now() },
     { id: randomUUID(), name: 'سلامت و زیبایی', slug: 'health-beauty', created_date: now(), updated_date: now() }
-  ]
+  ],
+  blog_tags: [],
+  blog_pages: [],
+  blog_comments: [],
+  blog_media: [],
+  blog_revisions: []
 };
 
 let mongoClientPromise: Promise<any> | null = null;
@@ -94,10 +104,39 @@ async function ensureBootstrapData(client: any) {
       if (!exists.length) await db.createCollection(collectionName);
     }));
 
+
+
+async function ensureBlogIndexes(db: any) {
+  const posts = db.collection('noosheh_blog_posts') as MongoCollection;
+  const categories = db.collection('noosheh_blog_categories') as MongoCollection;
+  const tags = db.collection('noosheh_blog_tags') as MongoCollection;
+  const pages = db.collection('noosheh_blog_pages') as MongoCollection;
+  const comments = db.collection('noosheh_blog_comments') as MongoCollection;
+
+  if (posts.createIndex) {
+    await posts.createIndex({ slug: 1 }, { unique: true });
+    await posts.createIndex({ status: 1, publish_at: -1 });
+    await posts.createIndex({ title: 'text', excerpt: 'text', content: 'text' });
+    await posts.createIndex({ deleted_at: 1 });
+  }
+  if (categories.createIndex) await categories.createIndex({ slug: 1 }, { unique: true });
+  if (tags.createIndex) await tags.createIndex({ slug: 1 }, { unique: true });
+  if (pages.createIndex) {
+    await pages.createIndex({ slug: 1 }, { unique: true });
+    await pages.createIndex({ status: 1, publish_at: -1 });
+  }
+  if (comments.createIndex) {
+    await comments.createIndex({ post_id: 1, status: 1, created_date: -1 });
+    await comments.createIndex({ parent_id: 1 });
+  }
+}
+
     const usersCollection = db.collection('noosheh_users') as MongoCollection;
     const productsCollection = db.collection('noosheh_products') as MongoCollection;
     const userCount = await usersCollection.countDocuments({});
     const productCount = await productsCollection.countDocuments({});
+    await ensureBlogIndexes(db);
+
     if (userCount === 0 && productCount === 0) {
       await usersCollection.insertOne({
         id: randomUUID(),

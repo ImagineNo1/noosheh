@@ -37,6 +37,55 @@ export const modelSchemas = {
     },
     required: ['title', 'content']
   },
+
+  BlogTag: {
+    name: 'BlogTag',
+    type: 'object',
+    properties: {
+      name: { type: 'string', description: 'نام تگ' },
+      slug: { type: 'string', description: 'آدرس یکتا' },
+      description: { type: 'string', description: 'توضیحات' },
+      post_count: { type: 'number', default: 0 }
+    },
+    required: ['name']
+  },
+  BlogPage: {
+    name: 'BlogPage',
+    type: 'object',
+    properties: {
+      title: { type: 'string' }, slug: { type: 'string' }, content: { type: 'string' }, excerpt: { type: 'string' },
+      parent_id: { type: 'string' }, template: { type: 'string' }, status: { type: 'string', enum: ['draft','published','private','scheduled'], default: 'draft' },
+      publish_at: { type: 'string' }, seo: { type: 'object' }
+    },
+    required: ['title', 'content']
+  },
+  BlogComment: {
+    name: 'BlogComment',
+    type: 'object',
+    properties: {
+      post_id: { type: 'string' }, parent_id: { type: 'string' }, author_name: { type: 'string' }, author_email: { type: 'string' },
+      content: { type: 'string' }, status: { type: 'string', enum: ['pending','approved','rejected','spam','trash'], default: 'pending' },
+      user_id: { type: 'string' }, ip_hash: { type: 'string' }
+    },
+    required: ['post_id', 'author_name', 'author_email', 'content']
+  },
+  BlogMedia: {
+    name: 'BlogMedia',
+    type: 'object',
+    properties: {
+      url: { type: 'string' }, alt: { type: 'string' }, title: { type: 'string' }, caption: { type: 'string' },
+      description: { type: 'string' }, mime_type: { type: 'string' }, size: { type: 'number' }, width: { type: 'number' }, height: { type: 'number' }
+    },
+    required: ['url']
+  },
+  BlogRevision: {
+    name: 'BlogRevision',
+    type: 'object',
+    properties: {
+      post_id: { type: 'string' }, title: { type: 'string' }, content: { type: 'string' }, excerpt: { type: 'string' }, editor_id: { type: 'string' }
+    },
+    required: ['post_id', 'content']
+  },
   CartItem: {
     name: 'CartItem',
     type: 'object',
@@ -281,7 +330,12 @@ const entityToModel = {
   redirects: 'Redirect',
   not_found_logs: 'NotFoundLog',
   blog_posts: 'BlogPost',
-  blog_categories: 'BlogCategory'
+  blog_categories: 'BlogCategory',
+  blog_tags: 'BlogTag',
+  blog_pages: 'BlogPage',
+  blog_comments: 'BlogComment',
+  blog_media: 'BlogMedia',
+  blog_revisions: 'BlogRevision'
 } as const;
 
 const aliases: Record<string, Record<string, string>> = {
