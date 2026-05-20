@@ -9,11 +9,15 @@ export default function RedirectsPage() {
   const [form, setForm] = useState({ fromPath: '', toPath: '', statusCode: 301 });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const getAuthHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('noosheh-admin-token') || '' : '';
+    return token ? ({ Authorization: `Bearer ${token}` } as Record<string, string>) : ({} as Record<string, string>);
+  };
 
   const load = async () => {
     try {
       setError('');
-      const res = await fetch('/api/admin/seo/redirects', { cache: 'no-store' });
+      const res = await fetch('/api/admin/seo/redirects', { cache: 'no-store', headers: getAuthHeaders() });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error || 'خطا در دریافت لیست ریدایرکت');
       setRows(Array.isArray(data) ? data : []);
@@ -28,7 +32,7 @@ export default function RedirectsPage() {
     try {
       setSaving(true);
       setError('');
-      const res = await fetch('/api/admin/seo/redirects', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(form) });
+      const res = await fetch('/api/admin/seo/redirects', { method: 'POST', headers: { 'content-type': 'application/json', ...getAuthHeaders() }, body: JSON.stringify(form) });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error || 'ثبت ریدایرکت ناموفق بود');
       setForm({ fromPath: '', toPath: '', statusCode: 301 });

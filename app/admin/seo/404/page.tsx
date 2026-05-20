@@ -7,10 +7,14 @@ type NotFoundRow = { id: string; path: string; hit_count?: number; referrer?: st
 export default function NotFoundPage() {
   const [rows, setRows] = useState<NotFoundRow[]>([]);
   const [error, setError] = useState('');
+  const getAuthHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('noosheh-admin-token') || '' : '';
+    return token ? ({ Authorization: `Bearer ${token}` } as Record<string, string>) : ({} as Record<string, string>);
+  };
   const load = async () => {
     try {
       setError('');
-      const res = await fetch('/api/admin/seo/404?resolved=false', { cache: 'no-store' });
+      const res = await fetch('/api/admin/seo/404?resolved=false', { cache: 'no-store', headers: getAuthHeaders() });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error || 'خطا در دریافت گزارش 404');
       setRows(Array.isArray(data) ? data : []);
@@ -24,7 +28,7 @@ export default function NotFoundPage() {
   const resolve = async (id: string) => {
     try {
       setError('');
-      const res = await fetch(`/api/admin/seo/404/${id}/resolve`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: '{}' });
+      const res = await fetch(`/api/admin/seo/404/${id}/resolve`, { method: 'PATCH', headers: { 'content-type': 'application/json', ...getAuthHeaders() }, body: '{}' });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error || 'Resolve ناموفق بود');
       await load();
