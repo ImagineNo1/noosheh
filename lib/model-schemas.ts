@@ -19,16 +19,21 @@ export const modelSchemas = {
   BlogCategory: {
     name: 'BlogCategory',
     type: 'object',
-    properties: { name: { type: 'string' }, slug: { type: 'string' }, description: { type: 'string' } },
+    properties: {
+      name: { type: 'string', description: 'نام دسته‌بندی' },
+      slug: { type: 'string', description: 'آدرس یکتا' },
+      description: { type: 'string', description: 'توضیحات دسته‌بندی' },
+      color: { type: 'string', description: 'رنگ دسته‌بندی' }
+    },
     required: ['name']
   },
   BlogPost: {
     name: 'BlogPost',
     type: 'object',
     properties: {
-      title: { type: 'string' }, slug: { type: 'string' }, excerpt: { type: 'string' }, content: { type: 'string' }, cover_image: { type: 'string' },
-      category: { type: 'string' }, tags: { type: 'array', items: { type: 'string' } }, author_name: { type: 'string' },
-      status: { type: 'string', enum: ['draft', 'published'], default: 'draft' }, view_count: { type: 'number', default: 0 }
+      title: { type: 'string', description: 'عنوان مقاله' }, slug: { type: 'string', description: 'آدرس یکتای مقاله' }, excerpt: { type: 'string', description: 'خلاصه مقاله' }, content: { type: 'string', description: 'محتوای کامل مقاله (HTML)' }, cover_image: { type: 'string', description: 'تصویر شاخص مقاله' },
+      category: { type: 'string', description: 'دسته‌بندی مقاله' }, tags: { type: 'array', items: { type: 'string' }, description: 'برچسب‌های مقاله' }, author_name: { type: 'string', description: 'نام نویسنده' },
+      status: { type: 'string', enum: ['draft', 'published'], default: 'draft', description: 'وضعیت انتشار' }, view_count: { type: 'number', default: 0, description: 'تعداد بازدید' }
     },
     required: ['title', 'content']
   },
