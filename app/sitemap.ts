@@ -8,10 +8,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const settings = await getSiteSettings();
   const siteUrl = (settings.site_url || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com').replace(/\/$/, '');
 
-  const [products, categories, seoMeta] = await Promise.all([
+  const [products, categories, seoMeta, blogPosts, blogCategories, blogTags, blogPages] = await Promise.all([
     listEntity('products').catch(() => [] as any[]),
     listEntity('categories').catch(() => [] as any[]),
-    listEntity('seo_meta').catch(() => [] as any[])
+    listEntity('seo_meta').catch(() => [] as any[]),
+    listEntity('blog_posts').catch(() => [] as any[]),
+    listEntity('blog_categories').catch(() => [] as any[]),
+    listEntity('blog_tags').catch(() => [] as any[]),
+    listEntity('blog_pages').catch(() => [] as any[])
   ]);
 
   const noindexMap = new Set(seoMeta.filter((m) => m.robots_index === false).map((m) => `${m.entity_type}:${m.entity_id}`));
@@ -24,6 +28,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .filter((c) => c.is_active !== false && !noindexMap.has(`category:${c.id}`) && (c.slug || c.title || c.name))
     .map((c) => ({ url: `${siteUrl}/category/${encodeURIComponent(c.slug || c.title || c.name)}`, lastModified: c.updated_date ? new Date(c.updated_date) : new Date(), changeFrequency: 'weekly' as const, priority: 0.7 }));
 
+
+  const blogPostItems = blogPosts
+    .filter((p) => p.status === 'published' && !p.deleted_at && (p.slug || p.id))
+    .map((p) => ({ url: `${siteUrl}/blog/${encodeURIComponent(p.slug || p.id)}`, lastModified: p.updated_date ? new Date(p.updated_date) : new Date(), changeFrequency: 'weekly' as const, priority: 0.7 }));
+
+  const blogCategoryItems = blogCategories
+    .filter((c) => c.slug)
+    .map((c) => ({ url: `${siteUrl}/blog/category/${encodeURIComponent(c.slug)}`, lastModified: c.updated_date ? new Date(c.updated_date) : new Date(), changeFrequency: 'weekly' as const, priority: 0.6 }));
+
+  const blogTagItems = blogTags
+    .filter((t) => t.slug)
+    .map((t) => ({ url: `${siteUrl}/blog/tag/${encodeURIComponent(t.slug)}`, lastModified: t.updated_date ? new Date(t.updated_date) : new Date(), changeFrequency: 'weekly' as const, priority: 0.5 }));
+
+  const blogPageItems = blogPages
+    .filter((p) => p.status === 'published' && p.slug)
+    .map((p) => ({ url: `${siteUrl}/pages/${encodeURIComponent(p.slug)}`, lastModified: p.updated_date ? new Date(p.updated_date) : new Date(), changeFrequency: 'monthly' as const, priority: 0.5 }));
+
   const staticItems: MetadataRoute.Sitemap = [
     { url: `${siteUrl}/`, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
     { url: `${siteUrl}/search`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.5 },
@@ -31,5 +52,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteUrl}/contact`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.4 }
   ];
 
-  return [...staticItems, ...productItems, ...categoryItems];
+  return [...staticItems, ...productItems, ...categoryItems, ...blogPostItems, ...blogCategoryItems, ...blogTagItems, ...blogPageItems];
 }
