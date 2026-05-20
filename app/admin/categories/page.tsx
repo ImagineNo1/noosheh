@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { adminApi } from '../admin-api';
 import { useEntityList } from '../_components/hooks';
 import { AlertDialog, Button, Card, Dialog, EmptyState, Input, Label, Toggle } from '../_components/ui';
+import SeoTab from '@/components/seo/SeoTab';
 import type { Category } from '../types';
 
 const emptyCategory = { title: '', title_en: '', slug: '', image: '', order: 0, is_active: true };
@@ -17,12 +18,14 @@ export default function Categories() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [editorTab, setEditorTab] = useState<'basic' | 'seo'>('basic');
 
   const close = () => { setDialogOpen(false); setEditing(null); };
-  const openCreate = () => { setEditing(null); setForm(emptyCategory); setDialogOpen(true); };
+  const openCreate = () => { setEditing(null); setForm(emptyCategory); setEditorTab('basic'); setDialogOpen(true); };
   const openEdit = (category: Category) => {
     setEditing(category);
     setForm({ title: category.title || '', title_en: category.title_en || '', slug: category.slug || '', image: category.image || '', order: category.order || 0, is_active: category.is_active !== false });
+    setEditorTab('basic');
     setDialogOpen(true);
   };
 
@@ -95,6 +98,8 @@ export default function Categories() {
       />
 
       <Dialog open={dialogOpen} title={editing ? 'ویرایش دسته‌بندی' : 'افزودن دسته‌بندی'} onClose={close}>
+        <div className='store-tab-list mb-3'>{[['basic','اطلاعات پایه'],['seo','SEO']].map(([key,label]) => <button key={key} type='button' className={editorTab===key ? 'active' : ''} onClick={() => setEditorTab(key as 'basic' | 'seo')}>{label}</button>)}</div>
+        {editorTab === 'basic' ? (
         <div className="admin-form">
           <div><Label>عنوان فارسی *</Label><Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} /></div>
           <div><Label>عنوان انگلیسی</Label><Input value={form.title_en} onChange={(e) => setForm((f) => ({ ...f, title_en: e.target.value }))} dir="ltr" /></div>
@@ -109,6 +114,7 @@ export default function Categories() {
             </div>
           </div>
         </div>
+        ) : (editing ? <SeoTab entity={form} entityType='category' entityId={editing.id} /> : <div className='admin-soft-box'>ابتدا دسته‌بندی را ذخیره کنید سپس SEO را تنظیم کنید.</div>)}
         <div className="admin-dialog-footer"><Button className="outline" onClick={close}>انصراف</Button><Button className="primary" onClick={handleSubmit} disabled={!form.title || saving}>{saving ? 'در حال ذخیره...' : editing ? 'ذخیره' : 'افزودن'}</Button></div>
       </Dialog>
     </div>

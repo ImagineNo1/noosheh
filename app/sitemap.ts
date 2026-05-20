@@ -30,24 +30,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
 
   const blogPostItems = blogPosts
-    .filter((p) => p.status === 'published' && !p.deleted_at && (p.slug || p.id))
+    .filter((p) => p.status === 'published' && !p.deleted_at && !noindexMap.has(`blog_post:${p.id}`) && (p.slug || p.id))
     .map((p) => ({ url: `${siteUrl}/blog/${encodeURIComponent(p.slug || p.id)}`, lastModified: p.updated_date ? new Date(p.updated_date) : new Date(), changeFrequency: 'weekly' as const, priority: 0.7 }));
 
   const blogCategoryItems = blogCategories
-    .filter((c) => c.slug)
+    .filter((c) => c.slug && !noindexMap.has(`blog_category:${c.id}`))
     .map((c) => ({ url: `${siteUrl}/blog/category/${encodeURIComponent(c.slug)}`, lastModified: c.updated_date ? new Date(c.updated_date) : new Date(), changeFrequency: 'weekly' as const, priority: 0.6 }));
 
   const blogTagItems = blogTags
-    .filter((t) => t.slug)
+    .filter((t) => t.slug && !noindexMap.has(`blog_tag:${t.id}`))
     .map((t) => ({ url: `${siteUrl}/blog/tag/${encodeURIComponent(t.slug)}`, lastModified: t.updated_date ? new Date(t.updated_date) : new Date(), changeFrequency: 'weekly' as const, priority: 0.5 }));
 
   const blogPageItems = blogPages
-    .filter((p) => p.status === 'published' && p.slug)
+    .filter((p) => p.status === 'published' && !noindexMap.has(`blog_page:${p.id}`) && p.slug)
     .map((p) => ({ url: `${siteUrl}/pages/${encodeURIComponent(p.slug)}`, lastModified: p.updated_date ? new Date(p.updated_date) : new Date(), changeFrequency: 'monthly' as const, priority: 0.5 }));
 
   const staticItems: MetadataRoute.Sitemap = [
     { url: `${siteUrl}/`, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
-    { url: `${siteUrl}/search`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.5 },
     { url: `${siteUrl}/faq`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.4 },
     { url: `${siteUrl}/contact`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.4 }
   ];

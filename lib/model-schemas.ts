@@ -254,7 +254,7 @@ export const modelSchemas = {
     name: 'SeoMeta',
     type: 'object',
     properties: {
-      entity_type: { type: 'string', enum: ['product', 'category', 'brand', 'page', 'home'] },
+      entity_type: { type: 'string', enum: ['product', 'category', 'brand', 'page', 'home', 'blog_post', 'blog_category', 'blog_tag', 'blog_page'] },
       entity_id: { type: 'string' },
       meta_title: { type: 'string' },
       meta_description: { type: 'string' },
