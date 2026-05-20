@@ -1,5 +1,46 @@
 export type SeoMetaInput = Record<string, any>;
 
+function stripHtml(value: string) {
+  return value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function truncate(value: string, max: number) {
+  if (value.length <= max) return value;
+  return `${value.slice(0, Math.max(0, max - 1)).trim()}…`;
+}
+
+export function generateAutoSeoMeta({ entity, entityType, siteUrl }: { entity?: Record<string, any>; entityType: string; siteUrl?: string }) {
+  const title = String(entity?.title || entity?.name || '').trim();
+  const shortDescription = stripHtml(String(entity?.short_description || entity?.excerpt || entity?.description || entity?.content || ''));
+  const siteName = 'نوشه';
+  const keyword = String(entity?.category || entity?.brand || entity?.product_type || title).trim();
+  const slug = String(entity?.slug || entity?.code || entity?.id || '').trim();
+  const canonicalPath = entityType === 'product' ? `product/${slug}` : entityType === 'blog_post' ? `blog/${slug}` : `${entityType}/${slug}`;
+  const metaTitle = truncate(`${title} | خرید و بررسی | ${siteName}`.trim(), 60);
+  const metaDescription = truncate(
+    shortDescription || `مشاهده ${title} با مشخصات کامل، قیمت به‌روز و ارسال سریع از ${siteName}.`,
+    160
+  );
+
+  const normalizedSiteUrl = String(siteUrl || process.env.NEXT_PUBLIC_SITE_URL || '').trim().replace(/\/$/, '');
+
+  return {
+    meta_title: metaTitle,
+    meta_description: metaDescription,
+    focus_keyword: keyword,
+    canonical_url: slug && normalizedSiteUrl ? `${normalizedSiteUrl}/${canonicalPath}` : '',
+    og_title: metaTitle,
+    og_description: metaDescription,
+    og_image: entity?.cover_image || entity?.image || entity?.images?.[0] || '',
+    twitter_title: metaTitle,
+    twitter_description: metaDescription,
+    twitter_image: entity?.cover_image || entity?.image || entity?.images?.[0] || '',
+    robots_index: true,
+    robots_follow: true,
+    schema_type: entityType === 'product' ? 'Product' : 'WebPage'
+  };
+}
+
 export function analyzeSeoContent({ entity, seoMeta }: { entity?: Record<string, any>; seoMeta?: SeoMetaInput; entityType?: string }) {
   const title = (seoMeta?.meta_title || entity?.title || entity?.name || '').trim();
   const description = (seoMeta?.meta_description || entity?.short_description || '').trim();

@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { MongoClient } from 'mongodb';
 import { hashPassword } from '@/lib/password';
 import { normalizeEntityForModel } from '@/lib/model-schemas';
+import { analyzeSeoContent, generateAutoSeoMeta } from '@/lib/seo/seoHelpers';
 
 export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users' | 'addresses' | 'cart_items' | 'return_requests' | 'wishlists' | 'product_attributes' | 'seo_settings' | 'seo_meta' | 'redirects' | 'not_found_logs' | 'blog_posts' | 'blog_categories' | 'blog_tags' | 'blog_pages' | 'blog_comments' | 'blog_media' | 'blog_revisions';
 
@@ -285,6 +286,7 @@ export async function createEntity(entity: EntityName, data: AnyRecord) {
   if (entity === 'orders') await ensureOrderedVariantStock(record);
   const collection = await getRequiredMongoCollection(entity);
   await collection.insertOne(record);
+  await ensureEntitySeoMeta(entity, record);
   if (entity === 'orders') await decrementOrderedVariantStock(record);
   return record;
 }
@@ -295,7 +297,48 @@ export async function updateEntity(entity: EntityName, id: string, data: AnyReco
   const updateRecord = entity === 'products' ? normalizeProductVariants({ ...normalized.record, id }) : normalized.record;
   const result = await collection.findOneAndUpdate({ id }, { $set: { ...updateRecord, id, updated_date: now() } }, { returnDocument: 'after' });
   const record = result && 'value' in result ? result.value : result;
+  if (record) await ensureEntitySeoMeta(entity, stripMongoId(record as AnyRecord));
   return record ? stripMongoId(record as AnyRecord) : null;
+}
+
+async function ensureEntitySeoMeta(entity: EntityName, record: AnyRecord) {
+  const entityTypeMap: Partial<Record<EntityName, string>> = {
+    products: 'product',
+    blog_posts: 'blog_post',
+    blog_categories: 'blog_category',
+    blog_tags: 'blog_tag',
+    blog_pages: 'blog_page',
+    categories: 'category'
+  };
+  const entityType = entityTypeMap[entity];
+  if (!entityType || !record?.id) return;
+
+  const seoCollection = await getRequiredMongoCollection('seo_meta');
+  const siteUrl = await resolveSeoSiteUrl();
+  const auto = generateAutoSeoMeta({ entity: record, entityType, siteUrl });
+  const existingRecords = await seoCollection.find({ entity_type: entityType, entity_id: record.id }).sort({ created_date: -1 }).limit(1).toArray();
+  const existing = existingRecords[0] ? stripMongoId(existingRecords[0]) : null;
+
+  const merged = {
+    ...(existing || {}),
+    ...auto,
+    entity_type: entityType,
+    entity_id: record.id,
+    seo_warnings: analyzeSeoContent({ entity: record, seoMeta: { ...(existing || {}), ...auto }, entityType }).warnings
+  };
+
+  if (existing?.id) {
+    await seoCollection.findOneAndUpdate({ id: existing.id }, { $set: { ...merged, updated_date: now() } }, { returnDocument: 'after' });
+    return;
+  }
+  await seoCollection.insertOne({ ...merged, id: randomUUID(), created_date: now(), updated_date: now() });
+}
+
+async function resolveSeoSiteUrl() {
+  const settingsCollection = await getRequiredMongoCollection('seo_settings');
+  const settings = await settingsCollection.find({}).sort({ updated_date: -1, created_date: -1 }).limit(1).toArray();
+  const siteUrl = String(settings[0]?.site_url || process.env.NEXT_PUBLIC_SITE_URL || '').trim();
+  return siteUrl.replace(/\/$/, '');
 }
 
 export async function deleteEntity(entity: EntityName, id: string) {
