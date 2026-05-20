@@ -12,7 +12,7 @@ export default function AdminBlogPage() {
 
   return (
     <div className="admin-page" dir="rtl">
-      <div className="admin-page-header"><div><h1 className="admin-title">داشبورد بلاگ</h1><p className="admin-muted small">مدیریت مقالات و محتوا</p></div><div className='flex gap-2'><Link href='/admin/blog/new' className='px-3 py-2 rounded bg-primary text-primary-foreground text-sm'>+ مقاله جدید</Link><Link href='/admin/blog/categories' className='px-3 py-2 rounded border text-sm'>دسته‌بندی‌ها</Link></div></div>
+      <div className="admin-page-header"><div><h1 className="admin-title">داشبورد بلاگ</h1><p className="admin-muted small">مدیریت مقالات و محتوا</p></div><div className='flex gap-2'><Link href='/admin/blog/posts' className='px-3 py-2 rounded border text-sm'>Posts</Link><Link href='/admin/blog/new' className='px-3 py-2 rounded bg-primary text-primary-foreground text-sm'>+ مقاله جدید</Link><Link href='/admin/blog/categories' className='px-3 py-2 rounded border text-sm'>دسته‌بندی‌ها</Link><Link href='/admin/blog/tags' className='px-3 py-2 rounded border text-sm'>Tags</Link><Link href='/admin/blog/comments' className='px-3 py-2 rounded border text-sm'>Comments</Link></div></div>
       <div className="admin-stats-grid">
         <Card><div className="admin-stat-card"><div><p>مقالات</p><strong>{posts.length.toLocaleString('fa-IR')}</strong></div><span className="admin-stat-icon pink">📝</span></div></Card>
         <Card><div className="admin-stat-card"><div><p>منتشر شده</p><strong>{published.toLocaleString('fa-IR')}</strong></div><span className="admin-stat-icon green">👁</span></div></Card>
