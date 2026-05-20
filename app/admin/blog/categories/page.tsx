@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { adminApi } from '@/app/admin/admin-api';
+import SeoTab from '@/components/seo/SeoTab';
 
 export default function AdminBlogCategoriesPage() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -51,6 +52,7 @@ export default function AdminBlogCategoriesPage() {
         </div>
         <textarea className='w-full border rounded-lg px-3 py-2 min-h-20' placeholder='توضیحات کوتاه...' value={form.description} onChange={e => setForm((p) => ({ ...p, description: e.target.value }))} />
         <button onClick={save} className='px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-semibold'>{editingId ? 'ذخیره ویرایش' : 'ذخیره'}</button>
+        {editingId ? <SeoTab entity={form} entityType='blog_category' entityId={editingId} /> : null}
       </div>
 
       <div className='bg-card rounded-2xl border border-border/60 overflow-hidden'>
