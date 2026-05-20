@@ -4,14 +4,38 @@ import { notFound } from 'next/navigation';
 import BlogHeader from '@/components/blog/BlogHeader';
 import { listEntity } from '@/lib/admin-store';
 import CommentsSection from '@/components/blog/CommentsSection';
+import type { Metadata } from 'next';
+import { getSiteSettings } from '@/lib/site-settings';
+import { generateSeoMetadata } from '@/lib/seo/seo-core';
+import JsonLd from '@/components/seo/JsonLd';
+import { blogPostingSchema, breadcrumbSchema } from '@/lib/seo/schema';
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const [settings, posts] = await Promise.all([getSiteSettings(), listEntity('blog_posts', '-created_date')]);
+  const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
+  const siteName = settings.site_title || 'Noosheh';
+  const post = posts.find((p: any) => p.slug === params.slug && p.status === 'published');
+  if (!post) return generateSeoMetadata({ title: 'مقاله پیدا نشد', description: 'مقاله موردنظر یافت نشد.', path: `/blog/${params.slug}`, siteUrl, siteName, robots: { index: false, follow: false } });
+  return generateSeoMetadata({
+    title: post.seo_title || post.title,
+    description: post.excerpt || post.seo_description || settings.site_tagline || '',
+    path: `/blog/${post.slug}`,
+    siteUrl,
+    siteName,
+    defaultOgImage: post.cover_image
+  });
+}
 
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-  const posts = await listEntity('blog_posts', '-created_date');
+  const [settings, posts] = await Promise.all([getSiteSettings(), listEntity('blog_posts', '-created_date')]);
   const post = posts.find((p: any) => p.slug === params.slug && p.status === 'published');
   if (!post) return notFound();
   const related = posts.filter((p: any) => p.category === post.category && p.slug !== post.slug).slice(0, 3);
+  const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
   return (
     <div className="min-h-screen bg-[#f6f6f8]">
+      <JsonLd id={`schema-blogposting-${post.id}`} data={blogPostingSchema({ siteUrl, post })} />
+      <JsonLd id={`schema-breadcrumb-blog-${post.id}`} data={breadcrumbSchema({ siteUrl, items: [{ name: 'خانه', path: '/' }, { name: 'بلاگ', path: '/blog' }, { name: post.title, path: `/blog/${post.slug}` }] })} />
       <BlogHeader title={post.title} breadcrumbs={[{ label: post.title }]} />
       <article className="max-w-5xl mx-auto px-4 sm:px-6 py-8" dir="rtl">
         <div className="flex items-center justify-between text-sm text-slate-500 mb-5"><span>{new Date(post.created_date).toLocaleDateString('fa-IR')} • {post.view_count || 0} بازدید</span><span className="px-2 py-1 rounded-full bg-rose-100 text-rose-600 text-xs">{post.category}</span></div>

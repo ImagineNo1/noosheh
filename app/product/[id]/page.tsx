@@ -3,6 +3,8 @@ import ProductDetailClient from './ProductDetailClient';
 import { listEntity } from '@/lib/admin-store';
 import { getSiteSettings } from '@/lib/site-settings';
 import { generateSeoMetadata } from '@/lib/seo/seo-core';
+import JsonLd from '@/components/seo/JsonLd';
+import { productSchema } from '@/lib/seo/schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +33,13 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   });
 }
 
-export default function ProductPage({ params }: { params: { id: string } }) {
-  return <ProductDetailClient params={params} />;
+export default async function ProductPage({ params }: { params: { id: string } }) {
+  const settings = await getSiteSettings();
+  const products = await listEntity('products').catch(() => [] as any[]);
+  const product = products.find((p) => p.id === params.id || p.code === params.id);
+  const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
+  return <>
+    {product ? <JsonLd id={`schema-product-${product.id}`} data={productSchema({ siteUrl, product })} /> : null}
+    <ProductDetailClient params={params} />
+  </>;
 }

@@ -4,6 +4,10 @@ export function analyzeSeoContent({ entity, seoMeta }: { entity?: Record<string,
   const title = (seoMeta?.meta_title || entity?.title || entity?.name || '').trim();
   const description = (seoMeta?.meta_description || entity?.short_description || '').trim();
   const keyword = (seoMeta?.focus_keyword || '').trim().toLowerCase();
+  const slug = String(entity?.slug || '').toLowerCase();
+  const canonical = (seoMeta?.canonical_url || '').trim();
+  const hasSchema = Boolean(seoMeta?.custom_schema || seoMeta?.schema_type);
+  const hasOgImage = Boolean(seoMeta?.og_image || entity?.cover_image || entity?.image);
 
   const checks = [] as Array<{ status: 'pass' | 'warning' | 'error' | 'info'; label: string }>;
   const errors: string[] = [];
@@ -25,6 +29,11 @@ export function analyzeSeoContent({ entity, seoMeta }: { entity?: Record<string,
   push(Boolean(keyword), 'کلمه کلیدی اصلی تعیین شود');
   push(!keyword || title.toLowerCase().includes(keyword), 'کلمه کلیدی در عنوان استفاده شود');
   push(!keyword || description.toLowerCase().includes(keyword), 'کلمه کلیدی در توضیحات استفاده شود');
+  push(!keyword || slug.includes(keyword), 'کلمه کلیدی در slug استفاده شود');
+  push(Boolean(canonical), 'canonical URL تنظیم شود');
+  push(hasSchema, 'schema تنظیم شود');
+  push(hasOgImage, 'تصویر شاخص (OG/featured) تنظیم شود');
+  push(seoMeta?.robots_index !== false || seoMeta?.robots_follow !== false, 'robots برای ایندکس صحیح تنظیم شود');
 
   const seoScore = Math.max(0, Math.min(100, Math.round((passed.length / Math.max(1, checks.length)) * 100)));
   const readabilityScore = Math.max(0, Math.min(100, 100 - Math.max(0, description.length - 180) / 2));

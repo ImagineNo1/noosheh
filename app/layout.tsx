@@ -5,6 +5,8 @@ import './globals.css';
 import { CartProvider } from '@/lib/cart-context';
 import { CompareProvider } from '@/components/store/ProductCompare';
 import { getSiteSettings } from '@/lib/site-settings';
+import JsonLd from '@/components/seo/JsonLd';
+import { organizationSchema, websiteSchema } from '@/lib/seo/schema';
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
@@ -16,6 +18,8 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${siteMetaTitle}`
     },
     description: settings.site_tagline || 'فروشگاه آنلاین نوشه پوش',
+    metadataBase: new URL(settings.site_url || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com'),
+    alternates: { canonical: '/' },
     manifest: '/manifest.json',
     icons: settings.site_icon
       ? {
@@ -32,10 +36,15 @@ export const viewport: Viewport = {
   initialScale: 1
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const settings = await getSiteSettings();
+  const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
+  const siteName = settings.site_title || 'Noosheh';
+  const org = organizationSchema({ siteUrl, siteName, logo: settings.site_icon });
+  const web = websiteSchema({ siteUrl, siteName });
   return (
     <html lang="fa" dir="rtl">
-      <body><CartProvider><CompareProvider>{children}</CompareProvider></CartProvider></body>
+      <body><JsonLd id="schema-org" data={org} /><JsonLd id="schema-website" data={web} /><CartProvider><CompareProvider>{children}</CompareProvider></CartProvider></body>
     </html>
   );
 }
