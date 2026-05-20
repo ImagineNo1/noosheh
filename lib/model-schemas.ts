@@ -16,6 +16,76 @@ export const modelSchemas = {
     },
     required: ['user_email', 'full_name', 'phone', 'address']
   },
+  BlogCategory: {
+    name: 'BlogCategory',
+    type: 'object',
+    properties: {
+      name: { type: 'string', description: 'نام دسته‌بندی' },
+      slug: { type: 'string', description: 'آدرس یکتا' },
+      description: { type: 'string', description: 'توضیحات دسته‌بندی' },
+      color: { type: 'string', description: 'رنگ دسته‌بندی' }
+    },
+    required: ['name']
+  },
+  BlogPost: {
+    name: 'BlogPost',
+    type: 'object',
+    properties: {
+      title: { type: 'string', description: 'عنوان مقاله' }, slug: { type: 'string', description: 'آدرس یکتای مقاله' }, excerpt: { type: 'string', description: 'خلاصه مقاله' }, content: { type: 'string', description: 'محتوای کامل مقاله (HTML)' }, cover_image: { type: 'string', description: 'تصویر شاخص مقاله' },
+      category: { type: 'string', description: 'دسته‌بندی مقاله' }, tags: { type: 'array', items: { type: 'string' }, description: 'برچسب‌های مقاله' }, author_name: { type: 'string', description: 'نام نویسنده' },
+      status: { type: 'string', enum: ['draft', 'published'], default: 'draft', description: 'وضعیت انتشار' }, view_count: { type: 'number', default: 0, description: 'تعداد بازدید' }
+    },
+    required: ['title', 'content']
+  },
+
+  BlogTag: {
+    name: 'BlogTag',
+    type: 'object',
+    properties: {
+      name: { type: 'string', description: 'نام تگ' },
+      slug: { type: 'string', description: 'آدرس یکتا' },
+      description: { type: 'string', description: 'توضیحات' },
+      post_count: { type: 'number', default: 0 }
+    },
+    required: ['name']
+  },
+  BlogPage: {
+    name: 'BlogPage',
+    type: 'object',
+    properties: {
+      title: { type: 'string' }, slug: { type: 'string' }, content: { type: 'string' }, excerpt: { type: 'string' },
+      parent_id: { type: 'string' }, template: { type: 'string' }, status: { type: 'string', enum: ['draft','published','private','scheduled'], default: 'draft' },
+      publish_at: { type: 'string' }, seo: { type: 'object' }
+    },
+    required: ['title', 'content']
+  },
+  BlogComment: {
+    name: 'BlogComment',
+    type: 'object',
+    properties: {
+      post_id: { type: 'string' }, parent_id: { type: 'string' }, author_name: { type: 'string' }, author_email: { type: 'string' },
+      content: { type: 'string' }, status: { type: 'string', enum: ['pending','approved','rejected','spam','trash'], default: 'pending' },
+      user_id: { type: 'string' }, ip_hash: { type: 'string' }
+    },
+    required: ['post_id', 'author_name', 'author_email', 'content']
+  },
+  BlogMedia: {
+    name: 'BlogMedia',
+    type: 'object',
+    properties: {
+      url: { type: 'string' }, alt: { type: 'string' }, title: { type: 'string' }, caption: { type: 'string' },
+      description: { type: 'string' }, mime_type: { type: 'string' }, size: { type: 'number' }, width: { type: 'number' }, height: { type: 'number' }
+    },
+    required: ['url']
+  },
+  BlogRevision: {
+    name: 'BlogRevision',
+    type: 'object',
+    properties: {
+      post_id: { type: 'string' }, title: { type: 'string' }, content: { type: 'string' }, excerpt: { type: 'string' }, editor_id: { type: 'string' }
+    },
+    required: ['post_id', 'content']
+  },
   CartItem: {
     name: 'CartItem',
     type: 'object',
@@ -258,7 +328,14 @@ const entityToModel = {
   seo_settings: 'SeoSettings',
   seo_meta: 'SeoMeta',
   redirects: 'Redirect',
-  not_found_logs: 'NotFoundLog'
+  not_found_logs: 'NotFoundLog',
+  blog_posts: 'BlogPost',
+  blog_categories: 'BlogCategory',
+  blog_tags: 'BlogTag',
+  blog_pages: 'BlogPage',
+  blog_comments: 'BlogComment',
+  blog_media: 'BlogMedia',
+  blog_revisions: 'BlogRevision'
 } as const;
 
 const aliases: Record<string, Record<string, string>> = {

@@ -1,0 +1,5 @@
+import Link from 'next/link';
+
+export default function BlogHeader({ title, breadcrumbs = [] }: { title?: string; breadcrumbs?: { label: string }[] }) {
+  return <div className="bg-gradient-to-l from-primary/5 via-secondary/50 to-transparent border-b border-border/40"><div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12" dir="rtl"><div className="flex items-center gap-2 text-sm text-muted-foreground mb-3"><Link href="/" className="hover:text-primary transition-colors flex items-center gap-1">⌂خانه</Link>‹<Link href="/blog" className="hover:text-primary">بلاگ</Link>{breadcrumbs.map((crumb, i) => <span key={i} className="flex items-center gap-2">‹<span className={i === breadcrumbs.length - 1 ? 'text-foreground' : ''}>{crumb.label}</span></span>)}</div><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">📖</div><div><h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">{title || 'بلاگ'}</h1><p className="text-sm text-muted-foreground mt-0.5">آخرین مقالات و آموزش‌ها</p></div></div></div></div>;
+}
