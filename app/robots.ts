@@ -16,7 +16,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     disallow: ['/admin', '/api', '/cart', '/checkout', '/account', '/*?sort=', '/*?filter=', '/*?utm_']
   };
 
-  if (!robotsTxt) return { rules: defaultRules, sitemap: [`${siteUrl.replace(/\/$/, '')}/sitemap.xml`] };
+  if (!robotsTxt) return { rules: defaultRules, sitemap: [`${siteUrl.replace(/\/$/, '')}/sitemap.xml`, `${siteUrl.replace(/\/$/, '')}/api/blog/rss`] };
 
-  return { rules: defaultRules, sitemap: [`${siteUrl.replace(/\/$/, '')}/sitemap.xml`] };
+  return { rules: defaultRules, sitemap: [`${siteUrl.replace(/\/$/, '')}/sitemap.xml`, `${siteUrl.replace(/\/$/, '')}/api/blog/rss`] };
 }
