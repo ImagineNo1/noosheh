@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const q = (searchParams.get('q') || '').trim();
   const category = searchParams.get('category') || '';
   const posts = await listEntity('blog_posts', '-created_date');
-  const filtered = posts.filter((p: any) => p.status === 'published').filter((p: any) => {
+  const filtered = posts.filter((p: any) => p.status === 'published' && !p.deleted_at).filter((p: any) => {
     const matchesQ = !q || p.title?.includes(q) || p.excerpt?.includes(q);
     const matchesCat = !category || p.category === category;
     return matchesQ && matchesCat;
