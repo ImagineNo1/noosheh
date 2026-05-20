@@ -16,6 +16,22 @@ export const modelSchemas = {
     },
     required: ['user_email', 'full_name', 'phone', 'address']
   },
+  BlogCategory: {
+    name: 'BlogCategory',
+    type: 'object',
+    properties: { name: { type: 'string' }, slug: { type: 'string' }, description: { type: 'string' } },
+    required: ['name']
+  },
+  BlogPost: {
+    name: 'BlogPost',
+    type: 'object',
+    properties: {
+      title: { type: 'string' }, slug: { type: 'string' }, excerpt: { type: 'string' }, content: { type: 'string' }, cover_image: { type: 'string' },
+      category: { type: 'string' }, tags: { type: 'array', items: { type: 'string' } }, author_name: { type: 'string' },
+      status: { type: 'string', enum: ['draft', 'published'], default: 'draft' }, view_count: { type: 'number', default: 0 }
+    },
+    required: ['title', 'content']
+  },
   CartItem: {
     name: 'CartItem',
     type: 'object',
@@ -258,7 +274,9 @@ const entityToModel = {
   seo_settings: 'SeoSettings',
   seo_meta: 'SeoMeta',
   redirects: 'Redirect',
-  not_found_logs: 'NotFoundLog'
+  not_found_logs: 'NotFoundLog',
+  blog_posts: 'BlogPost',
+  blog_categories: 'BlogCategory'
 } as const;
 
 const aliases: Record<string, Record<string, string>> = {

@@ -3,7 +3,7 @@ import { MongoClient } from 'mongodb';
 import { hashPassword } from '@/lib/password';
 import { normalizeEntityForModel } from '@/lib/model-schemas';
 
-export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users' | 'addresses' | 'cart_items' | 'return_requests' | 'wishlists' | 'product_attributes' | 'seo_settings' | 'seo_meta' | 'redirects' | 'not_found_logs';
+export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users' | 'addresses' | 'cart_items' | 'return_requests' | 'wishlists' | 'product_attributes' | 'seo_settings' | 'seo_meta' | 'redirects' | 'not_found_logs' | 'blog_posts' | 'blog_categories';
 
 export const entityMap = {
   Product: 'products',
@@ -19,7 +19,9 @@ export const entityMap = {
   SeoSettings: 'seo_settings',
   SeoMeta: 'seo_meta',
   Redirect: 'redirects',
-  NotFoundLog: 'not_found_logs'
+  NotFoundLog: 'not_found_logs',
+  BlogPost: 'blog_posts',
+  BlogCategory: 'blog_categories'
 } as const;
 
 export type ApiEntity = keyof typeof entityMap;
@@ -66,7 +68,16 @@ const initialDatabase: Record<EntityName, AnyRecord[]> = {
   seo_settings: [],
   seo_meta: [],
   redirects: [],
-  not_found_logs: []
+  not_found_logs: [],
+  blog_posts: [
+    { id: randomUUID(), title: 'راهنمای انتخاب سایز مناسب لباس زیر', slug: 'size-guide-1405', excerpt: 'راهنمای کاربردی انتخاب سایز', content: '<p>متن نمونه مقاله</p>', cover_image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=1200&auto=format&fit=crop', category: 'آموزش', tags: ['سایز','راهنما'], author_name: 'تیم نوشه', status: 'published', view_count: 234, created_date: now(), updated_date: now() },
+    { id: randomUUID(), title: 'ترندهای لباس زیر زنانه در سال ۱۴۰۵', slug: 'trend-1405', excerpt: 'نگاهی به ترندها', content: '<p>متن نمونه مقاله</p>', cover_image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1200&auto=format&fit=crop', category: 'مد و فشن', tags: ['ترند','۱۴۰۵'], author_name: 'تیم نوشه', status: 'published', view_count: 189, created_date: now(), updated_date: now() }
+  ],
+  blog_categories: [
+    { id: randomUUID(), name: 'آموزش', slug: 'learning', created_date: now(), updated_date: now() },
+    { id: randomUUID(), name: 'مد و فشن', slug: 'fashion', created_date: now(), updated_date: now() },
+    { id: randomUUID(), name: 'سلامت و زیبایی', slug: 'health-beauty', created_date: now(), updated_date: now() }
+  ]
 };
 
 let mongoClientPromise: Promise<any> | null = null;
