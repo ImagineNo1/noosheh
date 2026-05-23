@@ -20,7 +20,7 @@ export default function Checkout() {
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setIsSubmitting(true);
-    await storeApi.createOrder({ ...form, order_number: `NP-${Date.now().toString(36).toUpperCase()}`, items, total_amount: totalPrice, status: 'pending', payment_status: 'unpaid' });
+    await storeApi.createOrder({ ...form, items, total_amount: totalPrice, status: 'pending', payment_status: 'unpaid' });
     clearCart();
     setOrderSuccess(true);
     setIsSubmitting(false);
