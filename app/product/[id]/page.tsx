@@ -8,7 +8,13 @@ import { productSchema } from '@/lib/seo/schema';
 
 export const dynamic = 'force-dynamic';
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+async function resolveParamId(params: { id: string } | Promise<{ id: string }>) {
+  const resolved = await params;
+  return resolved?.id ? String(resolved.id) : '';
+}
+
+export async function generateMetadata({ params }: { params: { id: string } | Promise<{ id: string }> }): Promise<Metadata> {
+  const id = await resolveParamId(params);
   try {
     const [settings, products, seoMetas] = await Promise.all([
       getSiteSettings(),
@@ -17,8 +23,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     ]);
     const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
     const siteName = settings.site_title || 'Noosheh';
-    const product = products.find((p) => p.id === params.id || p.code === params.id);
-    if (!product) return generateSeoMetadata({ title: 'محصول یافت نشد', description: 'محصول مورد نظر یافت نشد.', path: `/product/${params.id}`, siteUrl, siteName, robots: { index: false, follow: false } });
+    const product = products.find((p) => p.id === id || p.code === id);
+    if (!product) return generateSeoMetadata({ title: 'محصول یافت نشد', description: 'محصول مورد نظر یافت نشد.', path: `/product/${id}`, siteUrl, siteName, robots: { index: false, follow: false } });
     const seo = seoMetas.find((m) => m.entity_type === 'product' && m.entity_id === product.id) || {};
     return generateSeoMetadata({
       title: seo.meta_title || product.title || product.name,
@@ -41,17 +47,18 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   }
 }
 
-export default async function ProductPage({ params }: { params: { id: string } }) {
+export default async function ProductPage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
+  const id = await resolveParamId(params);
   try {
     const settings = await getSiteSettings();
     const products = await listEntity('products').catch(() => [] as any[]);
-    const product = products.find((p) => p.id === params.id || p.code === params.id);
+    const product = products.find((p) => p.id === id || p.code === id);
     const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
     return <>
       {product ? <JsonLd id={`schema-product-${product.id}`} data={productSchema({ siteUrl, product })} /> : null}
-      <ProductDetailClient params={params} />
+      <ProductDetailClient params={{ id }} />
     </>;
   } catch {
-    return <ProductDetailClient params={params} />;
+    return <ProductDetailClient params={{ id }} />;
   }
 }
