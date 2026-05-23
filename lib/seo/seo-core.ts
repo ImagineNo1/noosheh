@@ -19,6 +19,18 @@ export function normalizeSiteUrl(siteUrl?: string) {
   }
 }
 
+
+export function normalizeOptionalUrl(url?: string, siteUrl?: string) {
+  const raw = (url || '').trim();
+  if (!raw) return '';
+  try {
+    const value = /^https?:\/\//i.test(raw) ? raw : toAbsoluteUrl(raw, siteUrl || 'https://example.com');
+    return new URL(value).toString();
+  } catch {
+    return '';
+  }
+}
+
 export function toAbsoluteUrl(pathOrUrl: string, siteUrl: string) {
   const base = normalizeSiteUrl(siteUrl);
   if (!pathOrUrl) return base;
@@ -75,7 +87,7 @@ export function generateSeoMetadata(input: {
   const title = truncateText(input.title || input.siteName, 60);
   const description = truncateText(input.description || '', 160);
   const normalizedSiteUrl = normalizeSiteUrl(input.siteUrl);
-  const canonical = input.canonicalUrl || generateCanonicalUrl(input.path, normalizedSiteUrl);
+  const canonical = normalizeOptionalUrl(input.canonicalUrl, normalizedSiteUrl) || generateCanonicalUrl(input.path, normalizedSiteUrl);
   const robots = buildRobotsMeta(input.robots);
 
   return {
@@ -90,13 +102,13 @@ export function generateSeoMetadata(input: {
       siteName: input.siteName,
       url: canonical,
       type: (input.og?.type as any) || 'website',
-      images: [input.og?.image || input.defaultOgImage].filter(Boolean) as string[]
+      images: [normalizeOptionalUrl(input.og?.image, normalizedSiteUrl) || normalizeOptionalUrl(input.defaultOgImage, normalizedSiteUrl)].filter(Boolean) as string[]
     },
     twitter: {
       card: (input.twitter?.card as any) || 'summary_large_image',
       title: input.twitter?.title || title,
       description: input.twitter?.description || description,
-      images: [input.twitter?.image || input.defaultOgImage].filter(Boolean) as string[]
+      images: [normalizeOptionalUrl(input.twitter?.image, normalizedSiteUrl) || normalizeOptionalUrl(input.defaultOgImage, normalizedSiteUrl)].filter(Boolean) as string[]
     }
   };
 }
