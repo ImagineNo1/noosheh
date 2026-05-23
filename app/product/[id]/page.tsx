@@ -8,6 +8,11 @@ import { productSchema } from '@/lib/seo/schema';
 
 export const dynamic = 'force-dynamic';
 
+function isSeoTemporarilyDisabled(settings: Record<string, string>) {
+  const raw = (settings.seo_enabled ?? settings.seo_product_enabled ?? '').toString().trim().toLowerCase();
+  return raw === 'false' || raw === '0' || raw === 'off';
+}
+
 async function resolveParamId(params: { id: string } | Promise<{ id: string }>) {
   const resolved = await params;
   return resolved?.id ? String(resolved.id) : '';
@@ -21,9 +26,17 @@ export async function generateMetadata({ params }: { params: { id: string } | Pr
       listEntity('products').catch(() => [] as any[]),
       listEntity('seo_meta').catch(() => [] as any[])
     ]);
+    const product = products.find((p) => p.id === id || p.code === id);
+    if (isSeoTemporarilyDisabled(settings)) {
+      return {
+        title: product?.title || product?.name || 'محصول',
+        description: product?.short_description || product?.description || 'مشاهده جزئیات محصول',
+        robots: { index: false, follow: false }
+      };
+    }
+
     const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
     const siteName = settings.site_title || 'Noosheh';
-    const product = products.find((p) => p.id === id || p.code === id);
     if (!product) return generateSeoMetadata({ title: 'محصول یافت نشد', description: 'محصول مورد نظر یافت نشد.', path: `/product/${id}`, siteUrl, siteName, robots: { index: false, follow: false } });
     const seo = seoMetas.find((m) => m.entity_type === 'product' && m.entity_id === product.id) || {};
     return generateSeoMetadata({
@@ -54,8 +67,9 @@ export default async function ProductPage({ params }: { params: { id: string } |
     const products = await listEntity('products').catch(() => [] as any[]);
     const product = products.find((p) => p.id === id || p.code === id);
     const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
+    const seoDisabled = isSeoTemporarilyDisabled(settings);
     return <>
-      {product ? <JsonLd id={`schema-product-${product.id}`} data={productSchema({ siteUrl, product })} /> : null}
+      {!seoDisabled && product ? <JsonLd id={`schema-product-${product.id}`} data={productSchema({ siteUrl, product })} /> : null}
       <ProductDetailClient params={{ id }} />
     </>;
   } catch {

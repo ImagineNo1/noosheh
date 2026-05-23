@@ -241,6 +241,27 @@ function normalizeProductVariants(record: AnyRecord) {
   return record;
 }
 
+
+function normalizeDatePart(value: string | undefined) {
+  const parsed = value ? new Date(value) : new Date();
+  const date = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  const y = String(date.getUTCFullYear());
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  return `${y}${m}${d}`;
+}
+
+async function ensureOrderIndicatorNumber(record: AnyRecord) {
+  if (String(record.order_number || '').trim()) return record;
+  const datePart = normalizeDatePart(record.contract_date || record.created_date);
+  const collection = await getRequiredMongoCollection('orders');
+  const prefix = `NP-${datePart}-`;
+  const sameDayCount = await collection.countDocuments({ order_number: { $regex: `^${prefix}` } as any });
+  const sequence = String((Number(sameDayCount) || 0) + 1).padStart(4, '0');
+  record.order_number = `${prefix}${sequence}`;
+  return record;
+}
+
 async function ensureOrderedVariantStock(order: AnyRecord) {
   if (!Array.isArray(order.items) || !order.items.length) return;
   const collection = await getRequiredMongoCollection('products');
@@ -283,7 +304,10 @@ export async function createEntity(entity: EntityName, data: AnyRecord) {
   const normalized = normalizeEntityForModel(entity, data);
   if (normalized.errors.length) throw new Error(`VALIDATION:${normalized.errors.join(', ')}`);
   const record = entity === 'products' ? normalizeProductVariants({ ...normalized.record, id: data.id || randomUUID(), created_date: data.created_date || now(), updated_date: now() }) : { ...normalized.record, id: data.id || randomUUID(), created_date: data.created_date || now(), updated_date: now() };
-  if (entity === 'orders') await ensureOrderedVariantStock(record);
+  if (entity === 'orders') {
+    await ensureOrderIndicatorNumber(record);
+    await ensureOrderedVariantStock(record);
+  }
   const collection = await getRequiredMongoCollection(entity);
   await collection.insertOne(record);
   await ensureEntitySeoMeta(entity, record);
