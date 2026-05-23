@@ -12,3 +12,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const isIframe = typeof window !== 'undefined' && window.self !== window.top;
+
+export const safeDecodeURIComponent = (value: string) => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};

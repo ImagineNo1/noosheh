@@ -3,6 +3,7 @@ import CategoryClient from './CategoryClient';
 import { listEntity } from '@/lib/admin-store';
 import { getSiteSettings } from '@/lib/site-settings';
 import { generateSeoMetadata } from '@/lib/seo/seo-core';
+import { safeDecodeURIComponent } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +15,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   ]);
   const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
   const siteName = settings.site_title || 'Noosheh';
-  const slug = decodeURIComponent(params.slug);
+  const slug = safeDecodeURIComponent(params.slug);
   const category = categories.find((c) => c.slug === slug || c.title === slug || c.name === slug);
   const seo = category ? (seoMetas.find((m) => m.entity_type === 'category' && m.entity_id === category.id) || {}) : {};
   const title = seo.meta_title || category?.title || category?.name || 'دسته‌بندی محصولات';

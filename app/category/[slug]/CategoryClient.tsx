@@ -8,9 +8,10 @@ import ProductCard from '@/components/store/ProductCard';
 import StoreHeader from '@/components/store/StoreHeader';
 import { storeApi } from '@/lib/store-api';
 import type { Product } from '@/app/admin/types';
+import { safeDecodeURIComponent } from '@/lib/utils';
 
 export default function CategoryClient({ params }: { params: { slug: string } }) {
-  const categorySlug = decodeURIComponent(params.slug);
+  const categorySlug = safeDecodeURIComponent(params.slug);
   const searchParams = useSearchParams();
   const collection = searchParams.get('collection') || '';
   const [sort, setSort] = useState('default');
