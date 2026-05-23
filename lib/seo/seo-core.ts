@@ -8,10 +8,34 @@ export type RobotsInput = {
   noimageindex?: boolean;
 };
 
+export function normalizeSiteUrl(siteUrl?: string) {
+  const raw = (siteUrl || '').trim();
+  if (!raw) return 'https://example.com';
+  const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  try {
+    return new URL(withProtocol).origin;
+  } catch {
+    return 'https://example.com';
+  }
+}
+
+
+export function normalizeOptionalUrl(url?: string, siteUrl?: string) {
+  const raw = (url || '').trim();
+  if (!raw) return '';
+  try {
+    const value = /^https?:\/\//i.test(raw) ? raw : toAbsoluteUrl(raw, siteUrl || 'https://example.com');
+    return new URL(value).toString();
+  } catch {
+    return '';
+  }
+}
+
 export function toAbsoluteUrl(pathOrUrl: string, siteUrl: string) {
-  if (!pathOrUrl) return siteUrl;
+  const base = normalizeSiteUrl(siteUrl);
+  if (!pathOrUrl) return base;
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
-  return `${siteUrl.replace(/\/$/, '')}/${pathOrUrl.replace(/^\//, '')}`;
+  return `${base.replace(/\/$/, '')}/${pathOrUrl.replace(/^\//, '')}`;
 }
 
 export function truncateText(input: string, limit: number) {
@@ -62,13 +86,14 @@ export function generateSeoMetadata(input: {
 }): Metadata {
   const title = truncateText(input.title || input.siteName, 60);
   const description = truncateText(input.description || '', 160);
-  const canonical = input.canonicalUrl || generateCanonicalUrl(input.path, input.siteUrl);
+  const normalizedSiteUrl = normalizeSiteUrl(input.siteUrl);
+  const canonical = normalizeOptionalUrl(input.canonicalUrl, normalizedSiteUrl) || generateCanonicalUrl(input.path, normalizedSiteUrl);
   const robots = buildRobotsMeta(input.robots);
 
   return {
     title,
     description,
-    metadataBase: new URL(input.siteUrl),
+    metadataBase: new URL(normalizedSiteUrl),
     alternates: { canonical },
     robots,
     openGraph: {
@@ -77,13 +102,13 @@ export function generateSeoMetadata(input: {
       siteName: input.siteName,
       url: canonical,
       type: (input.og?.type as any) || 'website',
-      images: [input.og?.image || input.defaultOgImage].filter(Boolean) as string[]
+      images: [normalizeOptionalUrl(input.og?.image, normalizedSiteUrl) || normalizeOptionalUrl(input.defaultOgImage, normalizedSiteUrl)].filter(Boolean) as string[]
     },
     twitter: {
       card: (input.twitter?.card as any) || 'summary_large_image',
       title: input.twitter?.title || title,
       description: input.twitter?.description || description,
-      images: [input.twitter?.image || input.defaultOgImage].filter(Boolean) as string[]
+      images: [normalizeOptionalUrl(input.twitter?.image, normalizedSiteUrl) || normalizeOptionalUrl(input.defaultOgImage, normalizedSiteUrl)].filter(Boolean) as string[]
     }
   };
 }
