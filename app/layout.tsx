@@ -21,7 +21,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: settings.site_tagline || 'فروشگاه آنلاین نوشه پوش',
     metadataBase: new URL(siteUrl),
-    alternates: { canonical: '/' },
     manifest: '/manifest.json',
     icons: settings.site_icon
       ? {
