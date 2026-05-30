@@ -178,18 +178,32 @@ export function normalizeStorefrontProduct(input: Product): Product {
 }
 
 
-export function productPathSegment(product: Pick<Product, 'id' | 'code' | 'slug'>) {
-  return stringifyProductValue(product.slug) || stringifyProductValue(product.code) || stringifyProductValue(product.id);
+export function productPathSegment(product: Partial<Pick<Product, 'id' | 'code' | 'slug' | 'title' | 'name'>>) {
+  return stringifyProductValue(product.slug) || stringifyProductValue(product.code) || stringifyProductValue(product.id) || slugifyProductValue(stringifyProductValue(product.title ?? product.name));
 }
 
-export function productHref(product: Pick<Product, 'id' | 'code' | 'slug'>) {
+export function productHref(product: Partial<Pick<Product, 'id' | 'code' | 'slug' | 'title' | 'name'>>) {
   const segment = productPathSegment(product);
-  return segment ? `/product/${encodeURIComponent(segment)}` : '/';
+  return segment ? `/product/${encodeURIComponent(segment)}` : '/product/unknown-product';
 }
 
-export function productIdentifierMatches(product: Pick<Product, 'id' | 'code' | 'slug'>, id: string) {
+export function productIdentifierMatches(product: Partial<Pick<Product, 'id' | 'code' | 'slug' | 'title' | 'name'>>, id: string) {
   const target = decodeURIComponent(stringifyProductValue(id));
-  return Boolean(target) && [product.slug, product.code, product.id].some((value) => stringifyProductValue(value) === target);
+  return Boolean(target) && [product.slug, product.code, product.id, slugifyProductValue(stringifyProductValue(product.title ?? product.name))].some((value) => stringifyProductValue(value) === target);
+}
+
+export function productCanonicalUrl(canonicalUrl: unknown, product: Partial<Pick<Product, 'id' | 'code' | 'slug' | 'title' | 'name'>>, siteUrl: string) {
+  const raw = stringifyProductValue(canonicalUrl).trim();
+  if (!raw) return '';
+  try {
+    const origin = (siteUrl || 'https://example.com').replace(/\/$/, '');
+    const url = new URL(/^https?:\/\//i.test(raw) ? raw : `${origin}/${raw.replace(/^\//, '')}`);
+    const pathname = decodeURIComponent(url.pathname.replace(/\/$/, '') || '/');
+    const expectedPath = decodeURIComponent(productHref(product).replace(/\/$/, ''));
+    const segment = pathname.split('/').filter(Boolean).pop() || '';
+    if (pathname === expectedPath || (pathname.startsWith('/product/') && productIdentifierMatches(product, segment))) return url.toString();
+  } catch {}
+  return '';
 }
 
 export function normalizeStorefrontProducts(products: Product[]): Product[] {

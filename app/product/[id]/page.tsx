@@ -5,7 +5,7 @@ import { getSiteSettings } from '@/lib/site-settings';
 import { generateSeoMetadata } from '@/lib/seo/seo-core';
 import JsonLd from '@/components/seo/JsonLd';
 import { productSchema } from '@/lib/seo/schema';
-import { normalizeStorefrontProducts, productHref, productIdentifierMatches } from '@/lib/product-normalization';
+import { normalizeStorefrontProducts, productCanonicalUrl, productHref, productIdentifierMatches } from '@/lib/product-normalization';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: { params: { id: string } | Pr
       siteName,
       defaultOgImage: seo.og_image || product.cover_image || product.images?.[0],
       robots: { index: seo.robots_index !== false, follow: seo.robots_follow !== false, noarchive: !!seo.robots_noarchive, nosnippet: !!seo.robots_nosnippet, noimageindex: !!seo.robots_noimageindex },
-      canonicalUrl: seo.canonical_url,
+      canonicalUrl: productCanonicalUrl(seo.canonical_url, product, siteUrl),
       og: { title: seo.og_title, description: seo.og_description, image: seo.og_image, type: seo.og_type || 'product' },
       twitter: { title: seo.twitter_title, description: seo.twitter_description, image: seo.twitter_image, card: seo.twitter_card }
     });
