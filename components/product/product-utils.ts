@@ -1,9 +1,10 @@
 import type { Product } from '@/app/admin/types';
+import { normalizeProductColors, normalizeProductImage, normalizeProductList, type StorefrontProductColor } from '@/lib/product-normalization';
 
-export type ProductColor = NonNullable<Product['color_swatches']>[number] & { value: string };
+export type ProductColor = StorefrontProductColor;
 export type ProductImage = string | { url?: string; alt?: string };
 
-export const normalizeList = (values?: string[]) => values?.filter(Boolean) || [];
+export { normalizeProductList as normalizeList };
 export const formatPrice = (price?: number) => (price || 0).toLocaleString('fa-IR');
 
 export function colorValue(color?: ProductColor | null) {
@@ -11,18 +12,11 @@ export function colorValue(color?: ProductColor | null) {
 }
 
 export function normalizeColors(product?: Product): ProductColor[] {
-  if (!product) return [];
-  if (product.color_swatches?.length) {
-    return product.color_swatches
-      .map((color) => ({ ...color, value: color.slug || (color.value?.startsWith('#') ? '' : color.value) || color.name }))
-      .sort((a, b) => (a.order ?? a.sort_order ?? 0) - (b.order ?? b.sort_order ?? 0));
-  }
-  return normalizeList(product.colors).map((color) => ({ name: color, value: color, active: true }));
+  return normalizeProductColors(product);
 }
 
 export function imageUrl(image?: ProductImage) {
-  if (!image) return '';
-  return typeof image === 'string' ? image : image.url || '';
+  return normalizeProductImage(image);
 }
 
 export function imageAlt(image: ProductImage | undefined, fallback: string) {

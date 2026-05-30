@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { listEntity } from '@/lib/admin-store';
+import { normalizeStorefrontProducts, productHref } from '@/lib/product-normalization';
 import { getSiteSettings } from '@/lib/site-settings';
 
 export const dynamic = 'force-dynamic';
@@ -20,9 +21,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const noindexMap = new Set(seoMeta.filter((m) => m.robots_index === false).map((m) => `${m.entity_type}:${m.entity_id}`));
 
-  const productItems = products
+  const normalizedProducts = normalizeStorefrontProducts(products as any[]);
+
+  const productItems = normalizedProducts
     .filter((p) => p.is_active !== false && !noindexMap.has(`product:${p.id}`) && (p.slug || p.id))
-    .map((p) => ({ url: `${siteUrl}/product/${p.id}`, lastModified: p.updated_date ? new Date(p.updated_date) : new Date(), changeFrequency: 'weekly' as const, priority: 0.8 }));
+    .map((p) => ({ url: `${siteUrl}${productHref(p)}`, lastModified: p.updated_date ? new Date(p.updated_date) : new Date(), changeFrequency: 'weekly' as const, priority: 0.8 }));
 
   const categoryItems = categories
     .filter((c) => c.is_active !== false && !noindexMap.has(`category:${c.id}`) && (c.slug || c.title || c.name))

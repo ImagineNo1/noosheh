@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import type { Product } from '@/app/admin/types';
 import { useCart } from '@/lib/cart-context';
+import { productHref } from '@/lib/product-normalization';
 import { useCompare } from './ProductCompare';
 
 const formatPrice = (price?: number) => `${(price || 0).toLocaleString('fa-IR')} ریال`;
@@ -30,10 +31,11 @@ export default function ProductCard({ product }: { product: Product }) {
   const compare = useCompare();
   const { addItem } = useCart();
   const colors = activeColors(product);
+  const href = productHref(product);
 
   return (
     <article className="group overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-md" dir="rtl">
-      <Link href={`/product/${product.id}`} className="block">
+      <Link href={href} className="block">
         <div className="relative aspect-[3/4] overflow-hidden bg-secondary/30">
           {cover ? (
             <img src={cover} alt={product.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -50,7 +52,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
       <div className="space-y-2 p-3">
         {product.brand && <p className="text-[10px] text-muted-foreground">{product.brand}</p>}
-        <Link href={`/product/${product.id}`} className="block">
+        <Link href={href} className="block">
           <h3 className="line-clamp-2 min-h-[2.4rem] text-sm font-medium leading-snug text-card-foreground">{product.title}</h3>
         </Link>
 
@@ -70,7 +72,7 @@ export default function ProductCard({ product }: { product: Product }) {
         <p className="text-[11px] text-muted-foreground">{inStock ? `موجودی کل: ${stock.toLocaleString('fa-IR')}` : 'ناموجود'}</p>
 
         <div className="grid grid-cols-[1fr_auto_auto] gap-2 pt-1">
-          <Link href={`/product/${product.id}`} className="inline-flex h-9 items-center justify-center rounded-full border border-border px-3 text-xs font-medium hover:border-primary hover:text-primary">
+          <Link href={href} className="inline-flex h-9 items-center justify-center rounded-full border border-border px-3 text-xs font-medium hover:border-primary hover:text-primary">
             مشاهده
           </Link>
           <button

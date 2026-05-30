@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { adminApi } from '@/app/admin/admin-api';
 import SeoScoreBadge from './SeoScoreBadge';
+import { productCanonicalUrl, productHref } from '@/lib/product-normalization';
 import { analyzeSeoContent } from '@/lib/seo/seoHelpers';
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
@@ -26,12 +27,15 @@ export default function SeoTab({ entity, entityType, entityId }: { entity: any; 
   const seoTitle = form.meta_title || entity?.title || entity?.name || 'عنوان صفحه';
   const seoDescription = form.meta_description || entity?.short_description || entity?.description || 'توضیحات متا اینجا نمایش داده می‌شود.';
   const canonicalBase = siteUrl || (typeof window !== 'undefined' ? window.location.origin : '');
-  const canonical = form.canonical_url || (canonicalBase ? `${canonicalBase}/${entityType}/${entityId}` : `/${entityType}/${entityId}`);
+  const generatedCanonicalPath = entityType === 'product' ? productHref(entity || { id: entityId }) : `/${entityType}/${entityId}`;
+  const validProductCanonical = entityType === 'product' ? productCanonicalUrl(form.canonical_url, entity || { id: entityId }, canonicalBase) : form.canonical_url;
+  const canonical = validProductCanonical || (canonicalBase ? `${canonicalBase}${generatedCanonicalPath}` : generatedCanonicalPath);
 
   const onSave = async () => {
     if (form.custom_schema) { try { JSON.parse(form.custom_schema); } catch { return alert('JSON-LD نامعتبر است'); } }
     setSaving(true);
-    const payload = { ...form, entity_type: entityType, entity_id: entityId, seo_score: analysis.seoScore };
+    const canonical_url = entityType === 'product' ? productCanonicalUrl(form.canonical_url, entity || { id: entityId }, canonicalBase) : form.canonical_url;
+    const payload = { ...form, canonical_url, entity_type: entityType, entity_id: entityId, seo_score: analysis.seoScore };
     try {
       if (existing?.id) await adminApi.update('SeoMeta', existing.id, payload); else await adminApi.create('SeoMeta', payload);
       const next = await adminApi.list<any>('SeoMeta', '-created_date', 500);

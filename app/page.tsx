@@ -16,7 +16,8 @@ export async function generateMetadata(): Promise<Metadata> {
     title: {
       absolute: siteMetaTitle
     },
-    description: siteTagline
+    description: siteTagline,
+    alternates: { canonical: '/' }
   };
 }
 
