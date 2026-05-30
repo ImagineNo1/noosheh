@@ -16,6 +16,7 @@ import TrustBadges from '@/components/product/TrustBadges';
 import { colorImageUrls, colorValue, formatPrice, normalizeColors, normalizeList, variantAvailable, variantStock, type ProductColor } from '@/components/product/product-utils';
 import StoreHeader from '@/components/store/StoreHeader';
 import { useCart } from '@/lib/cart-context';
+import { productIdentifierMatches } from '@/lib/product-normalization';
 import { storeApi } from '@/lib/store-api';
 import type { Product } from '@/app/admin/types';
 
@@ -39,7 +40,7 @@ export default function ProductDetailClient({ params }: { params: { id: string }
     return () => { mounted = false; };
   }, []);
 
-  const product = useMemo(() => products.find((item) => item.id === params.id || item.code === params.id), [products, params.id]);
+  const product = useMemo(() => products.find((item) => productIdentifierMatches(item, params.id)), [products, params.id]);
   const colorOptions = useMemo(() => normalizeColors(product), [product]);
 
   useEffect(() => {

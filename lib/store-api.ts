@@ -1,4 +1,5 @@
 import type { Order, Product, SiteSetting, Category } from '@/app/admin/types';
+import { normalizeStorefrontProducts } from '@/lib/product-normalization';
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -11,7 +12,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export const storeApi = {
-  products: () => request<Product[]>('/api/admin/entities/Product?sort=-created_date&limit=100'),
+  products: () => request<Product[]>('/api/admin/entities/Product?sort=-created_date&limit=100').then(normalizeStorefrontProducts),
   categories: () => request<Category[]>('/api/admin/entities/Category?sort=order&limit=50'),
   orders: () => request<Order[]>('/api/admin/entities/Order?sort=-created_date&limit=100'),
   settings: () => request<SiteSetting[]>('/api/admin/entities/SiteSettings'),

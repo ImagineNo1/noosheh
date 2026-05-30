@@ -5,6 +5,7 @@ import { getSiteSettings } from '@/lib/site-settings';
 import { generateSeoMetadata } from '@/lib/seo/seo-core';
 import JsonLd from '@/components/seo/JsonLd';
 import { productSchema } from '@/lib/seo/schema';
+import { normalizeStorefrontProducts, productIdentifierMatches } from '@/lib/product-normalization';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +24,8 @@ export async function generateMetadata({ params }: { params: { id: string } | Pr
     ]);
     const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
     const siteName = settings.site_title || 'Noosheh';
-    const product = products.find((p) => p.id === id || p.code === id);
+    const normalizedProducts = normalizeStorefrontProducts(products as any[]);
+    const product = normalizedProducts.find((item) => productIdentifierMatches(item, id)) || null;
     if (!product) return generateSeoMetadata({ title: 'محصول یافت نشد', description: 'محصول مورد نظر یافت نشد.', path: `/product/${id}`, siteUrl, siteName, robots: { index: false, follow: false } });
     const seo = seoMetas.find((m) => m.entity_type === 'product' && m.entity_id === product.id) || {};
     return generateSeoMetadata({
@@ -52,7 +54,8 @@ export default async function ProductPage({ params }: { params: { id: string } |
   try {
     const settings = await getSiteSettings();
     const products = await listEntity('products').catch(() => [] as any[]);
-    const product = products.find((p) => p.id === id || p.code === id);
+    const normalizedProducts = normalizeStorefrontProducts(products as any[]);
+    const product = normalizedProducts.find((item) => productIdentifierMatches(item, id)) || null;
     const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
     return <>
       {product ? <JsonLd id={`schema-product-${product.id}`} data={productSchema({ siteUrl, product })} /> : null}
