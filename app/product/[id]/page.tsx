@@ -5,7 +5,7 @@ import { getSiteSettings } from '@/lib/site-settings';
 import { generateSeoMetadata } from '@/lib/seo/seo-core';
 import JsonLd from '@/components/seo/JsonLd';
 import { productSchema } from '@/lib/seo/schema';
-import { normalizeStorefrontProducts, productIdentifierMatches } from '@/lib/product-normalization';
+import { normalizeStorefrontProducts, productHref, productIdentifierMatches } from '@/lib/product-normalization';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: { params: { id: string } | Pr
     return generateSeoMetadata({
       title: seo.meta_title || product.title || product.name,
       description: seo.meta_description || product.short_description || product.description || settings.site_tagline || '',
-      path: `/product/${product.id}`,
+      path: productHref(product),
       siteUrl,
       siteName,
       defaultOgImage: seo.og_image || product.cover_image || product.images?.[0],

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import type { Product } from '@/app/admin/types';
+import { productHref } from '@/lib/product-normalization';
 
 type CompareContextValue = {
   compareList: Product[];
@@ -84,7 +85,7 @@ function CompareModal() {
         <div className="store-compare-table" style={{ ['--cols' as string]: compare.compareList.length }}>
           <div />
           {compare.compareList.map((product) => (
-            <Link href={`/product/${product.id}`} key={product.id} onClick={() => compare.setShowModal(false)}>
+            <Link href={productHref(product)} key={product.id} onClick={() => compare.setShowModal(false)}>
               {product.images?.[0] ? <img src={product.images[0]} alt={product.title} /> : <span />}
               <b>{product.title}</b>
             </Link>

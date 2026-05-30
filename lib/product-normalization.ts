@@ -13,10 +13,12 @@ export function stringifyProductValue(value: unknown, fallback = ''): string {
   if (Array.isArray(value)) return value.map((item) => stringifyProductValue(item)).filter(Boolean).join('، ') || fallback;
   if (typeof value === 'object') {
     const record = value as AnyRecord;
-    return stringifyProductValue(
-      record.title ?? record.name ?? record.label ?? record.value ?? record.slug ?? record.code ?? record.id ?? record.url,
-      fallback
-    );
+    const nestedValue = record.title ?? record.name ?? record.label ?? record.value ?? record.slug ?? record.code ?? record.id ?? record.url;
+    if (nestedValue !== undefined) return stringifyProductValue(nestedValue, fallback);
+    if (typeof value.toString === 'function' && value.toString !== Object.prototype.toString) {
+      const stringValue = value.toString();
+      return stringValue && stringValue !== '[object Object]' ? stringValue : fallback;
+    }
   }
   return fallback;
 }
@@ -35,7 +37,7 @@ function normalizeBoolean(value: unknown, fallback = false) {
   return typeof value === 'boolean' ? value : value == null ? fallback : Boolean(value);
 }
 
-function slugifyProductValue(value: string) {
+export function slugifyProductValue(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w\u0600-\u06FF-]+/g, '');
 }
 
@@ -108,8 +110,11 @@ function normalizeProductVariants(variants?: unknown): NonNullable<Product['vari
 
 export function normalizeStorefrontProduct(input: Product): Product {
   const record = (input || {}) as AnyRecord;
-  const id = stringifyProductValue(record.id ?? record._id ?? record.code);
-  const title = stringifyProductValue(record.title ?? record.name, id || 'محصول');
+  const rawId = stringifyProductValue(record.id ?? record._id);
+  const code = stringifyProductValue(record.code);
+  const title = stringifyProductValue(record.title ?? record.name, rawId || code || 'محصول');
+  const slug = stringifyProductValue(record.slug) || code || slugifyProductValue(title) || rawId;
+  const id = rawId || code || slug;
   const images = normalizeProductImages(record.images);
   const coverImage = normalizeProductImage(record.cover_image) || images[0] || '';
   const colorSwatches = normalizeProductColors(record);
@@ -121,8 +126,8 @@ export function normalizeStorefrontProduct(input: Product): Product {
     id,
     name: stringifyProductValue(record.name ?? title, title),
     title,
-    slug: stringifyProductValue(record.slug),
-    code: stringifyProductValue(record.code),
+    slug,
+    code,
     brand: stringifyProductValue(record.brand),
     short_description: stringifyProductValue(record.short_description),
     description: stringifyProductValue(record.description),
@@ -173,9 +178,18 @@ export function normalizeStorefrontProduct(input: Product): Product {
 }
 
 
-export function productIdentifierMatches(product: Pick<Product, 'id' | 'code'>, id: string) {
-  const target = stringifyProductValue(id);
-  return Boolean(target) && [product.id, product.code].some((value) => stringifyProductValue(value) === target);
+export function productPathSegment(product: Pick<Product, 'id' | 'code' | 'slug'>) {
+  return stringifyProductValue(product.slug) || stringifyProductValue(product.code) || stringifyProductValue(product.id);
+}
+
+export function productHref(product: Pick<Product, 'id' | 'code' | 'slug'>) {
+  const segment = productPathSegment(product);
+  return segment ? `/product/${encodeURIComponent(segment)}` : '/';
+}
+
+export function productIdentifierMatches(product: Pick<Product, 'id' | 'code' | 'slug'>, id: string) {
+  const target = decodeURIComponent(stringifyProductValue(id));
+  return Boolean(target) && [product.slug, product.code, product.id].some((value) => stringifyProductValue(value) === target);
 }
 
 export function normalizeStorefrontProducts(products: Product[]): Product[] {

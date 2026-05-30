@@ -1,4 +1,6 @@
-export type SeoMetaInput = Record<string, any>;
+import { productHref, productPathSegment } from '@/lib/product-normalization';
+
+type SeoMetaInput = Record<string, any>;
 
 function stripHtml(value: string) {
   return value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -14,7 +16,7 @@ export function generateAutoSeoMeta({ entity, entityType, siteUrl }: { entity?: 
   const shortDescription = stripHtml(String(entity?.short_description || entity?.excerpt || entity?.description || entity?.content || ''));
   const siteName = 'نوشه';
   const keyword = String(entity?.category || entity?.brand || entity?.product_type || title).trim();
-  const slug = String(entity?.slug || entity?.code || entity?.id || '').trim();
+  const slug = String(entityType === 'product' ? productPathSegment(entity as any) : entity?.slug || entity?.code || entity?.id || '').trim();
   const canonicalPath = entityType === 'product' ? `product/${slug}` : entityType === 'blog_post' ? `blog/${slug}` : `${entityType}/${slug}`;
   const metaTitle = truncate(`${title} | خرید و بررسی | ${siteName}`.trim(), 60);
   const metaDescription = truncate(
@@ -105,7 +107,7 @@ export function generateJsonLd(type: string, data: any, siteUrl = '') {
         priceCurrency: 'IRR',
         price: data.discount_price || data.price,
         availability: Number(data.stock || 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-        url: `${siteUrl}/product/${data.id || data.slug || ''}`
+        url: `${siteUrl}${productHref(data)}`
       }
     };
   }

@@ -1,3 +1,5 @@
+import { productHref } from '@/lib/product-normalization';
+
 export function toAbsoluteUrl(pathOrUrl: string, siteUrl: string) {
   if (!pathOrUrl) return siteUrl;
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
@@ -46,7 +48,7 @@ export function productSchema(input: { siteUrl: string; product: any }) {
       priceCurrency: 'IRR',
       price: p.discount_price || p.price,
       availability: Number(p.stock || 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-      url: `${input.siteUrl.replace(/\/$/, '')}/product/${p.id}`
+      url: `${input.siteUrl.replace(/\/$/, '')}${productHref(p)}`
     }
   };
 }
