@@ -1,0 +1,8 @@
+{
+  "name": "noosheh",
+  "short_name": "noosheh",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#e01b72"
+}
