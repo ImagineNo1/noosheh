@@ -1,31 +1,36 @@
 import type { Metadata } from 'next';
 import ProductDetailClient from './ProductDetailClient';
-import { listEntity } from '@/lib/admin-store';
-import { getSiteSettings } from '@/lib/site-settings';
+import { cache } from 'react';
+import { getCachedSiteSettings, listCachedEntity, listCachedProducts } from '@/lib/public-data';
 import { generateSeoMetadata } from '@/lib/seo/seo-core';
 import JsonLd from '@/components/seo/JsonLd';
 import { breadcrumbSchema, productSchema } from '@/lib/seo/schema';
-import { normalizeStorefrontProducts, productCanonicalUrl, productHref, productIdentifierMatches } from '@/lib/product-normalization';
+import { productCanonicalUrl, productHref, productIdentifierMatches } from '@/lib/product-normalization';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 async function resolveParamId(params: { id: string } | Promise<{ id: string }>) {
   const resolved = await params;
   return resolved?.id ? String(resolved.id) : '';
 }
 
+const getProductContext = cache(async function getProductContext(id: string) {
+  const [settings, products, seoMetas, reviews] = await Promise.all([
+    getCachedSiteSettings(),
+    listCachedProducts('-created_date', '0'),
+    listCachedEntity('seo_meta').catch(() => [] as any[]),
+    listCachedEntity('reviews').catch(() => [] as any[])
+  ]);
+  const product = products.find((item) => productIdentifierMatches(item, id)) || null;
+  return { settings, products, seoMetas, reviews, product };
+});
+
 export async function generateMetadata({ params }: { params: { id: string } | Promise<{ id: string }> }): Promise<Metadata> {
   const id = await resolveParamId(params);
   try {
-    const [settings, products, seoMetas] = await Promise.all([
-      getSiteSettings(),
-      listEntity('products').catch(() => [] as any[]),
-      listEntity('seo_meta').catch(() => [] as any[])
-    ]);
+    const { settings, seoMetas, product } = await getProductContext(id);
     const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL;
     const siteName = settings.site_title || 'Noosheh';
-    const normalizedProducts = normalizeStorefrontProducts(products as any[]);
-    const product = normalizedProducts.find((item) => productIdentifierMatches(item, id)) || null;
     if (!product) return generateSeoMetadata({ title: 'محصول یافت نشد', description: 'محصول مورد نظر یافت نشد.', path: `/product/${id}`, siteUrl, siteName, robots: { index: false, follow: false } });
     const seo = seoMetas.find((m) => m.entity_type === 'product' && m.entity_id === product.id) || {};
     return generateSeoMetadata({
@@ -53,13 +58,7 @@ export async function generateMetadata({ params }: { params: { id: string } | Pr
 export default async function ProductPage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
   const id = await resolveParamId(params);
   try {
-    const settings = await getSiteSettings();
-    const [products, reviews] = await Promise.all([
-      listEntity('products').catch(() => [] as any[]),
-      listEntity('reviews').catch(() => [] as any[])
-    ]);
-    const normalizedProducts = normalizeStorefrontProducts(products as any[]);
-    const product = normalizedProducts.find((item) => productIdentifierMatches(item, id)) || null;
+    const { settings, products: normalizedProducts, reviews, product } = await getProductContext(id);
     const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL;
     const productReviews = reviews.filter((review: any) => review.product_id === product?.id);
     return <>

@@ -1,17 +1,16 @@
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import BlogHeader from '@/components/blog/BlogHeader';
-import { listEntity } from '@/lib/admin-store';
 import CommentsSection from '@/components/blog/CommentsSection';
 import type { Metadata } from 'next';
-import { getSiteSettings } from '@/lib/site-settings';
+import { getCachedSiteSettings, listCachedEntity } from '@/lib/public-data';
 import { generateSeoMetadata } from '@/lib/seo/seo-core';
 import JsonLd from '@/components/seo/JsonLd';
 import { blogPostingSchema, breadcrumbSchema } from '@/lib/seo/schema';
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const [settings, posts] = await Promise.all([getSiteSettings(), listEntity('blog_posts', '-created_date')]);
+  const [settings, posts] = await Promise.all([getCachedSiteSettings(), listCachedEntity('blog_posts', '-created_date').catch(() => [] as any[])]);
   const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL;
   const siteName = settings.site_title || 'Noosheh';
   const post = posts.find((p: any) => p.slug === params.slug && p.status === 'published');
@@ -29,7 +28,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-  const [settings, posts] = await Promise.all([getSiteSettings(), listEntity('blog_posts', '-created_date')]);
+  const [settings, posts] = await Promise.all([getCachedSiteSettings(), listCachedEntity('blog_posts', '-created_date').catch(() => [] as any[])]);
   const post = posts.find((p: any) => p.slug === params.slug && p.status === 'published');
   if (!post) return notFound();
   const related = posts.filter((p: any) => p.category === post.category && p.slug !== post.slug).slice(0, 3);

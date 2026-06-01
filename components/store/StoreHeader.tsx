@@ -1,10 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useCart } from '@/lib/cart-context';
 import { getStoredUser } from '@/lib/user-auth';
-import { storeApi } from '@/lib/store-api';
 import CartSidebar from './CartSidebar';
 
 const mainCategories = [
@@ -31,26 +30,21 @@ function Icon({ name }: { name: 'menu' | 'search' | 'user' | 'heart' | 'cart' | 
   return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
 
-export default function StoreHeader() {
+export default function StoreHeader({ promoText: initialPromoText = 'ارسال رایگان سفارش‌های بالای ۵۰۰ هزار تومان | ۱۲٪ تخفیف اولین خرید', logoText: initialLogoText = 'Noosheh' }: { promoText?: string; logoText?: string } = {}) {
   const { totalItems, setIsOpen } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [promoClosed, setPromoClosed] = useState(false);
-  const [promoText, setPromoText] = useState('ارسال رایگان سفارش‌های بالای ۵۰۰ هزار تومان | ۱۲٪ تخفیف اولین خرید');
-  const [logoText, setLogoText] = useState('Noosheh');
+  const promoText = initialPromoText;
+  const logoText = initialLogoText;
 
   useEffect(() => {
     setIsAuthenticated(Boolean(getStoredUser()));
-    storeApi.settings().then((items) => {
-      const map = Object.fromEntries(items.map((item) => [item.key, item.value]));
-      if (map.promo_banner_text) setPromoText(map.promo_banner_text);
-      if (map.site_title) setLogoText(map.site_title);
-    }).catch(() => {});
   }, []);
 
-  const promoParts = useMemo(() => promoText.split('|').map((item) => item.trim()).filter(Boolean), [promoText]);
+  const promoParts = promoText.split('|').map((item) => item.trim()).filter(Boolean);
 
   const submitSearch = (event?: FormEvent) => {
     event?.preventDefault();

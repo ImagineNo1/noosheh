@@ -5,11 +5,11 @@ import type { Product } from '@/app/admin/types';
 import ProductReviews from '@/components/store/ProductReviews';
 
 const tabConfig = [
-  { key: 'details', label: 'Product Details' },
-  { key: 'size_fit', label: 'Size & Fit' },
-  { key: 'fabric_care', label: 'Fabric & Care' },
-  { key: 'shipping_returns', label: 'Shipping & Returns' },
-  { key: 'reviews', label: 'Reviews' }
+  { key: 'details', label: 'جزئیات محصول' },
+  { key: 'size_fit', label: 'سایز و فیت' },
+  { key: 'fabric_care', label: 'جنس و نگهداری' },
+  { key: 'shipping_returns', label: 'ارسال و مرجوعی' },
+  { key: 'reviews', label: 'نظرات کاربران' }
 ] as const;
 
 export default function ProductTabs({ product }: { product: Product }) {

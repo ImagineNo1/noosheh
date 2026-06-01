@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -40,7 +40,7 @@ export default function ProductDetailClient({ params, initialProducts = [] }: { 
         setLoadError('');
       })
       .catch(() => {
-        if (mounted && initialProducts.length === 0) setLoadError('Ø®Ø·Ø§ Ø¯Ø± Ø¯Ø±ÛŒØ§ÙØª Ø§Ø·Ù„Ø§Ø¹Ø§Øª Ù…Ø­ØµÙˆÙ„.');
+        if (mounted && initialProducts.length === 0) setLoadError('خطا در دریافت اطلاعات محصول.');
       })
       .finally(() => mounted && setIsLoading(false));
     return () => { mounted = false; };
@@ -91,7 +91,7 @@ export default function ProductDetailClient({ params, initialProducts = [] }: { 
   }
 
   if (loadError || !product) {
-    return <div className="store-page" dir="rtl"><StoreHeader /><div className="mx-auto max-w-7xl px-4 py-20 text-center"><h1 className="mb-2 text-xl font-bold">Ù…Ø­ØµÙˆÙ„ ÛŒØ§ÙØª Ù†Ø´Ø¯</h1><p className="mb-4 text-sm text-muted-foreground">{loadError || 'Ø§ÛŒÙ† Ù…Ø­ØµÙˆÙ„ ÙˆØ¬ÙˆØ¯ Ù†Ø¯Ø§Ø±Ø¯ ÛŒØ§ Ø­Ø°Ù Ø´Ø¯Ù‡ Ø§Ø³Øª.'}</p><Link href="/" className="text-sm text-primary hover:underline">Ø¨Ø§Ø²Ú¯Ø´Øª Ø¨Ù‡ Ø®Ø§Ù†Ù‡</Link></div></div>;
+    return <div className="store-page" dir="rtl"><StoreHeader /><div className="mx-auto max-w-7xl px-4 py-20 text-center"><h1 className="mb-2 text-xl font-bold">محصول یافت نشد</h1><p className="mb-4 text-sm text-muted-foreground">{loadError || 'این محصول وجود ندارد یا حذف شده است.'}</p><Link href="/" className="text-sm text-primary hover:underline">بازگشت به خانه</Link></div></div>;
   }
 
   const currentPrice = currentVariant?.discount_price || currentVariant?.price || product.discount_price || product.price;
@@ -106,8 +106,8 @@ export default function ProductDetailClient({ params, initialProducts = [] }: { 
   const completeTheLook = products.filter((item) => (product.complete_the_look_ids || []).includes(item.id));
   const similarProducts = (product.similar_product_ids?.length ? products.filter((item) => product.similar_product_ids?.includes(item.id)) : products.filter((item) => item.category === product.category && item.id !== product.id && item.is_active !== false)).slice(0, 8);
   const validationErrors = [
-    ...(product.sizes?.length && !selectedSize ? ['Ù„Ø·ÙØ§Ù‹ Ø³Ø§ÛŒØ² Ø±Ø§ Ø§Ù†ØªØ®Ø§Ø¨ Ú©Ù†ÛŒØ¯'] : []),
-    ...(product.has_cup_option && product.cups?.length && !selectedCup ? ['Ù„Ø·ÙØ§Ù‹ Ú©Ø§Ù¾ Ø±Ø§ Ø§Ù†ØªØ®Ø§Ø¨ Ú©Ù†ÛŒØ¯'] : [])
+    ...(product.sizes?.length && !selectedSize ? ['لطفاً سایز را انتخاب کنید'] : []),
+    ...(product.has_cup_option && product.cups?.length && !selectedCup ? ['لطفاً کاپ را انتخاب کنید'] : [])
   ];
   const selectedImage = galleryImages[0] || product.images?.[0] || '';
 
@@ -122,8 +122,8 @@ export default function ProductDetailClient({ params, initialProducts = [] }: { 
       <StoreHeader />
       <div className="mx-auto max-w-7xl px-4 py-3">
         <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Link href="/" className="transition-colors hover:text-primary">Ø®Ø§Ù†Ù‡</Link><span>â€¹</span>
-          {product.category && <><Link href={`/category/${product.category}`} className="transition-colors hover:text-primary">{product.category}</Link><span>â€¹</span></>}
+          <Link href="/" className="transition-colors hover:text-primary">خانه</Link><span>‹</span>
+          {product.category && <><Link href={`/category/${product.category}`} className="transition-colors hover:text-primary">{product.category}</Link><span>‹</span></>}
           <span className="font-medium text-foreground">{product.title}</span>
         </nav>
       </div>
@@ -133,8 +133,8 @@ export default function ProductDetailClient({ params, initialProducts = [] }: { 
           <section className="lg:sticky lg:top-28 lg:self-start"><ProductGallery images={galleryImages} title={product.title} /></section>
           <section className="space-y-5">
             <ProductBadges badges={product.badges} isAvailable={isAvailable} />
-            <div><h1 className="text-2xl font-bold md:text-3xl">{product.title}</h1>{(product.brand || product.collection) && <p className="mt-2 text-xs text-muted-foreground">{product.brand && <>Ø¨Ø±Ù†Ø¯: {product.brand}</>}{product.brand && product.collection && ' | '}{product.collection && <>Ú©Ø§Ù„Ú©Ø´Ù†: {product.collection}</>}</p>}</div>
-            <div className="flex flex-wrap items-baseline gap-3"><span className="text-2xl font-bold text-primary">{formatPrice(currentPrice)} Ø±ÛŒØ§Ù„</span>{hasDiscount && <><span className="text-sm text-muted-foreground line-through">{formatPrice(comparePrice)} Ø±ÛŒØ§Ù„</span><span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">{discountPercent}Ùª ØªØ®ÙÛŒÙ</span></>}</div>
+            <div><h1 className="text-2xl font-bold md:text-3xl">{product.title}</h1>{(product.brand || product.collection) && <p className="mt-2 text-xs text-muted-foreground">{product.brand && <>برند: {product.brand}</>}{product.brand && product.collection && ' | '}{product.collection && <>کالکشن: {product.collection}</>}</p>}</div>
+            <div className="flex flex-wrap items-baseline gap-3"><span className="text-2xl font-bold text-primary">{formatPrice(currentPrice)} ریال</span>{hasDiscount && <><span className="text-sm text-muted-foreground line-through">{formatPrice(comparePrice)} ریال</span><span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">{discountPercent}٪ تخفیف</span></>}</div>
             {product.short_description && <p className="text-sm leading-relaxed text-muted-foreground">{product.short_description}</p>}
             {features.length > 0 && <ul className="space-y-1">{features.map((feature) => <li key={feature} className="flex items-start gap-2 text-sm text-foreground/80"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />{feature}</li>)}</ul>}
 
@@ -143,9 +143,9 @@ export default function ProductDetailClient({ params, initialProducts = [] }: { 
               <SizeSelector sizes={product.sizes} selectedSize={selectedSize} availableSizes={availableSizes} onSelect={(size) => { setSelectedSize(size); setSelectedCup(''); setNotifyMessage(''); }} sizeGuide={product.size_fit} />
               <CupSelector cups={product.cups} selectedCup={selectedCup} availableCups={availableCups} onSelect={(cup) => { setSelectedCup(cup); setNotifyMessage(''); }} />
               <QuantitySelector value={quantity} max={Math.max(1, stock || 99)} onChange={setQuantity} />
-              {hasConfiguredVariants && selectedSize && (!product.has_cup_option || selectedCup) && !isAvailable && <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">Ø§ÛŒÙ† Ø­Ø§Ù„Øª Ù…Ø­ØµÙˆÙ„ Ù†Ø§Ù…ÙˆØ¬ÙˆØ¯ Ø§Ø³Øª.</p>}
+              {hasConfiguredVariants && selectedSize && (!product.has_cup_option || selectedCup) && !isAvailable && <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">این حالت محصول ناموجود است.</p>}
               {notifyMessage && <p className="rounded-xl bg-primary/10 p-3 text-sm text-primary">{notifyMessage}</p>}
-              <AddToCartButton isAvailable={isAvailable} isValid={validationErrors.length === 0} validationErrors={validationErrors} onAdd={handleAdd} onNotify={() => setNotifyMessage('Ø¯Ø±Ø®ÙˆØ§Ø³Øª Ø§Ø·Ù„Ø§Ø¹â€ŒØ±Ø³Ø§Ù†ÛŒ Ø´Ù…Ø§ Ø«Ø¨Øª Ø´Ø¯.')} />
+              <AddToCartButton isAvailable={isAvailable} isValid={validationErrors.length === 0} validationErrors={validationErrors} onAdd={handleAdd} onNotify={() => setNotifyMessage('درخواست اطلاع‌رسانی شما ثبت شد.')} />
             </div>
             <TrustBadges />
           </section>

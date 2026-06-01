@@ -1,10 +1,10 @@
 import type { MetadataRoute } from 'next';
 import { listEntity } from '@/lib/admin-store';
 import { normalizeStorefrontProducts, productHref } from '@/lib/product-normalization';
-import { getSiteSettings } from '@/lib/site-settings';
+import { getCachedSiteSettings } from '@/lib/public-data';
 import { generateCanonicalUrl, normalizeSiteUrl } from '@/lib/seo/seo-core';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 type SitemapEntry = MetadataRoute.Sitemap[number];
 
@@ -26,7 +26,7 @@ function noindexSet(seoMeta: any[]) {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const settings = await getSiteSettings();
+  const settings = await getCachedSiteSettings();
   const siteUrl = normalizeSiteUrl(settings.site_url || process.env.NEXT_PUBLIC_SITE_URL);
 
   const [products, categories, seoMeta, blogPosts, blogCategories, blogTags, blogPages] = await Promise.all([
