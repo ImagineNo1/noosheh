@@ -1,18 +1,28 @@
+import Image from 'next/image';
 import Link from 'next/link';
+import { formatBlogDate, getBlogImage, getPostCategory, getReadingTime } from './blog-utils';
 
-export default function BlogCard({ post }: { post: any }) {
-  const d = post.created_date ? new Date(post.created_date).toLocaleDateString('fa-IR') : '—';
+export default function BlogCard({ post, index = 0 }: { post: any; index?: number }) {
+  const image = getBlogImage(post, index);
   return (
-    <Link href={`/blog/${post.slug}`} className='block group'>
-      <article className='bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-md transition'>
-        <div className='aspect-[16/9] bg-slate-100 overflow-hidden'>{post.cover_image ? <img src={post.cover_image} alt={post.title} className='w-full h-full object-cover group-hover:scale-105 transition duration-500' /> : <div className='w-full h-full flex items-center justify-center text-3xl'>📝</div>}</div>
-        <div className='p-5' dir='rtl'>
-          {post.category && <span className='text-[11px] px-2 py-1 rounded-full bg-rose-50 text-rose-600'>{post.category}</span>}
-          <h3 className='font-extrabold text-2xl mt-3 mb-2 line-clamp-2'>{post.title}</h3>
-          <p className='text-slate-500 text-sm line-clamp-2 mb-4'>{post.excerpt}</p>
-          <div className='flex justify-between items-center text-xs text-slate-500'>
-            <span className='text-rose-500'>ادامه مطلب ←</span>
-            <span>{post.view_count || 0} 👁 • {d} 📅</span>
+    <Link href={`/blog/${post.slug}`} className="group block h-full">
+      <article className="flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-[#eaded5] bg-[#fffaf5] shadow-[0_18px_45px_rgba(74,36,31,0.05)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(74,36,31,0.12)]" dir="rtl">
+        <div className="relative aspect-[4/3] overflow-hidden bg-[#f2ded5]">
+          <Image src={image} alt={post.title || 'مقاله نوشه'} fill sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 92vw" className="object-cover transition duration-700 group-hover:scale-105" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#4a241f]/25 via-transparent to-transparent opacity-70" />
+          <span className="absolute right-4 top-4 rounded-full bg-[#fffaf5]/90 px-3 py-1 text-[11px] font-bold text-[#970f35] backdrop-blur">{getPostCategory(post)}</span>
+        </div>
+        <div className="flex flex-1 flex-col p-5 sm:p-6">
+          <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] font-semibold text-[#7d6660]">
+            <span>{formatBlogDate(post.created_date)}</span>
+            <span className="h-1 w-1 rounded-full bg-[#d8c7bd]" />
+            <span>{getReadingTime(post)}</span>
+          </div>
+          <h3 className="line-clamp-2 text-xl font-black leading-[1.65] text-[#4a241f] transition group-hover:text-[#970f35] sm:text-2xl">{post.title}</h3>
+          <p className="mt-3 line-clamp-3 text-sm leading-8 text-[#7d6660]">{post.excerpt || 'روایتی کوتاه از انتخاب‌های روزمره، راحتی و زیبایی در سبک زندگی نوشه.'}</p>
+          <div className="mt-auto flex items-center justify-between pt-6 text-sm font-extrabold text-[#970f35]">
+            <span>خواندن مقاله</span>
+            <span className="transition group-hover:-translate-x-1">←</span>
           </div>
         </div>
       </article>

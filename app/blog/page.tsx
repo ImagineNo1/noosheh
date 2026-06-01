@@ -3,6 +3,7 @@ import BlogPageClient from './BlogPageClient';
 import type { Metadata } from 'next';
 import { getCachedSiteSettings, listCachedEntity } from '@/lib/public-data';
 import { generateSeoMetadata } from '@/lib/seo/seo-core';
+
 export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -17,4 +18,17 @@ export async function generateMetadata(): Promise<Metadata> {
     siteName
   });
 }
-export default async function BlogPage(){ const [posts,categories]=await Promise.all([listCachedEntity('blog_posts','-created_date').catch(() => [] as any[]), listCachedEntity('blog_categories','-created_date').catch(() => [] as any[])]); return <div className='min-h-screen bg-[#f5f6f8]'><BlogHeader title='بلاگ نوشه' /><BlogPageClient posts={posts.filter((p:any)=>p.status==='published'&&!p.deleted_at)} categories={categories} /></div>; }
+
+export default async function BlogPage() {
+  const [posts, categories] = await Promise.all([
+    listCachedEntity('blog_posts', '-created_date').catch(() => [] as any[]),
+    listCachedEntity('blog_categories', '-created_date').catch(() => [] as any[])
+  ]);
+
+  return (
+    <div className="min-h-screen bg-[#fbf6f0]">
+      <BlogHeader title="بلاگ نوشه" description="آخرین مقالات، راهنماهای تخصصی و روایت‌های الهام‌بخش نوشه برای انتخابی زیباتر و راحت‌تر." />
+      <BlogPageClient posts={posts.filter((post: any) => post.status === 'published' && !post.deleted_at)} categories={categories} />
+    </div>
+  );
+}
