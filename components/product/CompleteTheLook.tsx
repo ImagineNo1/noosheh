@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { Product } from '@/app/admin/types';
 import { productHref } from '@/lib/product-normalization';
-import { colorImageUrls, colorValue, formatPrice, normalizeColors, normalizeList, variantAvailable, type ProductColor } from './product-utils';
+import { colorImageUrls, colorMatchesVariant, colorValue, formatPrice, normalizeColors, normalizeList, optionMatchesVariant, variantAvailable, type ProductColor } from './product-utils';
 
 function ProductMiniCard({ product, preferredColor, onAddToCart }: { product: Product; preferredColor?: ProductColor | null; onAddToCart: (product: Product, size?: string, color?: string, cup?: string, variantId?: string, image?: string, price?: number) => void }) {
   const colors = normalizeColors(product);
@@ -14,7 +14,7 @@ function ProductMiniCard({ product, preferredColor, onAddToCart }: { product: Pr
   const [selectedCup, setSelectedCup] = useState('');
   const [added, setAdded] = useState(false);
 
-  const variant = useMemo(() => product.variants?.find((item) => (!selectedColor || item.color === colorValue(selectedColor)) && (!selectedSize || item.size === selectedSize) && (!product.has_cup_option || !selectedCup || item.cup === selectedCup)), [product, selectedColor, selectedSize, selectedCup]);
+  const variant = useMemo(() => product.variants?.find((item) => colorMatchesVariant(selectedColor, item.color) && optionMatchesVariant(selectedSize, item.size) && (!product.has_cup_option || optionMatchesVariant(selectedCup, item.cup))), [product, selectedColor, selectedSize, selectedCup]);
   const images = colorImageUrls(selectedColor);
   const coverImage = images[0] || product.images?.[0] || '';
   const price = variant?.discount_price || variant?.price || product.discount_price || product.price;

@@ -11,6 +11,25 @@ export function colorValue(color?: ProductColor | null) {
   return color?.slug || (color?.value?.startsWith('#') ? '' : color?.value) || color?.name || '';
 }
 
+export function normalizeVariantValue(value?: unknown) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+export function colorMatchesVariant(color: ProductColor | null | undefined, variantColor?: unknown) {
+  if (!color) return true;
+  const target = normalizeVariantValue(variantColor);
+  if (!target) return false;
+  return [color.name, color.value, color.slug, color.hex, colorValue(color)]
+    .map(normalizeVariantValue)
+    .filter(Boolean)
+    .some((value) => value === target);
+}
+
+export function optionMatchesVariant(selected?: string, variantValue?: unknown) {
+  if (!selected) return true;
+  return normalizeVariantValue(selected) === normalizeVariantValue(variantValue);
+}
+
 export function normalizeColors(product?: Product): ProductColor[] {
   return normalizeProductColors(product);
 }

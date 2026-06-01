@@ -11,11 +11,10 @@ const mainCategories = [
   { label: 'لباس زیر', path: '/category/lingerie', desc: 'انتخاب روزمره' },
   { label: 'لباس خواب', path: '/category/sleepwear', desc: 'نرم و آرام' },
   { label: 'ست زنانه', path: '/category/sets', desc: 'هماهنگ و ظریف' },
-  { label: 'خانگی و راحتی', path: '/category/lounge', desc: 'برای خانه' },
+  { label: 'لباس راحتی', path: '/category/lounge', desc: 'برای خانه' },
   { label: 'جوراب و لگ', path: '/category/socks', desc: 'جزئیات کامل' },
-  { label: 'راهنمای سایز', path: '/faq', desc: 'انتخاب دقیق' },
-  { label: 'پیشنهادها', path: '/category/all?collection=sale', desc: 'فروش ویژه' },
-  { label: 'تخفیف‌ها', path: '/category/all?collection=sale', desc: 'قیمت بهتر' }
+  { label: 'مجله نوشه', path: '/blog', desc: 'راهنمای خرید' },
+  { label: 'پیشنهاد ویژه', path: '/category/all?collection=sale', desc: 'فروش ویژه' }
 ];
 
 function Icon({ name }: { name: 'menu' | 'search' | 'user' | 'heart' | 'cart' | 'close' }) {
@@ -30,21 +29,17 @@ function Icon({ name }: { name: 'menu' | 'search' | 'user' | 'heart' | 'cart' | 
   return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
 
-export default function StoreHeader({ promoText: initialPromoText = 'ارسال رایگان سفارش‌های بالای ۵۰۰ هزار تومان | ۱۲٪ تخفیف اولین خرید', logoText: initialLogoText = 'Noosheh' }: { promoText?: string; logoText?: string } = {}) {
+export default function StoreHeader({ promoText = 'ارسال رایگان برای خریدهای بالای ۵۰۰,۰۰۰ تومان', logoText = 'NOOSHEH' }: { promoText?: string; logoText?: string } = {}) {
   const { totalItems, setIsOpen } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [promoClosed, setPromoClosed] = useState(false);
-  const promoText = initialPromoText;
-  const logoText = initialLogoText;
 
   useEffect(() => {
     setIsAuthenticated(Boolean(getStoredUser()));
   }, []);
-
-  const promoParts = promoText.split('|').map((item) => item.trim()).filter(Boolean);
 
   const submitSearch = (event?: FormEvent) => {
     event?.preventDefault();
@@ -56,7 +51,7 @@ export default function StoreHeader({ promoText: initialPromoText = 'ارسال 
   const searchForm = (compact = false) => (
     <form onSubmit={submitSearch} className={`store-ref-search ${compact ? 'compact' : ''}`}>
       <Icon name="search" />
-      <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="جستجو در فروشگاه..." autoFocus={compact} />
+      <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="جستجو در نوشه..." autoFocus={compact} />
       <button type="submit" aria-label="جستجو">جستجو</button>
     </form>
   );
@@ -64,10 +59,9 @@ export default function StoreHeader({ promoText: initialPromoText = 'ارسال 
   return (
     <>
       <header className="store-premium-header store-ref-header" dir="rtl">
-        {!promoClosed && promoParts.length > 0 ? (
+        {!promoClosed ? (
           <div className="store-announcement store-ref-announcement">
-            <span>{promoParts[0]}</span>
-            {promoParts[1] ? <><i /> <span className="desktop-only">{promoParts[1]}</span></> : null}
+            <span>{promoText}</span>
             <button type="button" onClick={() => setPromoClosed(true)} aria-label="بستن پیام"><Icon name="close" /></button>
           </div>
         ) : null}

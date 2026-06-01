@@ -13,7 +13,7 @@ import QuantitySelector from '@/components/product/QuantitySelector';
 import SimilarProducts from '@/components/product/SimilarProducts';
 import SizeSelector from '@/components/product/SizeSelector';
 import TrustBadges from '@/components/product/TrustBadges';
-import { colorImageUrls, colorValue, formatPrice, normalizeColors, normalizeList, variantAvailable, variantStock, type ProductColor } from '@/components/product/product-utils';
+import { colorImageUrls, colorMatchesVariant, colorValue, formatPrice, normalizeColors, normalizeList, optionMatchesVariant, variantAvailable, variantStock, type ProductColor } from '@/components/product/product-utils';
 import StoreHeader from '@/components/store/StoreHeader';
 import { useCart } from '@/lib/cart-context';
 import { productIdentifierMatches } from '@/lib/product-normalization';
@@ -64,7 +64,7 @@ export default function ProductDetailClient({ params, initialProducts = [] }: { 
   const availableSizes = useMemo(() => {
     if (!product?.variants?.length) return normalizeList(product?.sizes);
     const sizes = product.variants
-      .filter((variant) => (!selectedColor || variant.color === colorValue(selectedColor)) && variantAvailable(variant))
+      .filter((variant) => colorMatchesVariant(selectedColor, variant.color) && variantAvailable(variant))
       .map((variant) => variant.size)
       .filter(Boolean) as string[];
     return [...new Set(sizes.length ? sizes : normalizeList(product.sizes))];
@@ -74,16 +74,16 @@ export default function ProductDetailClient({ params, initialProducts = [] }: { 
     if (!product?.has_cup_option) return [];
     if (!product.variants?.length) return normalizeList(product.cups);
     const cups = product.variants
-      .filter((variant) => (!selectedColor || variant.color === colorValue(selectedColor)) && (!selectedSize || variant.size === selectedSize) && variantAvailable(variant))
+      .filter((variant) => colorMatchesVariant(selectedColor, variant.color) && optionMatchesVariant(selectedSize, variant.size) && variantAvailable(variant))
       .map((variant) => variant.cup)
       .filter(Boolean) as string[];
     return [...new Set(cups.length ? cups : normalizeList(product.cups))];
   }, [product, selectedColor, selectedSize]);
 
   const currentVariant = useMemo(() => product?.variants?.find((variant) =>
-    (!selectedColor || variant.color === colorValue(selectedColor)) &&
-    (!selectedSize || variant.size === selectedSize) &&
-    (!product.has_cup_option || !selectedCup || variant.cup === selectedCup)
+    colorMatchesVariant(selectedColor, variant.color) &&
+    optionMatchesVariant(selectedSize, variant.size) &&
+    (!product.has_cup_option || optionMatchesVariant(selectedCup, variant.cup))
   ), [product, selectedColor, selectedSize, selectedCup]);
 
   if (isLoading) {
