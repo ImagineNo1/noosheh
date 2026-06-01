@@ -1,17 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { AssistantPage, Badge, Card, CardTitle, toFa } from '../SeoAssistantUI';
 
-type RedirectRow = { id: string; from_path: string; to_path: string; status_code: number; is_active?: boolean; hit_count?: number };
+type RedirectRow = { id: string; from_path: string; to_path: string; status_code: number; is_active?: boolean; hit_count?: number; notes?: string };
+
+const redirectTypes = [
+  { code: 301, title: '۳۰۱', label: 'انتقال دائمی', text: 'برای صفحه‌ای که برای همیشه به آدرس جدید منتقل شده است.' },
+  { code: 302, title: '۳۰۲', label: 'انتقال موقت', text: 'برای تغییرهای کوتاه‌مدت، مثل کمپین یا توقف موقت یک صفحه.' },
+  { code: 410, title: '۴۱۰', label: 'حذف دائمی', text: 'برای صفحه‌ای که عمدا حذف شده و جایگزین ندارد.' }
+];
 
 export default function RedirectsPage() {
   const [rows, setRows] = useState<RedirectRow[]>([]);
-  const [form, setForm] = useState({ fromPath: '', toPath: '', statusCode: 301 });
+  const [form, setForm] = useState({ fromPath: '', toPath: '', statusCode: 301, notes: '' });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+
   const getAuthHeaders = () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('noosheh-admin-token') || '' : '';
-    return token ? ({ Authorization: `Bearer ${token}` } as Record<string, string>) : ({} as Record<string, string>);
+    return token ? ({ Authorization: `Bearer ${token}` } as Record<string, string>) : {};
   };
 
   const load = async () => {
@@ -26,6 +34,7 @@ export default function RedirectsPage() {
       setError(err?.message || 'خطای ناشناخته');
     }
   };
+
   useEffect(() => { load(); }, []);
 
   const createRedirect = async () => {
@@ -35,7 +44,7 @@ export default function RedirectsPage() {
       const res = await fetch('/api/admin/seo/redirects', { method: 'POST', headers: { 'content-type': 'application/json', ...getAuthHeaders() }, body: JSON.stringify(form) });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error || 'ثبت ریدایرکت ناموفق بود');
-      setForm({ fromPath: '', toPath: '', statusCode: 301 });
+      setForm({ fromPath: '', toPath: '', statusCode: 301, notes: '' });
       await load();
     } catch (err: any) {
       setError(err?.message || 'خطا در ثبت ریدایرکت');
@@ -44,20 +53,48 @@ export default function RedirectsPage() {
     }
   };
 
-  return <div className='space-y-4'>
-    <h1 className='text-lg font-bold'>Redirect Manager</h1>
-    {error && <p className='rounded border border-destructive/30 bg-destructive/10 p-2 text-sm text-destructive'>{error}</p>}
-    <div className='grid gap-2 sm:grid-cols-4'>
-      <input className='rounded border p-2' placeholder='/old-path' value={form.fromPath} onChange={(e) => setForm((f) => ({ ...f, fromPath: e.target.value }))} />
-      <input className='rounded border p-2' placeholder='/new-path' value={form.toPath} onChange={(e) => setForm((f) => ({ ...f, toPath: e.target.value }))} />
-      <select className='rounded border p-2' value={form.statusCode} onChange={(e) => setForm((f) => ({ ...f, statusCode: Number(e.target.value) }))}><option value={301}>301</option><option value={302}>302</option><option value={307}>307</option><option value={308}>308</option><option value={410}>410</option></select>
-      <button disabled={saving} className='rounded bg-primary px-3 py-2 text-primary-foreground disabled:opacity-60' onClick={createRedirect}>{saving ? '...' : 'افزودن'}</button>
-    </div>
-    <div className='overflow-auto rounded border'>
-      <table className='w-full text-sm'>
-        <thead><tr className='bg-secondary/40 text-right'><th className='p-2'>From</th><th className='p-2'>To</th><th className='p-2'>Code</th><th className='p-2'>Hits</th></tr></thead>
-        <tbody>{rows.map((r) => <tr key={r.id} className='border-t'><td className='p-2' dir='ltr'>{r.from_path}</td><td className='p-2' dir='ltr'>{r.to_path}</td><td className='p-2'>{r.status_code}</td><td className='p-2'>{r.hit_count || 0}</td></tr>)}</tbody>
-      </table>
-    </div>
-  </div>;
+  const hits = useMemo(() => rows.reduce((sum, row) => sum + Number(row.hit_count || 0), 0), [rows]);
+
+  return (
+    <AssistantPage title="مدیریت ریدایرکت‌ها" description="وقتی آدرس صفحه‌ای عوض می‌شود، ریدایرکت مشتری و گوگل را به مسیر درست هدایت می‌کند.">
+      {error && <div className="seo-error">{error}</div>}
+
+      <div className="seo-info-grid">
+        {redirectTypes.map((item) => (
+          <Card key={item.code}>
+            <strong className="seo-code">{item.title}</strong>
+            <h2>{item.label}</h2>
+            <p>{item.text}</p>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardTitle title="ساخت ریدایرکت جدید" subtitle="آدرس قدیمی را به آدرس درست وصل کنید." />
+        <div className="seo-form-grid redirect-form">
+          <label className="seo-field"><span>Old URL</span><input dir="ltr" placeholder="/old-path" value={form.fromPath} onChange={(event) => setForm((current) => ({ ...current, fromPath: event.target.value }))} /></label>
+          <label className="seo-field"><span>New URL</span><input dir="ltr" placeholder="/new-path" value={form.toPath} onChange={(event) => setForm((current) => ({ ...current, toPath: event.target.value }))} /></label>
+          <label className="seo-field"><span>Type</span><select value={form.statusCode} onChange={(event) => setForm((current) => ({ ...current, statusCode: Number(event.target.value) }))}><option value={301}>301</option><option value={302}>302</option><option value={307}>307</option><option value={308}>308</option><option value={410}>410</option></select></label>
+          <label className="seo-field"><span>Notes</span><input value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="مثلا تغییر آدرس دسته‌بندی" /></label>
+        </div>
+        <div className="seo-save-row"><button type="button" className="seo-button" disabled={saving} onClick={createRedirect}>{saving ? 'در حال ثبت...' : 'افزودن ریدایرکت'}</button></div>
+      </Card>
+
+      <div className="seo-kpi-grid compact">
+        <Card className="seo-kpi-card"><span>کل ریدایرکت‌ها</span><strong>{toFa(rows.length)}</strong></Card>
+        <Card className="seo-kpi-card"><span>فعال</span><strong>{toFa(rows.filter((row) => row.is_active !== false).length)}</strong></Card>
+        <Card className="seo-kpi-card"><span>بازدید هدایت‌شده</span><strong>{toFa(hits)}</strong></Card>
+      </div>
+
+      <Card>
+        <CardTitle title="لیست ریدایرکت‌ها" />
+        <div className="seo-table-wrap">
+          <table className="seo-table">
+            <thead><tr><th>Old URL</th><th>New URL</th><th>Type</th><th>Hits</th><th>Status</th></tr></thead>
+            <tbody>{rows.map((row) => <tr key={row.id}><td dir="ltr">{row.from_path}</td><td dir="ltr">{row.to_path}</td><td>{toFa(row.status_code)}</td><td>{toFa(Number(row.hit_count || 0))}</td><td><Badge tone={row.is_active === false ? 'neutral' : 'good'}>{row.is_active === false ? 'غیرفعال' : 'فعال'}</Badge></td></tr>)}</tbody>
+          </table>
+        </div>
+      </Card>
+    </AssistantPage>
+  );
 }

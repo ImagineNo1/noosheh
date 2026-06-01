@@ -5,28 +5,26 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const nav = [
-  { key: 'dashboard', href: '/admin/seo', label: 'داشبورد' },
-  { key: 'settings', href: '/admin/seo/settings', label: 'تنظیمات' },
-  { key: 'redirects', href: '/admin/seo/redirects', label: 'ریدایرکت' },
-  { key: '404', href: '/admin/seo/404', label: '۴۰۴' },
-  { key: 'robots', href: '/admin/seo/robots', label: 'Robots' },
-  { key: 'sitemap', href: '/admin/seo/sitemap', label: 'Sitemap' },
-  { key: 'analyzer', href: '/admin/seo/analyzer', label: 'آنالایزر' }
+  { href: '/admin/seo', label: 'داشبورد' },
+  { href: '/admin/seo/settings', label: 'تنظیمات پایه' },
+  { href: '/admin/seo/analyzer', label: 'آنالایزر صفحات' },
+  { href: '/admin/seo/redirects', label: 'ریدایرکت‌ها' },
+  { href: '/admin/seo/404', label: 'مانیتور ۴۰۴' },
+  { href: '/admin/seo/robots', label: 'Robots' },
+  { href: '/admin/seo/sitemap', label: 'Sitemap' }
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const p = usePathname();
+  const pathname = usePathname();
+
   return (
-    <div className='space-y-4'>
-      <div className='rounded-xl border bg-card p-3'>
-        <p className='mb-2 text-xs text-muted-foreground'>راهنمای سریع: هر بخش برای مدیریت ایندکس، متادیتا و بهبود رتبه صفحات است.</p>
-        <div className='flex flex-wrap gap-2'>
-          {nav.map((item) => {
-            const active = item.href === '/admin/seo' ? p === item.href : p === item.href || p.startsWith(item.href + '/');
-            return <Link key={item.key} href={item.href} className={`px-3 py-1.5 rounded border text-sm ${active ? 'bg-primary text-primary-foreground' : 'bg-card'}`}>{item.label}</Link>;
-          })}
-        </div>
-      </div>
+    <div className="seo-shell">
+      <nav className="seo-topnav" aria-label="بخش‌های سئو">
+        {nav.map((item) => {
+          const active = item.href === '/admin/seo' ? pathname === item.href : pathname.startsWith(item.href);
+          return <Link key={item.href} href={item.href} className={active ? 'active' : ''}>{item.label}</Link>;
+        })}
+      </nav>
       {children}
     </div>
   );
