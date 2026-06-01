@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Product } from '@/app/admin/types';
 import type { SiteSettingsMap } from '@/lib/site-settings';
-import ProductCard from './ProductCard';
+import StaticProductCard from './StaticProductCard';
 
 const heroImage = '/store/noosheh-hero-editorial.png';
 const promoSetImage = '/store/noosheh-cat-lounge.png';
@@ -53,7 +53,7 @@ function ProductGrid({ products, emptyText, compact = false }: { products: Produ
   if (!products.length) return <div className="store-empty-state">{emptyText}</div>;
   return (
     <div className={compact ? 'store-ref-product-grid compact' : 'store-ref-product-grid'}>
-      {products.map((product, index) => <ProductCard key={`${product.id}-${index}`} product={product} />)}
+      {products.map((product, index) => <StaticProductCard key={`${product.id}-${index}`} product={product} imageSizes={compact ? '(max-width: 768px) 50vw, 12vw' : '(max-width: 768px) 50vw, 25vw'} />)}
     </div>
   );
 }

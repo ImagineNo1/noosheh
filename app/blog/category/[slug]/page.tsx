@@ -1,18 +1,17 @@
 import Link from 'next/link';
-import { listEntity } from '@/lib/admin-store';
 import BlogHeader from '@/components/blog/BlogHeader';
 import BlogCard from '@/components/blog/BlogCard';
 import type { Metadata } from 'next';
-import { getSiteSettings } from '@/lib/site-settings';
+import { getCachedSiteSettings, listCachedEntity } from '@/lib/public-data';
 import { generateSeoMetadata } from '@/lib/seo/seo-core';
 import JsonLd from '@/components/seo/JsonLd';
 import { breadcrumbSchema, collectionPageSchema } from '@/lib/seo/schema';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const [settings, categories] = await Promise.all([getSiteSettings(), listEntity('blog_categories', '-created_date')]);
+  const [settings, categories] = await Promise.all([getCachedSiteSettings(), listCachedEntity('blog_categories', '-created_date').catch(() => [] as any[])]);
   const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL;
   const siteName = settings.site_title || 'Noosheh';
   const category = categories.find((c: any) => c.slug === params.slug);
@@ -21,7 +20,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function CategoryArchive({ params }: { params: { slug: string } }) {
-  const [settings, categories, posts] = await Promise.all([getSiteSettings(), listEntity('blog_categories', '-created_date'), listEntity('blog_posts', '-created_date')]);
+  const [settings, categories, posts] = await Promise.all([getCachedSiteSettings(), listCachedEntity('blog_categories', '-created_date').catch(() => [] as any[]), listCachedEntity('blog_posts', '-created_date').catch(() => [] as any[])]);
   const category = categories.find((c: any) => c.slug === params.slug);
   const rows = posts.filter((p: any) => p.status === 'published' && p.category === category?.name);
   const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL;

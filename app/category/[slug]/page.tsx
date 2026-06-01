@@ -1,15 +1,15 @@
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import CategoryClient from './CategoryClient';
-import { listEntity } from '@/lib/admin-store';
-import { getSiteSettings } from '@/lib/site-settings';
+import { getCachedSiteSettings, listCachedEntity, listCachedProducts } from '@/lib/public-data';
 import { generateSeoMetadata, normalizeSiteUrl } from '@/lib/seo/seo-core';
 import JsonLd from '@/components/seo/JsonLd';
 import { breadcrumbSchema, categoryPath, collectionPageSchema, itemListSchema } from '@/lib/seo/schema';
-import { normalizeStorefrontProducts, productHref } from '@/lib/product-normalization';
+import { productHref } from '@/lib/product-normalization';
 import { safeDecodeURIComponent } from '@/lib/utils';
-import type { Category, Product } from '@/app/admin/types';
+import type { Category } from '@/app/admin/types';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 function categoryNameFromSlug(slug: string, category?: Partial<Category>) {
   if (slug === 'all') return 'همه محصولات';
@@ -20,12 +20,12 @@ function categoryDescription(name: string, siteName: string, custom?: string) {
   return custom || `خرید ${name} از ${siteName}؛ مشاهده محصولات جدید، پرفروش و منتخب با امکان بررسی قیمت، رنگ، سایز و موجودی.`;
 }
 
-async function getCategoryContext(slugParam: string) {
+const getCategoryContext = cache(async function getCategoryContext(slugParam: string) {
   const [settings, categories, products, seoMetas] = await Promise.all([
-    getSiteSettings(),
-    listEntity('categories').catch(() => [] as Category[]),
-    listEntity('products', '-created_date', '200').then((items) => normalizeStorefrontProducts(items as Product[])).catch(() => [] as Product[]),
-    listEntity('seo_meta').catch(() => [] as any[])
+    getCachedSiteSettings(),
+    listCachedEntity('categories').catch(() => [] as Category[]),
+    listCachedProducts('-created_date', '200'),
+    listCachedEntity('seo_meta').catch(() => [] as any[])
   ]);
   const slug = safeDecodeURIComponent(slugParam);
   const category = (categories as Category[]).find((item) => item.slug === slug || item.title === slug || item.name === slug);
@@ -36,7 +36,7 @@ async function getCategoryContext(slugParam: string) {
   const filteredProducts = products.filter((product) => product.is_active !== false).filter((product) => slug === 'all' || product.category === slug || product.category === category?.title || product.category === category?.name);
 
   return { settings, categories: categories as Category[], products, filteredProducts, category, seo, slug, name, siteName, siteUrl };
-}
+});
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const ctx = await getCategoryContext(params.slug);

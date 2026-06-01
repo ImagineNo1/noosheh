@@ -1,16 +1,17 @@
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { CartProvider } from '@/lib/cart-context';
 import { CompareProvider } from '@/components/store/ProductCompare';
-import { getSiteSettings } from '@/lib/site-settings';
+import { getCachedSiteSettings } from '@/lib/public-data';
 import JsonLd from '@/components/seo/JsonLd';
 import { organizationSchema, websiteSchema } from '@/lib/seo/schema';
 import { normalizeSiteUrl } from '@/lib/seo/seo-core';
 
+
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getSiteSettings();
+  const settings = await getCachedSiteSettings();
   const siteTitle = settings.site_title || 'Noosheh';
   const siteMetaTitle = settings.site_meta_title || siteTitle;
   const siteDescription = settings.site_meta_description || settings.site_tagline || 'فروشگاه آنلاین نوشه برای خرید لباس زیر، لباس خواب و محصولات راحتی زنانه با تجربه خرید امن.';
@@ -58,7 +59,7 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const settings = await getSiteSettings();
+  const settings = await getCachedSiteSettings();
   const siteUrl = normalizeSiteUrl(settings.site_url || process.env.NEXT_PUBLIC_SITE_URL);
   const siteName = settings.site_title || 'Noosheh';
   const org = organizationSchema({

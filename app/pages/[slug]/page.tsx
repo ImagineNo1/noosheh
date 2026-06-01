@@ -1,13 +1,12 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { listEntity } from '@/lib/admin-store';
-import { getSiteSettings } from '@/lib/site-settings';
+import { getCachedSiteSettings, listCachedEntity } from '@/lib/public-data';
 import { generateSeoMetadata } from '@/lib/seo/seo-core';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const [settings, pages] = await Promise.all([getSiteSettings(), listEntity('blog_pages', '-created_date')]);
+  const [settings, pages] = await Promise.all([getCachedSiteSettings(), listCachedEntity('blog_pages', '-created_date').catch(() => [] as any[])]);
   const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL;
   const siteName = settings.site_title || 'Noosheh';
   const page = pages.find((p: any) => p.slug === params.slug && p.status === 'published');
@@ -23,7 +22,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function DynamicPage({ params }: { params: { slug: string } }) {
-  const pages = await listEntity('blog_pages', '-created_date');
+  const pages = await listCachedEntity('blog_pages', '-created_date').catch(() => [] as any[]);
   const page = pages.find((p:any)=>p.slug===params.slug && p.status==='published');
   if (!page) return notFound();
   return <article className='max-w-4xl mx-auto px-4 py-12' dir='rtl'><h1 className='text-3xl font-extrabold mb-6'>{page.title}</h1><div className='blog-content' dangerouslySetInnerHTML={{__html: page.content}} /></article>;

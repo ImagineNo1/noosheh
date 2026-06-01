@@ -1,12 +1,12 @@
 import type { MetadataRoute } from 'next';
 import { listEntity } from '@/lib/admin-store';
-import { getSiteSettings } from '@/lib/site-settings';
+import { getCachedSiteSettings } from '@/lib/public-data';
 import { normalizeSiteUrl } from '@/lib/seo/seo-core';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
-  const settings = await getSiteSettings();
+  const settings = await getCachedSiteSettings();
   const siteUrl = normalizeSiteUrl(settings.site_url || process.env.NEXT_PUBLIC_SITE_URL);
   const seo = await listEntity('seo_settings').catch(() => [] as any[]);
   const cfg = seo[0] || {};

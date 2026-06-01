@@ -1,25 +1,24 @@
 import Link from 'next/link';
-import { listEntity } from '@/lib/admin-store';
 import BlogHeader from '@/components/blog/BlogHeader';
 import BlogCard from '@/components/blog/BlogCard';
 import type { Metadata } from 'next';
-import { getSiteSettings } from '@/lib/site-settings';
+import { getCachedSiteSettings, listCachedEntity } from '@/lib/public-data';
 import { generateSeoMetadata } from '@/lib/seo/seo-core';
 import JsonLd from '@/components/seo/JsonLd';
 import { breadcrumbSchema, collectionPageSchema, itemListSchema } from '@/lib/seo/schema';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const settings = await getSiteSettings();
+  const settings = await getCachedSiteSettings();
   const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL;
   const siteName = settings.site_title || 'Noosheh';
   return generateSeoMetadata({ title: `برچسب ${params.slug}`, description: `آرشیو مقالات با برچسب ${params.slug} در ${siteName}` , path: `/blog/tag/${params.slug}`, siteUrl, siteName });
 }
 
 export default async function TagArchive({ params }: { params: { slug: string } }) {
-  const [settings, posts] = await Promise.all([getSiteSettings(), listEntity('blog_posts', '-created_date')]);
+  const [settings, posts] = await Promise.all([getCachedSiteSettings(), listCachedEntity('blog_posts', '-created_date').catch(() => [] as any[])]);
   const rows = posts.filter((p: any) => p.status === 'published' && (p.tags || []).some((t: string) => t.replace(/\s+/g, '-').toLowerCase() === params.slug));
   const siteUrl = settings.site_url || process.env.NEXT_PUBLIC_SITE_URL;
   return <div className='min-h-screen bg-background'>
