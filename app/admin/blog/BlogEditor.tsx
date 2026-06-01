@@ -1,33 +1,183 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { adminApi } from '@/app/admin/admin-api';
+
+import Image from 'next/image';
+import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { adminApi } from '@/app/admin/admin-api';
 import SeoTab from '@/components/seo/SeoTab';
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className='block space-y-1.5 text-sm font-medium'><span>{label}</span>{children}</label>;
+const fallbackImage = '/store/noosheh-hero-editorial.png';
+
+type EditorForm = {
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  cover_image: string;
+  category: string;
+  tags: string[];
+  status: 'draft' | 'published' | 'archived';
+  author_name: string;
+  publish_at: string;
+  seo_title: string;
+  seo_description: string;
+  og_image: string;
+};
+
+function Section({ eyebrow, title, description, children }: { eyebrow: string; title: string; description: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-[1.6rem] border border-[#eaded5] bg-white/90 p-5 shadow-[0_18px_55px_rgba(74,36,31,0.06)]">
+      <div className="mb-5 border-b border-[#f0e4dc] pb-4">
+        <p className="text-[11px] font-black tracking-[0.2em] text-[#970f35]">{eyebrow}</p>
+        <h2 className="mt-2 text-xl font-black text-[#2d1b18]">{title}</h2>
+        <p className="mt-2 text-sm leading-7 text-[#7d6660]">{description}</p>
+      </div>
+      <div className="space-y-4">{children}</div>
+    </section>
+  );
 }
 
-const editorActions: Array<{ label: string; title: string; command: string; value?: string }> = [
-  { label: 'B', title: 'Bold', command: 'bold' },
-  { label: 'I', title: 'Italic', command: 'italic' },
-  { label: 'U', title: 'Underline', command: 'underline' },
-  { label: '• لیست', title: 'Bullet List', command: 'insertUnorderedList' },
-  { label: '1. لیست', title: 'Numbered List', command: 'insertOrderedList' },
-  { label: 'نقل‌قول', title: 'Quote', command: 'formatBlock', value: 'blockquote' },
-  { label: 'H2', title: 'Heading 2', command: 'formatBlock', value: 'h2' },
-  { label: 'H3', title: 'Heading 3', command: 'formatBlock', value: 'h3' }
+function Field({ label, helper, children, required }: { label: string; helper?: string; children: React.ReactNode; required?: boolean }) {
+  return (
+    <label className="block space-y-2 text-sm font-black text-[#3a211d]">
+      <span>{label}{required && <span className="text-[#970f35]"> *</span>}</span>
+      {children}
+      {helper && <span className="block text-xs font-medium leading-6 text-[#9b857b]">{helper}</span>}
+    </label>
+  );
+}
+
+const inputClass = 'w-full rounded-2xl border border-[#eaded5] bg-[#fffaf5] px-4 py-3 text-sm text-[#3a211d] outline-none transition placeholder:text-[#b09b92] focus:border-[#970f35] focus:ring-4 focus:ring-[#970f35]/10';
+
+const editorActions: Array<{ label: string; command: string; value?: string }> = [
+  { label: 'Bold', command: 'bold' },
+  { label: 'Italic', command: 'italic' },
+  { label: 'Underline', command: 'underline' },
+  { label: 'H2', command: 'formatBlock', value: 'h2' },
+  { label: 'H3', command: 'formatBlock', value: 'h3' },
+  { label: '• لیست', command: 'insertUnorderedList' },
+  { label: '۱. لیست', command: 'insertOrderedList' },
+  { label: 'نقل‌قول', command: 'formatBlock', value: 'blockquote' }
 ];
 
+function normalizeSlug(value: string) {
+  return value.trim().replace(/\s+/g, '-').replace(/-{2,}/g, '-');
+}
+
 export default function BlogEditor({ id }: { id?: string }) {
-  const isEditing = !!id; const router = useRouter();
-  const [form, setForm] = useState<any>({ title:'', slug:'', excerpt:'', content:'', cover_image:'', category:'', tags:[], status:'draft', author_name:'' });
-  const [tagInput, setTagInput] = useState(''); const [categories, setCategories] = useState<any[]>([]);
-  useEffect(() => { adminApi.list<any>('BlogCategory').then(setCategories); if (id) adminApi.list<any>('BlogPost').then((rows)=>{ const p=rows.find((x)=>x.id===id); if(p) setForm({...form,...p}); }); }, [id]);
-  const save = async () => { const slug = form.slug || form.title.replace(/\s+/g,'-'); if (isEditing) await adminApi.update('BlogPost', id!, { ...form, slug }); else await adminApi.create('BlogPost', { ...form, slug }); router.push('/admin/blog'); };
+  const isEditing = !!id;
+  const router = useRouter();
+  const [form, setForm] = useState<EditorForm>({ title: '', slug: '', excerpt: '', content: '', cover_image: '', category: '', tags: [], status: 'draft', author_name: '', publish_at: '', seo_title: '', seo_description: '', og_image: '' });
+  const [tagInput, setTagInput] = useState('');
+  const [categories, setCategories] = useState<any[]>([]);
+  const [previewMode, setPreviewMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    adminApi.list<any>('BlogCategory').then(setCategories);
+    if (id) {
+      adminApi.list<any>('BlogPost').then((rows) => {
+        const post = rows.find((item) => item.id === id);
+        if (post) setForm((current) => ({ ...current, ...post, tags: Array.isArray(post.tags) ? post.tags : [] }));
+      });
+    }
+  }, [id]);
+
+  const generatedSlug = useMemo(() => normalizeSlug(form.slug || form.title), [form.slug, form.title]);
+  const seoTitleLength = (form.seo_title || form.title).length;
+  const seoDescriptionLength = (form.seo_description || form.excerpt).length;
+  const metadataValid = seoTitleLength >= 20 && seoTitleLength <= 70 && seoDescriptionLength >= 70 && seoDescriptionLength <= 170;
+
+  const save = async (nextStatus = form.status) => {
+    setSaving(true);
+    const payload = { ...form, status: nextStatus, slug: generatedSlug || normalizeSlug(form.title), og_image: form.og_image || form.cover_image };
+    if (isEditing) await adminApi.update('BlogPost', id!, payload);
+    else await adminApi.create('BlogPost', payload);
+    setSaving(false);
+    router.push('/admin/blog/posts');
+  };
+
   const execEditor = (command: string, value?: string) => {
     document.execCommand(command, false, value);
   };
 
-  return <div className="p-6 sm:p-8 max-w-6xl" dir="rtl"><div className="flex items-center justify-between mb-6"><h1 className="text-xl font-extrabold">{isEditing?'ویرایش مقاله':'مقاله جدید'}</h1><button onClick={save} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground">ذخیره</button></div><div className="grid grid-cols-1 lg:grid-cols-5 gap-6"><div className="lg:col-span-3 space-y-4"><Field label='عنوان مقاله'><input className="w-full border rounded-lg px-3 py-2" placeholder="عنوان" value={form.title} onChange={(e)=>setForm({...form,title:e.target.value})}/></Field><Field label='نامک (Slug)'><input className="w-full border rounded-lg px-3 py-2" placeholder="example-post-slug" dir='ltr' value={form.slug || ''} onChange={(e)=>setForm({...form,slug:e.target.value})}/></Field><Field label='خلاصه مقاله'><textarea className="w-full border rounded-lg px-3 py-2 min-h-24" placeholder="خلاصه" value={form.excerpt} onChange={(e)=>setForm({...form,excerpt:e.target.value})}/></Field><Field label='بدنه و متن اصلی مقاله'><div className='rounded-lg border'><div className='flex flex-wrap gap-2 border-b p-2 bg-muted/30'>{editorActions.map((action) => <button key={action.title} type='button' className='rounded border bg-background px-2 py-1 text-xs' onClick={() => execEditor(action.command, action.value)}>{action.label}</button>)}<button type='button' className='rounded border bg-background px-2 py-1 text-xs' onClick={() => { const url = window.prompt('لینک را وارد کنید'); if (url) execEditor('createLink', url); }}>لینک</button><button type='button' className='rounded border bg-background px-2 py-1 text-xs' onClick={() => execEditor('removeFormat')}>پاک‌سازی فرمت</button></div><div className="w-full px-3 py-2 min-h-72 focus:outline-none" contentEditable suppressContentEditableWarning onInput={(e)=>setForm({...form,content:(e.currentTarget as HTMLDivElement).innerHTML})} dangerouslySetInnerHTML={{ __html: form.content || '' }} /></div><p className='text-xs text-muted-foreground'>می‌توانید مثل ورد متن را بولد، لیست‌دار، تیتر و لینک‌دار کنید.</p></Field></div><div className="lg:col-span-2 space-y-4"><Field label='تصویر شاخص (URL)'><input className="w-full border rounded-lg px-3 py-2" placeholder="https://..." dir='ltr' value={form.cover_image} onChange={(e)=>setForm({...form,cover_image:e.target.value})}/></Field><Field label='دسته‌بندی'><select className="w-full border rounded-lg px-3 py-2" value={form.category} onChange={(e)=>setForm({...form,category:e.target.value})}><option value="">انتخاب دسته</option>{categories.map(c=><option key={c.id} value={c.name}>{c.name}</option>)}</select></Field><Field label='نام نویسنده'><input className="w-full border rounded-lg px-3 py-2" value={form.author_name || ''} onChange={(e)=>setForm({...form,author_name:e.target.value})} placeholder='مثال: تیم نوشه' /></Field><Field label='برچسب‌ها'><div className="flex gap-2"><input className="w-full border rounded-lg px-3 py-2" value={tagInput} onChange={(e)=>setTagInput(e.target.value)} placeholder="برچسب"/><button type='button' onClick={()=>{if(tagInput.trim()) {setForm({...form,tags:[...form.tags, tagInput.trim()]});setTagInput('');}}} className="px-3 rounded bg-secondary">+</button></div></Field><div className="flex flex-wrap gap-2">{form.tags.map((t:string)=><button type='button' key={t} onClick={()=>setForm({...form,tags:form.tags.filter((x:string)=>x!==t)})} className="px-2 py-1 bg-secondary rounded-full text-xs">{t} ×</button>)}</div>{isEditing && id ? <SeoTab entity={form} entityType='blog_post' entityId={id} /> : <div className='rounded border p-3 text-sm text-muted-foreground'>پس از ذخیره مقاله، پنل SEO فعال می‌شود.</div>}</div></div></div>;
+  const addTag = () => {
+    const value = tagInput.trim();
+    if (!value || form.tags.includes(value)) return;
+    setForm({ ...form, tags: [...form.tags, value] });
+    setTagInput('');
+  };
+
+  return (
+    <div className="min-h-[calc(100vh-7rem)] rounded-[2rem] bg-[#fbf6f0] p-4 text-[#3a211d] sm:p-6" dir="rtl">
+      <div className="mb-6 flex flex-col gap-4 rounded-[2rem] border border-[#eaded5] bg-[#fffaf5] p-5 shadow-[0_24px_70px_rgba(74,36,31,0.07)] lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <Link href="/admin/blog/posts" className="text-xs font-bold text-[#970f35]">بازگشت به مقالات</Link>
+          <h1 className="mt-3 text-3xl font-black text-[#2d1b18]">{isEditing ? 'ویرایش مقاله' : 'مقاله جدید'}</h1>
+          <p className="mt-2 text-sm leading-7 text-[#7d6660]">گردش‌کار انتشار مجله نوشه؛ از ایده و تصویر شاخص تا SEO و انتشار نهایی.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => save('draft')} disabled={saving} className="rounded-2xl border border-[#eaded5] bg-white px-4 py-3 text-sm font-black text-[#4a241f] hover:text-[#970f35] disabled:opacity-60">ذخیره پیش‌نویس</button>
+          <button onClick={() => setPreviewMode(!previewMode)} className="rounded-2xl border border-[#eaded5] bg-[#f7eee8] px-4 py-3 text-sm font-black text-[#970f35]">پیش‌نمایش</button>
+          <button onClick={() => save('published')} disabled={saving} className="rounded-2xl bg-[#970f35] px-5 py-3 text-sm font-black text-white shadow-[0_16px_35px_rgba(151,15,53,0.24)] hover:bg-[#7d0b2b] disabled:opacity-60">ذخیره و انتشار</button>
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
+        <main className="space-y-6">
+          <Section eyebrow="01" title="اطلاعات اصلی" description="عنوان، نامک، خلاصه و دسته‌بندی ستون اصلی تجربه تحریریه هستند.">
+            <Field label="عنوان مقاله" required><input className={inputClass} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="راهنمای انتخاب سایز مناسب لباس زیر" /></Field>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="نامک (Slug)" helper={`پیش‌نمایش: /blog/${generatedSlug || 'article-slug'}`}><input className={inputClass} dir="ltr" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="article-slug" /></Field>
+              <Field label="نویسنده"><input className={inputClass} value={form.author_name} onChange={(e) => setForm({ ...form, author_name: e.target.value })} placeholder="تیم نویسندگان نوشه" /></Field>
+            </div>
+            <Field label="خلاصه مقاله" helper="یک لید کوتاه و مجله‌ای برای کارت‌ها، متادیتا و ابتدای صفحه."><textarea className={`${inputClass} min-h-28`} value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} placeholder="یک خلاصه کوتاه و جذاب درباره مقاله بنویسید..." /></Field>
+          </Section>
+
+          <Section eyebrow="02" title="محتوا" description="ویرایشگر تمیز با کنترل تیتر، لیست، لینک و حالت پیش‌نمایش برای تولید محتوای بلند.">
+            <div className="overflow-hidden rounded-[1.4rem] border border-[#eaded5] bg-[#fffaf5]">
+              <div className="flex flex-wrap gap-2 border-b border-[#eaded5] bg-white/80 p-3">
+                {editorActions.map((action) => <button key={action.label} type="button" className="rounded-xl border border-[#eaded5] bg-[#fffaf5] px-3 py-2 text-xs font-black text-[#4a241f] hover:text-[#970f35]" onClick={() => execEditor(action.command, action.value)}>{action.label}</button>)}
+                <button type="button" className="rounded-xl border border-[#eaded5] bg-[#fffaf5] px-3 py-2 text-xs font-black text-[#4a241f] hover:text-[#970f35]" onClick={() => { const url = window.prompt('لینک را وارد کنید'); if (url) execEditor('createLink', url); }}>لینک</button>
+                <button type="button" className="rounded-xl border border-[#eaded5] bg-[#fffaf5] px-3 py-2 text-xs font-black text-[#4a241f] hover:text-[#970f35]" onClick={() => execEditor('removeFormat')}>پاک‌سازی</button>
+              </div>
+              {previewMode ? <article className="min-h-80 px-5 py-6 text-base leading-9 text-[#4a241f] [&_a]:text-[#970f35] [&_blockquote]:border-r-4 [&_blockquote]:border-[#970f35] [&_blockquote]:bg-[#f8eee8] [&_blockquote]:p-4 [&_h2]:mt-8 [&_h2]:text-2xl [&_h2]:font-black [&_h3]:mt-6 [&_h3]:text-xl [&_h3]:font-black" dangerouslySetInnerHTML={{ __html: form.content || '<p>پیش‌نمایش محتوا اینجا نمایش داده می‌شود.</p>' }} /> : <div className="min-h-80 px-5 py-6 text-base leading-9 text-[#4a241f] outline-none empty:before:text-[#b09b92]" contentEditable suppressContentEditableWarning onInput={(e) => setForm({ ...form, content: (e.currentTarget as HTMLDivElement).innerHTML })} dangerouslySetInnerHTML={{ __html: form.content || '' }} />}
+            </div>
+            <p className="text-xs leading-6 text-[#9b857b]">برای تیترهای مقاله از H2 و H3 استفاده کنید تا فهرست مطالب، SEO و خوانایی بهتر شود.</p>
+          </Section>
+
+          <Section eyebrow="04" title="SEO" description="پیش‌نمایش زنده نتیجه جستجو، نامک و اعتبارسنجی متادیتا بدون تغییر معماری SEO موجود.">
+            <div className="rounded-2xl border border-[#eaded5] bg-[#fffaf5] p-4">
+              <p className="text-xs text-[#6f5a54]">noosheh.com/blog/{generatedSlug || 'article-slug'}</p>
+              <h3 className="mt-2 text-lg font-black text-[#1a0dab]">{form.seo_title || form.title || 'عنوان سئو مقاله'}</h3>
+              <p className="mt-2 text-sm leading-7 text-[#545454]">{form.seo_description || form.excerpt || 'توضیحات متا مقاله اینجا نمایش داده می‌شود تا قبل از انتشار طول و کیفیت آن را بررسی کنید.'}</p>
+            </div>
+            <Field label="Meta title" helper={`${seoTitleLength.toLocaleString('fa-IR')} کاراکتر؛ پیشنهاد ۲۰ تا ۷۰ کاراکتر.`}><input className={inputClass} value={form.seo_title} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} placeholder="عنوان سئو" /></Field>
+            <Field label="Meta description" helper={`${seoDescriptionLength.toLocaleString('fa-IR')} کاراکتر؛ پیشنهاد ۷۰ تا ۱۷۰ کاراکتر.`}><textarea className={`${inputClass} min-h-24`} value={form.seo_description} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} placeholder="توضیحات متا" /></Field>
+            <Field label="OG image" helper="در صورت خالی بودن، تصویر شاخص برای شبکه‌های اجتماعی استفاده می‌شود."><input className={inputClass} dir="ltr" value={form.og_image} onChange={(e) => setForm({ ...form, og_image: e.target.value })} placeholder="https://..." /></Field>
+            <div className={`rounded-2xl border px-4 py-3 text-sm font-bold ${metadataValid ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>{metadataValid ? 'متادیتا از نظر طول آماده انتشار است.' : 'برای نتیجه بهتر، طول عنوان و توضیحات متا را به محدوده پیشنهادی نزدیک کنید.'}</div>
+            {isEditing && id ? <SeoTab entity={form} entityType="blog_post" entityId={id} /> : <div className="rounded-2xl border border-dashed border-[#eaded5] bg-white/70 px-4 py-3 text-sm leading-7 text-[#7d6660]">پس از اولین ذخیره، پنل تخصصی SEO و اسکیما فعال می‌شود.</div>}
+          </Section>
+        </main>
+
+        <aside className="space-y-6 xl:sticky xl:top-20 xl:self-start">
+          <Section eyebrow="03" title="تصویر شاخص" description="تصویر بزرگ و لطیف، حس مجله مد را به مقاله می‌دهد.">
+            <div className="overflow-hidden rounded-[1.4rem] border border-[#eaded5] bg-[#f7eee8]">
+              <Image src={form.cover_image || fallbackImage} alt="تصویر شاخص" width={640} height={420} unoptimized className="h-56 w-full object-cover" />
+            </div>
+            <Field label="Featured image URL"><input className={inputClass} dir="ltr" value={form.cover_image} onChange={(e) => setForm({ ...form, cover_image: e.target.value })} placeholder="https://..." /></Field>
+          </Section>
+
+          <Section eyebrow="05" title="انتشار" description="وضعیت، تاریخ انتشار، دسته‌بندی و برچسب‌های تحریریه را کنترل کنید.">
+            <Field label="وضعیت"><select className={inputClass} value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as EditorForm['status'] })}><option value="draft">پیش‌نویس</option><option value="published">منتشر شده</option><option value="archived">بایگانی</option></select></Field>
+            <Field label="تاریخ انتشار"><input className={inputClass} type="datetime-local" value={form.publish_at ? form.publish_at.slice(0, 16) : ''} onChange={(e) => setForm({ ...form, publish_at: e.target.value })} /></Field>
+            <Field label="دسته‌بندی"><select className={inputClass} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="">انتخاب دسته</option>{categories.map((category) => <option key={category.id || category.name} value={category.name}>{category.name}</option>)}</select></Field>
+            <Field label="برچسب‌ها"><div className="flex gap-2"><input className={inputClass} value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }} placeholder="مثال: ساتن" /><button type="button" onClick={addTag} className="rounded-2xl bg-[#970f35] px-4 font-black text-white">+</button></div></Field>
+            <div className="flex flex-wrap gap-2">{form.tags.map((tag) => <button type="button" key={tag} onClick={() => setForm({ ...form, tags: form.tags.filter((item) => item !== tag) })} className="rounded-full bg-[#f7e8ee] px-3 py-1.5 text-xs font-bold text-[#970f35]">{tag} ×</button>)}</div>
+          </Section>
+        </aside>
+      </div>
+    </div>
+  );
 }
