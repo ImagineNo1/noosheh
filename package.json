@@ -11,7 +11,7 @@
     "clean:next": "node scripts/clean-next-build.mjs"
   },
   "dependencies": {
-    "next": "14.2.5",
+    "next": "14.2.35",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "mongodb": "^6.12.0"
