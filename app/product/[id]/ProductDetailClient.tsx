@@ -80,11 +80,18 @@ export default function ProductDetailClient({ params, initialProducts = [] }: { 
     return [...new Set(cups.length ? cups : normalizeList(product.cups))];
   }, [product, selectedColor, selectedSize]);
 
-  const currentVariant = useMemo(() => product?.variants?.find((variant) =>
-    colorMatchesVariant(selectedColor, variant.color) &&
-    optionMatchesVariant(selectedSize, variant.size) &&
-    (!product.has_cup_option || optionMatchesVariant(selectedCup, variant.cup))
-  ), [product, selectedColor, selectedSize, selectedCup]);
+  const hasSizeOptions = Boolean(product?.sizes?.length);
+  const hasCupOptions = Boolean(product?.has_cup_option && product.cups?.length);
+  const hasRequiredSelection = (!hasSizeOptions || Boolean(selectedSize)) && (!hasCupOptions || Boolean(selectedCup));
+
+  const currentVariant = useMemo(() => {
+    if (!product?.variants?.length || !hasRequiredSelection) return undefined;
+    return product.variants.find((variant) =>
+      colorMatchesVariant(selectedColor, variant.color) &&
+      optionMatchesVariant(selectedSize, variant.size) &&
+      (!product.has_cup_option || optionMatchesVariant(selectedCup, variant.cup))
+    );
+  }, [product, selectedColor, selectedSize, selectedCup, hasRequiredSelection]);
 
   if (isLoading) {
     return <div className="store-page" dir="rtl"><StoreHeader /><div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-8 lg:grid-cols-2"><ProductGallery isLoading /><div className="space-y-4"><div className="h-8 w-56 animate-pulse rounded bg-secondary" /><div className="h-6 w-36 animate-pulse rounded bg-secondary" /><div className="h-12 w-full animate-pulse rounded bg-secondary" /></div></div></div>;
@@ -99,7 +106,8 @@ export default function ProductDetailClient({ params, initialProducts = [] }: { 
   const totalStock = product.variants?.length ? product.variants.reduce((sum, variant) => sum + variantStock(variant), 0) : Number(product.stock ?? 0);
   const stock = currentVariant ? variantStock(currentVariant) : totalStock;
   const hasConfiguredVariants = Boolean(product.variants?.length);
-  const isAvailable = hasConfiguredVariants ? Boolean(currentVariant && variantAvailable(currentVariant)) : totalStock > 0;
+  const hasAvailableVariant = hasConfiguredVariants && product.variants!.some((variant) => colorMatchesVariant(selectedColor, variant.color) && variantAvailable(variant));
+  const isAvailable = hasConfiguredVariants ? (hasRequiredSelection ? Boolean(currentVariant && variantAvailable(currentVariant)) : hasAvailableVariant) : totalStock > 0;
   const hasDiscount = Boolean(comparePrice && comparePrice > currentPrice);
   const discountPercent = hasDiscount ? Math.round((1 - currentPrice / (comparePrice || currentPrice)) * 100) : 0;
   const features = product.features || [];

@@ -296,9 +296,18 @@ export async function createEntity(entity: EntityName, data: AnyRecord) {
 }
 
 export async function updateEntity(entity: EntityName, id: string, data: AnyRecord) {
-  const normalized = normalizeEntityForModel(entity, data, { partial: true });
   const collection = await getRequiredMongoCollection(entity);
-  const updateRecord = entity === 'products' ? normalizeProductVariants({ ...normalized.record, id }) : normalized.record;
+  let updateRecord: AnyRecord;
+  if (entity === 'products') {
+    const existingRecords = await collection.find({ id }).sort({ created_date: -1 }).limit(1).toArray();
+    const existing = existingRecords[0] ? stripMongoId(existingRecords[0]) : null;
+    if (!existing) return null;
+    const normalized = normalizeEntityForModel(entity, { ...existing, ...data, id }, { partial: false });
+    updateRecord = normalizeProductVariants({ ...normalized.record, id, created_date: existing.created_date });
+  } else {
+    const normalized = normalizeEntityForModel(entity, data, { partial: true });
+    updateRecord = normalized.record;
+  }
   const result = await collection.findOneAndUpdate({ id }, { $set: { ...updateRecord, id, updated_date: now() } }, { returnDocument: 'after' });
   const record = result && 'value' in result ? result.value : result;
   if (record) await ensureEntitySeoMeta(entity, stripMongoId(record as AnyRecord));
