@@ -99,6 +99,30 @@ let mongoClientPromise: Promise<any> | null = null;
 
 let bootstrapPromise: Promise<void> | null = null;
 
+const warnedIndexFailures = new Set<string>();
+
+function isDuplicateKeyIndexError(error: unknown) {
+  const record = error && typeof error === 'object' ? error as AnyRecord : {};
+  return record.code === 11000 || record.codeName === 'DuplicateKey';
+}
+
+async function createMongoIndex(collection: MongoCollection, collectionName: string, keys: AnyRecord, options?: AnyRecord) {
+  if (!collection.createIndex) return;
+  try {
+    await collection.createIndex(keys, options);
+  } catch (error) {
+    if (options?.unique && isDuplicateKeyIndexError(error)) {
+      const indexName = `${collectionName}:${Object.keys(keys).join('_')}`;
+      if (!warnedIndexFailures.has(indexName)) {
+        warnedIndexFailures.add(indexName);
+        console.warn(`Skipping unique MongoDB index for ${collectionName} because duplicate existing values were found. Clean up duplicate records before recreating this index.`);
+      }
+      return;
+    }
+    throw error;
+  }
+}
+
 async function ensureBootstrapData(client: any) {
   if (bootstrapPromise) return bootstrapPromise;
   bootstrapPromise = (async () => {
@@ -118,22 +142,16 @@ async function ensureBlogIndexes(db: any) {
   const pages = db.collection('noosheh_blog_pages') as MongoCollection;
   const comments = db.collection('noosheh_blog_comments') as MongoCollection;
 
-  if (posts.createIndex) {
-    await posts.createIndex({ slug: 1 }, { unique: true });
-    await posts.createIndex({ status: 1, publish_at: -1 });
-    await posts.createIndex({ title: 'text', excerpt: 'text', content: 'text' });
-    await posts.createIndex({ deleted_at: 1 });
-  }
-  if (categories.createIndex) await categories.createIndex({ slug: 1 }, { unique: true });
-  if (tags.createIndex) await tags.createIndex({ slug: 1 }, { unique: true });
-  if (pages.createIndex) {
-    await pages.createIndex({ slug: 1 }, { unique: true });
-    await pages.createIndex({ status: 1, publish_at: -1 });
-  }
-  if (comments.createIndex) {
-    await comments.createIndex({ post_id: 1, status: 1, created_date: -1 });
-    await comments.createIndex({ parent_id: 1 });
-  }
+  await createMongoIndex(posts, 'noosheh_blog_posts', { slug: 1 }, { unique: true });
+  await createMongoIndex(posts, 'noosheh_blog_posts', { status: 1, publish_at: -1 });
+  await createMongoIndex(posts, 'noosheh_blog_posts', { title: 'text', excerpt: 'text', content: 'text' });
+  await createMongoIndex(posts, 'noosheh_blog_posts', { deleted_at: 1 });
+  await createMongoIndex(categories, 'noosheh_blog_categories', { slug: 1 }, { unique: true });
+  await createMongoIndex(tags, 'noosheh_blog_tags', { slug: 1 }, { unique: true });
+  await createMongoIndex(pages, 'noosheh_blog_pages', { slug: 1 }, { unique: true });
+  await createMongoIndex(pages, 'noosheh_blog_pages', { status: 1, publish_at: -1 });
+  await createMongoIndex(comments, 'noosheh_blog_comments', { post_id: 1, status: 1, created_date: -1 });
+  await createMongoIndex(comments, 'noosheh_blog_comments', { parent_id: 1 });
 }
 
     const usersCollection = db.collection('noosheh_users') as MongoCollection;
