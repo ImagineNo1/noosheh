@@ -4,7 +4,7 @@ import { hashPassword } from '@/lib/password';
 import { normalizeEntityForModel } from '@/lib/model-schemas';
 import { analyzeSeoContent, generateAutoSeoMeta } from '@/lib/seo/seoHelpers';
 
-export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users' | 'addresses' | 'cart_items' | 'return_requests' | 'wishlists' | 'product_attributes' | 'seo_settings' | 'seo_meta' | 'redirects' | 'not_found_logs' | 'blog_posts' | 'blog_categories' | 'blog_tags' | 'blog_pages' | 'blog_comments' | 'blog_media' | 'blog_revisions';
+export type EntityName = 'products' | 'orders' | 'categories' | 'settings' | 'reviews' | 'users' | 'addresses' | 'cart_items' | 'return_requests' | 'wishlists' | 'payment_gateways' | 'payment_transactions' | 'product_attributes' | 'seo_settings' | 'seo_meta' | 'redirects' | 'not_found_logs' | 'blog_posts' | 'blog_categories' | 'blog_tags' | 'blog_pages' | 'blog_comments' | 'blog_media' | 'blog_revisions';
 
 export const entityMap = {
   Product: 'products',
@@ -16,6 +16,8 @@ export const entityMap = {
   CartItem: 'cart_items',
   ReturnRequest: 'return_requests',
   Wishlist: 'wishlists',
+  PaymentGateway: 'payment_gateways',
+  PaymentTransaction: 'payment_transactions',
   ProductAttribute: 'product_attributes',
   SeoSettings: 'seo_settings',
   SeoMeta: 'seo_meta',
@@ -70,6 +72,8 @@ const initialDatabase: Record<EntityName, AnyRecord[]> = {
   cart_items: [],
   return_requests: [],
   wishlists: [],
+  payment_gateways: [],
+  payment_transactions: [],
   product_attributes: [],
   seo_settings: [],
   seo_meta: [],

@@ -7,7 +7,7 @@ import CategoryFilters, { emptyProductFilters, type FilterOptions, type ProductF
 import ProductCard from '@/components/store/ProductCard';
 import StoreHeader from '@/components/store/StoreHeader';
 import { storeApi } from '@/lib/store-api';
-import type { Product } from '@/app/admin/types';
+import type { Category, Product } from '@/app/admin/types';
 import { safeDecodeURIComponent } from '@/lib/utils';
 
 type RelatedCategory = { label: string; href: string };
@@ -45,12 +45,13 @@ function removeFilter(filters: ProductFilters, key: keyof ProductFilters, value?
 export default function CategoryClient({
   params,
   initialProducts = [],
+  initialCategories = [],
   categoryTitle,
-  categoryDescription,
   relatedCategories = []
 }: {
   params: { slug: string };
   initialProducts?: Product[];
+  initialCategories?: Category[];
   categoryTitle?: string;
   categoryDescription?: string;
   relatedCategories?: RelatedCategory[];
@@ -124,26 +125,13 @@ export default function CategoryClient({
 
   return (
     <div className="store-page store-boutique-listing" dir="rtl">
-      <StoreHeader />
+      <StoreHeader categories={initialCategories} />
       <div className="store-container store-breadcrumb">
         <Link href="/">خانه</Link>
         <span>‹</span>
         <b>{title}</b>
       </div>
       <div className="store-container store-category-layout">
-        <header className="store-category-seo-head premium">
-          <div>
-            <h1>{title}</h1>
-            <span>{filtered.length.toLocaleString('fa-IR')} محصول</span>
-          </div>
-          {categoryDescription ? <p>{categoryDescription}</p> : null}
-          {relatedCategories.length > 0 ? (
-            <nav aria-label="دسته‌بندی‌های مرتبط">
-              {relatedCategories.map((category) => category.label ? <Link key={category.href} href={category.href}>{category.label}</Link> : null)}
-            </nav>
-          ) : null}
-        </header>
-
         <aside>
           <CategoryFilters
             sort={sort}
@@ -162,15 +150,6 @@ export default function CategoryClient({
             : filtered.length === 0 ? <div className="store-empty premium"><h2>محصولی با این فیلترها پیدا نشد</h2><p>چند فیلتر را حذف کنید یا همه محصولات این دسته را ببینید.</p><button type="button" onClick={() => setFilters(emptyProductFilters)}>حذف همه فیلترها</button></div>
             : <div className="store-product-grid boutique">{filtered.map((product) => <ProductCard key={product.id} product={product} />)}</div>}
         </main>
-
-        <section className="store-category-copy">
-          <h2>راهنمای خرید {title}</h2>
-          <p>برای انتخاب بهتر، مشخصات هر محصول، جنس، سایزهای موجود، رنگ‌ها و شرایط ارسال را در صفحه محصول بررسی کنید. لینک‌های دسته‌بندی بالا به گوگل و مشتریان کمک می‌کند سریع‌تر بین کالکشن‌های نوشه حرکت کنند.</p>
-          <div>
-            <Link href="/faq">راهنمای سایز و سوالات متداول</Link>
-            <Link href="/contact">تماس با پشتیبانی</Link>
-          </div>
-        </section>
       </div>
     </div>
   );

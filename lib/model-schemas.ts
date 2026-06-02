@@ -110,9 +110,22 @@ export const modelSchemas = {
       name: { type: 'string' },
       slug: { type: 'string' },
       parent_id: { type: 'string' },
+      description: { type: 'string' },
+      menu_title: { type: 'string' },
       image: { type: 'string' },
+      icon: { type: 'string' },
       sort_order: { type: 'number', default: 0 },
-      is_active: { type: 'boolean', default: true }
+      is_active: { type: 'boolean', default: true },
+      show_in_header: { type: 'boolean', default: true },
+      show_on_home: { type: 'boolean', default: false },
+      is_featured: { type: 'boolean', default: false },
+      homepage_title: { type: 'string' },
+      menu_column: { type: 'number', default: 0 },
+      menu_group: { type: 'string' },
+      highlight_label: { type: 'string' },
+      highlight_url: { type: 'string' },
+      seo_title: { type: 'string' },
+      seo_description: { type: 'string' }
     },
     required: ['name']
   },
@@ -123,11 +136,59 @@ export const modelSchemas = {
       user_email: { type: 'string' },
       items: { type: 'array', items: { type: 'object' } },
       total: { type: 'number' },
-      status: { type: 'string', enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'], default: 'pending' },
+      status: { type: 'string', enum: ['pending', 'pending_payment', 'processing', 'packed', 'shipped', 'delivered', 'cancelled', 'returned'], default: 'pending' },
       shipping_address: { type: 'string' },
-      tracking_number: { type: 'string' }
+      tracking_number: { type: 'string' },
+      payment_method: { type: 'string' },
+      payment_gateway: { type: 'string' },
+      payment_status: { type: 'string', enum: ['unpaid', 'pending', 'manual_pending', 'paid', 'failed', 'rejected', 'refunded'], default: 'unpaid' },
+      payment_tracking_code: { type: 'string' },
+      paid_at: { type: 'string' },
+      manual_payment_status: { type: 'string' },
+      admin_payment_note: { type: 'string' },
+      admin_confirmed_by: { type: 'string' },
+      admin_confirmed_at: { type: 'string' },
+      cancel_reason: { type: 'string' }
     },
     required: ['items', 'total']
+  },
+
+  PaymentGateway: {
+    name: 'PaymentGateway',
+    type: 'object',
+    properties: {
+      provider: { type: 'string' },
+      title: { type: 'string' },
+      is_active: { type: 'boolean', default: false },
+      is_sandbox: { type: 'boolean', default: true },
+      priority: { type: 'number', default: 0 },
+      credentials: { type: 'object' },
+      description: { type: 'string' }
+    },
+    required: ['provider', 'title']
+  },
+
+  PaymentTransaction: {
+    name: 'PaymentTransaction',
+    type: 'object',
+    properties: {
+      order_id: { type: 'string' },
+      order_number: { type: 'string' },
+      provider: { type: 'string' },
+      amount: { type: 'number' },
+      currency: { type: 'string', default: 'IRR' },
+      status: { type: 'string', enum: ['initiated', 'redirected', 'paid', 'failed', 'cancelled', 'verified', 'manual_pending', 'manual_approved', 'manual_rejected'], default: 'initiated' },
+      authority: { type: 'string' },
+      gateway_transaction_id: { type: 'string' },
+      ref_id: { type: 'string' },
+      track_id: { type: 'string' },
+      card_pan_masked: { type: 'string' },
+      callback_payload: { type: 'object' },
+      verify_payload: { type: 'object' },
+      error_code: { type: 'string' },
+      error_message: { type: 'string' }
+    },
+    required: ['order_id', 'provider', 'amount']
   },
 
   ProductAttribute: {
@@ -324,6 +385,8 @@ const entityToModel = {
   cart_items: 'CartItem',
   return_requests: 'ReturnRequest',
   wishlists: 'Wishlist',
+  payment_gateways: 'PaymentGateway',
+  payment_transactions: 'PaymentTransaction',
   product_attributes: 'ProductAttribute',
   seo_settings: 'SeoSettings',
   seo_meta: 'SeoMeta',

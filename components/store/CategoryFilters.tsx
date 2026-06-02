@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import ActiveFilterChips from './ActiveFilterChips';
 
@@ -45,8 +45,8 @@ export type FilterOptions = {
 
 const sortOptions = [
   { value: 'default', label: 'پربازدیدترین' },
-  { value: 'price_asc', label: 'ارزان‌ترین' },
-  { value: 'price_desc', label: 'گران‌ترین' },
+  { value: 'price_asc', label: 'ارزان ترین' },
+  { value: 'price_desc', label: 'گران ترین' },
   { value: 'newest', label: 'جدیدترین' },
   { value: 'discount', label: 'بیشترین تخفیف' },
   { value: 'rating', label: 'بالاترین امتیاز' }
@@ -66,6 +66,11 @@ function hasFilters(filters: ProductFilters) {
     filters.priceMin ||
     Number.isFinite(filters.priceMax)
   );
+}
+
+function toman(value: number) {
+  if (!Number.isFinite(value)) return 'همه قیمت ها';
+  return `${Math.max(0, value).toLocaleString('fa-IR')} تومان`;
 }
 
 export default function CategoryFilters({
@@ -88,31 +93,32 @@ export default function CategoryFilters({
   onRemove: (key: keyof ProductFilters, value?: string) => void;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const priceMax = Math.max(options.priceMax || 0, options.priceMin || 0, 1);
+  const selectedMax = Number.isFinite(filters.priceMax) ? filters.priceMax : priceMax;
+  const step = useMemo(() => Math.max(1000, Math.round(priceMax / 100)), [priceMax]);
   const toggleArray = (key: keyof ProductFilters, value: string) => {
     const current = filters[key];
     if (!Array.isArray(current)) return;
     setFilters({ ...filters, [key]: current.includes(value) ? current.filter((item) => item !== value) : [...current, value] });
   };
   const setBool = (key: 'inStock' | 'discountOnly', value: boolean) => setFilters({ ...filters, [key]: value });
+  const setPriceMin = (value: number) => setFilters({ ...filters, priceMin: Math.min(value, selectedMax) });
+  const setPriceMax = (value: number) => setFilters({ ...filters, priceMax: Math.max(value, filters.priceMin || 0) });
 
   const panel = (
     <div className="store-filter-panel">
       <div className="store-filter-panel-head">
         <h2>فیلترها</h2>
-        {hasFilters(filters) ? <button type="button" onClick={onClear}>حذف همه فیلترها</button> : null}
+        {hasFilters(filters) ? <button type="button" onClick={onClear}>حذف همه</button> : null}
       </div>
 
       <FilterSection title="سایز">
-        <div className="store-filter-options grid">
-          {options.sizes.map((size) => <button key={size} type="button" className={filters.sizes.includes(size) ? 'active' : ''} onClick={() => toggleArray('sizes', size)}>{size}</button>)}
-        </div>
+        <ChipList values={options.sizes} selected={filters.sizes} onToggle={(value) => toggleArray('sizes', value)} limit={9} />
       </FilterSection>
 
       {options.cups.length ? (
         <FilterSection title="کاپ">
-          <div className="store-filter-options grid">
-            {options.cups.map((cup) => <button key={cup} type="button" className={filters.cups.includes(cup) ? 'active' : ''} onClick={() => toggleArray('cups', cup)}>{cup}</button>)}
-          </div>
+          <ChipList values={options.cups} selected={filters.cups} onToggle={(value) => toggleArray('cups', value)} limit={9} />
         </FilterSection>
       ) : null}
 
@@ -128,21 +134,22 @@ export default function CategoryFilters({
         </FilterSection>
       ) : null}
 
-      <FilterSection title="محدوده قیمت (تومان)">
-        <div className="store-price-filter">
-          <input inputMode="numeric" value={filters.priceMin || ''} onChange={(event) => setFilters({ ...filters, priceMin: Number(event.target.value || 0) })} placeholder={options.priceMin.toLocaleString('fa-IR')} />
-          <input inputMode="numeric" value={Number.isFinite(filters.priceMax) ? filters.priceMax : ''} onChange={(event) => setFilters({ ...filters, priceMax: event.target.value ? Number(event.target.value) : Infinity })} placeholder={options.priceMax.toLocaleString('fa-IR')} />
+      <FilterSection title="محدوده قیمت">
+        <div className="store-price-slider">
+          <div><span>{toman(filters.priceMin || options.priceMin || 0)}</span><span>{toman(selectedMax)}</span></div>
+          <input type="range" min={options.priceMin || 0} max={priceMax} step={step} value={filters.priceMin || options.priceMin || 0} onChange={(event) => setPriceMin(Number(event.target.value))} aria-label="حداقل قیمت" />
+          <input type="range" min={options.priceMin || 0} max={priceMax} step={step} value={selectedMax} onChange={(event) => setPriceMax(Number(event.target.value))} aria-label="حداکثر قیمت" />
         </div>
       </FilterSection>
 
       <div className="store-switch-list">
         <label><input type="checkbox" checked={filters.inStock} onChange={(event) => setBool('inStock', event.target.checked)} />فقط کالاهای موجود</label>
-        <label><input type="checkbox" checked={filters.discountOnly} onChange={(event) => setBool('discountOnly', event.target.checked)} />فقط کالاهای تخفیف‌دار</label>
+        <label><input type="checkbox" checked={filters.discountOnly} onChange={(event) => setBool('discountOnly', event.target.checked)} />فقط کالاهای تخفیف دار</label>
       </div>
 
-      {options.brands.length ? <SelectList title="برند" values={options.brands} selected={filters.brands} onToggle={(value) => toggleArray('brands', value)} /> : null}
-      {options.collections.length ? <SelectList title="کالکشن" values={options.collections} selected={filters.collections} onToggle={(value) => toggleArray('collections', value)} /> : null}
-      {options.materials.length ? <SelectList title="جنس" values={options.materials} selected={filters.materials} onToggle={(value) => toggleArray('materials', value)} /> : null}
+      {options.brands.length ? <ChipListSection title="برند" values={options.brands} selected={filters.brands} onToggle={(value) => toggleArray('brands', value)} /> : null}
+      {options.collections.length ? <ChipListSection title="کالکشن" values={options.collections} selected={filters.collections} onToggle={(value) => toggleArray('collections', value)} /> : null}
+      {options.materials.length ? <ChipListSection title="جنس" values={options.materials} selected={filters.materials} onToggle={(value) => toggleArray('materials', value)} /> : null}
 
       <FilterSection title="امتیاز مشتری">
         <div className="store-filter-options">
@@ -159,7 +166,7 @@ export default function CategoryFilters({
       <div className="store-listing-toolbar">
         <button type="button" className="store-filter-toggle" onClick={() => setDrawerOpen(true)}>فیلترها</button>
         <label className="store-sort-select">
-          <span>مرتب‌سازی:</span>
+          <span>مرتب سازی:</span>
           <select value={sort} onChange={(event) => setSort(event.target.value)}>
             {sortOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
@@ -182,12 +189,21 @@ function FilterSection({ title, children }: { title: string; children: ReactNode
   return <section className="store-filter-section"><h3>{title}</h3>{children}</section>;
 }
 
-function SelectList({ title, values, selected, onToggle }: { title: string; values: string[]; selected: string[]; onToggle: (value: string) => void }) {
+function ChipListSection({ title, values, selected, onToggle }: { title: string; values: string[]; selected: string[]; onToggle: (value: string) => void }) {
   return (
     <FilterSection title={title}>
-      <div className="store-filter-options">
-        {values.map((value) => <button key={value} type="button" className={selected.includes(value) ? 'active' : ''} onClick={() => onToggle(value)}>{value}</button>)}
-      </div>
+      <ChipList values={values} selected={selected} onToggle={onToggle} />
     </FilterSection>
+  );
+}
+
+function ChipList({ values, selected, onToggle, limit = 8 }: { values: string[]; selected: string[]; onToggle: (value: string) => void; limit?: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? values : values.slice(0, limit);
+  return (
+    <div className="store-filter-options">
+      {visible.map((value) => <button key={value} type="button" className={selected.includes(value) ? 'active' : ''} onClick={() => onToggle(value)}>{value}</button>)}
+      {values.length > limit ? <button type="button" className="ghost" onClick={() => setExpanded((value) => !value)}>{expanded ? 'نمایش کمتر' : 'نمایش بیشتر'}</button> : null}
+    </div>
   );
 }

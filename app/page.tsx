@@ -4,8 +4,9 @@ import type { Metadata } from 'next';
 import StoreHeader from '@/components/store/StoreHeader';
 import Footer from '@/components/store/Footer';
 import { StoreHome } from '@/components/store/HomeSections';
+import type { Category } from '@/app/admin/types';
 import { productHref } from '@/lib/product-normalization';
-import { getCachedSiteSettings, listCachedProducts } from '@/lib/public-data';
+import { getCachedSiteSettings, listCachedEntity, listCachedProducts } from '@/lib/public-data';
 import { generateSeoMetadata, normalizeSiteUrl } from '@/lib/seo/seo-core';
 import JsonLd from '@/components/seo/JsonLd';
 import { itemListSchema } from '@/lib/seo/schema';
@@ -29,9 +30,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const [settings, products] = await Promise.all([
+  const [settings, products, categories] = await Promise.all([
     getCachedSiteSettings(),
-    listCachedProducts('-created_date', '100')
+    listCachedProducts('-created_date', '100'),
+    listCachedEntity('categories', 'sort_order', '100').then((items) => items as Category[]).catch(() => [] as Category[])
   ]);
   const siteUrl = normalizeSiteUrl(settings.site_url || process.env.NEXT_PUBLIC_SITE_URL);
   const activeProducts = products.filter((product) => product.is_active !== false).slice(0, 12);
@@ -39,8 +41,8 @@ export default async function Home() {
   return (
     <main>
       <JsonLd id="schema-home-products" data={itemListSchema({ siteUrl, name: 'محصولات منتخب نوشه', path: '/', items: activeProducts.map((product) => ({ name: product.title || product.name || 'محصول نوشه', path: productHref(product) })) })} />
-      <StoreHeader promoText={settings.promo_banner_text} logoText={settings.site_title || 'Noosheh'} />
-      <StoreHome products={products} settings={settings} />
+      <StoreHeader promoText={settings.promo_banner_text} logoText={settings.site_title || 'Noosheh'} categories={categories} />
+      <StoreHome products={products} settings={settings} categories={categories} />
       <Footer />
     </main>
   );

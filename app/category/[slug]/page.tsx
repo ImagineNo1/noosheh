@@ -73,6 +73,7 @@ export default async function CategoryPage({ params }: { params: { slug: string 
       <CategoryClient
         params={params}
         initialProducts={ctx.products}
+        initialCategories={ctx.categories}
         categoryTitle={ctx.name}
         categoryDescription={description}
         relatedCategories={siblingCategories.map((category) => ({ label: category.title || category.name || category.slug || '', href: categoryPath(category) }))}
