@@ -1,12 +1,12 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import type { Product } from '@/app/admin/types';
 import { useCart } from '@/lib/cart-context';
 import { productHref } from '@/lib/product-normalization';
 import { useCompare } from './ProductCompare';
+import ProductCardImageCarousel from './ProductCardImageCarousel';
 
 const fallbackImage = '/store/product-fallback.png';
 const formatPrice = (price?: number) => `${(price || 0).toLocaleString('fa-IR')} تومان`;
@@ -44,7 +44,6 @@ export default function ProductCard({ product }: { product: Product }) {
   const hasDiscount = Boolean(product.discount_price && product.discount_price < product.price);
   const discountPercent = hasDiscount ? Math.round((1 - (product.discount_price || 0) / product.price) * 100) : 0;
   const currentPrice = hasDiscount ? product.discount_price : product.price;
-  const cover = product.images?.[0] || product.cover_image || fallbackImage;
   const stock = totalStock(product);
   const inStock = stock > 0;
   const needsVariantSelection = Boolean(product.variants?.length || product.sizes?.length || product.color_swatches?.length || product.has_cup || product.cups?.length);
@@ -65,14 +64,20 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <article className={`store-product-card premium ${!inStock ? 'is-out' : ''}`} dir="rtl">
       <div className="store-product-card-frame">
-        <Link href={href} className="store-product-media" aria-label={`مشاهده ${product.title}`}>
-          <Image src={cover} alt={product.title} fill sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw" unoptimized={cover.startsWith('http')} />
+        <ProductCardImageCarousel
+          href={href}
+          title={product.title}
+          images={product.images}
+          coverImage={product.cover_image}
+          fallbackImage={fallbackImage}
+          imageSizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+          quickView={<span className="store-quick-view"><Icon name="eye" /> مشاهده سریع</span>}
+        >
           <div className="store-product-badges">
             {!inStock ? <span className="muted">ناموجود</span> : hasDiscount ? <span>{discountPercent.toLocaleString('fa-IR')}٪ تخفیف</span> : null}
             {inStock && product.badges?.includes('new') ? <span className="light">جدید</span> : null}
           </div>
-          <span className="store-quick-view"><Icon name="eye" /> مشاهده سریع</span>
-        </Link>
+        </ProductCardImageCarousel>
 
         <button
           type="button"

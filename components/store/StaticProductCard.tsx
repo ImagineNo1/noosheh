@@ -1,7 +1,7 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import type { Product } from '@/app/admin/types';
 import { productHref } from '@/lib/product-normalization';
+import ProductCardImageCarousel from './ProductCardImageCarousel';
 
 const fallbackImage = '/store/product-fallback.png';
 const formatPrice = (price?: number) => `${(price || 0).toLocaleString('fa-IR')} ریال`;
@@ -21,19 +21,24 @@ export default function StaticProductCard({ product, imageSizes = '(max-width: 7
   const hasDiscount = Boolean(product.discount_price && product.discount_price < product.price);
   const discountPercent = hasDiscount ? Math.round((1 - (product.discount_price || 0) / product.price) * 100) : 0;
   const currentPrice = hasDiscount ? product.discount_price : product.price;
-  const cover = product.images?.[0] || product.cover_image || fallbackImage;
   const colors = activeColors(product);
   const href = productHref(product);
 
   return (
     <article className="store-product-card" dir="rtl">
-      <Link href={href} className="store-product-media" aria-label={`مشاهده ${product.title}`}>
-        <Image src={cover} alt={product.title} fill sizes={imageSizes} unoptimized={cover.startsWith('http')} />
+      <ProductCardImageCarousel
+        href={href}
+        title={product.title}
+        images={product.images}
+        coverImage={product.cover_image}
+        fallbackImage={fallbackImage}
+        imageSizes={imageSizes}
+      >
         <div className="store-product-badges">
           {hasDiscount ? <span>{discountPercent.toLocaleString('fa-IR')}٪ تخفیف</span> : null}
           {product.badges?.includes('new') ? <span className="light">جدید</span> : null}
         </div>
-      </Link>
+      </ProductCardImageCarousel>
 
       <div className="store-product-body">
         <div className="store-product-meta">
