@@ -195,7 +195,7 @@ export const modelSchemas = {
     name: 'ProductAttribute',
     type: 'object',
     properties: {
-      type: { type: 'string', enum: ['size', 'color', 'cup'] },
+      type: { type: 'string', enum: ['size', 'color', 'cup', 'brand', 'collection', 'category', 'product_type', 'tag', 'feature', 'badge'] },
       name: { type: 'string' },
       value: { type: 'string' }
     },

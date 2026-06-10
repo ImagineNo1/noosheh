@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { adminApi } from '../admin-api';
 import AdminColorManager from '@/components/admin/AdminColorManager';
 import AdminImageManager from '@/components/admin/AdminImageManager';
@@ -13,18 +13,102 @@ import { AlertDialog, Button, Card, Dialog, EmptyState, Input, Label, Textarea, 
 import type { Product, ProductAttribute, ProductVariant } from '../types';
 import { productHref } from '@/lib/product-normalization';
 
-const badgeOptions = ['new', 'sale', 'final_sale', 'best_seller', 'limited'];
+const fallbackBadgeOptions = ['new', 'sale', 'final_sale', 'best_seller', 'limited'];
 const emptyProduct: Omit<Product, 'id'> = { title: '', code: '', price: 0, discount_price: 0, description: '', short_description: '', images: [], category: '', collection: '', sizes: [], colors: [], cup_size: '', material: '', brand: '', stock: 0, is_active: true, is_featured: false, wash_instructions: '', product_type: '', tags: [], features: [], cups: [], badges: [], variants: [], color_swatches: [], complete_the_look_ids: [], similar_product_ids: [], details: '', size_fit: '', fabric_care: '', shipping_returns: '', complete_the_look_enabled: true, weight: 0, avg_rating: 0, review_count: 0 };
 const splitLines = (value: string) => value.split('\n').map((item) => item.trim()).filter(Boolean);
 const imageUrl = (image?: string | { url?: string }) => typeof image === 'string' ? image : image?.url || '';
 const totalStock = (product: Pick<Product, 'variants' | 'stock'>) => product.variants?.length ? product.variants.reduce((sum, variant) => sum + Number(variant.stock ?? variant.inventory ?? 0), 0) : Number(product.stock ?? 0);
 const onlyDigits = (value: string) => value.replace(/[^0-9]/g, '');
+const formatNumericInput = (value?: number) => value ? Number(value).toLocaleString('en-US') : '';
+const uniqueOptions = (...groups: Array<Array<string | undefined>>) => Array.from(new Set(groups.flat().map((item) => (item || '').trim()).filter(Boolean)));
 const attributeValues = (items: ProductAttribute[], type: string) => items.filter((item) => item.type === type).map((item) => item.value || item.name).filter(Boolean);
+const attributeOptions = (items: ProductAttribute[], type: string, fallback: Array<string | undefined> = []) => uniqueOptions(attributeValues(items, type), fallback);
 const variantTitle = (variant: ProductVariant) => [variant.color && `رنگ ${variant.color}`, variant.size && `سایز ${variant.size}`, variant.cup && `کاپ ${variant.cup}`].filter(Boolean).join(' / ') || 'وریانت پیش‌فرض';
+
+function AdminCreatableDropdown({
+  label,
+  value,
+  selectedValues,
+  options,
+  placeholder,
+  multiple = false,
+  onChange,
+  onCreate
+}: {
+  label: string;
+  value?: string;
+  selectedValues?: string[];
+  options: string[];
+  placeholder?: string;
+  multiple?: boolean;
+  onChange: (value: string | string[]) => void;
+  onCreate: (value: string) => Promise<void>;
+}) {
+  const [query, setQuery] = useState(value || '');
+  const [open, setOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const selected = selectedValues || [];
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredOptions = useMemo(() => options
+    .filter((option) => !multiple || !selected.includes(option))
+    .filter((option) => !normalizedQuery || option.toLowerCase().includes(normalizedQuery))
+    .slice(0, 8), [multiple, normalizedQuery, options, selected]);
+  const exactExists = options.some((option) => option.toLowerCase() === normalizedQuery);
+  const canCreate = Boolean(query.trim()) && !exactExists;
+
+  const choose = (option: string) => {
+    if (multiple) onChange(uniqueOptions(selected, [option]));
+    else onChange(option);
+    setQuery('');
+    setOpen(false);
+  };
+
+  const remove = (option: string) => onChange(selected.filter((item) => item !== option));
+
+  const createOption = async () => {
+    const nextValue = query.trim();
+    if (!nextValue || creating) return;
+    setCreating(true);
+    try {
+      await onCreate(nextValue);
+      choose(nextValue);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <div className="admin-combobox">
+      <Label>{label}</Label>
+      {multiple && selected.length > 0 && <div className="admin-combobox-chips">{selected.map((item) => <span key={item} className="relation-chip"><b>{item}</b><button type="button" onClick={() => remove(item)} aria-label={`حذف ${item}`}>×</button></span>)}</div>}
+      <div className="admin-combobox-input-wrap">
+        <Input
+          value={multiple ? query : (open ? query : value || '')}
+          onFocus={() => { setQuery(value || ''); setOpen(true); }}
+          onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setOpen(true);
+            if (!multiple) onChange(event.target.value);
+          }}
+          placeholder={placeholder || 'جستجو یا تایپ کنید...'}
+        />
+        {canCreate && <button type="button" className="admin-combobox-add" onMouseDown={(event) => event.preventDefault()} onClick={createOption} disabled={creating} aria-label={`افزودن ${query}`}>＋</button>}
+      </div>
+      {open && (filteredOptions.length > 0 || canCreate) && (
+        <div className="admin-combobox-menu">
+          {filteredOptions.map((option) => <button type="button" key={option} onMouseDown={(event) => event.preventDefault()} onClick={() => choose(option)}>{option}</button>)}
+          {canCreate && <button type="button" className="create" onMouseDown={(event) => event.preventDefault()} onClick={createOption} disabled={creating}>＋ افزودن «{query.trim()}» به پیش‌فرض‌ها</button>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 export default function Products() {
   const { data: products, isLoading, reload } = useEntityList<Product>('Product', '-created_date', 100);
-  const { data: attributes } = useEntityList<ProductAttribute>('ProductAttribute', 'type', 300);
+  const { data: attributes, reload: reloadAttributes } = useEntityList<ProductAttribute>('ProductAttribute', 'type', 500);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [inventoryProduct, setInventoryProduct] = useState<Product | null>(null);
   const [inventoryVariants, setInventoryVariants] = useState<ProductVariant[]>([]);
@@ -42,12 +126,25 @@ export default function Products() {
   const sizeOptions = attributeValues(attributes, 'size');
   const colorOptions = attributeValues(attributes, 'color');
   const cupOptions = attributeValues(attributes, 'cup');
+  const brandOptions = attributeOptions(attributes, 'brand', products.map((product) => product.brand));
+  const collectionOptions = attributeOptions(attributes, 'collection', products.map((product) => product.collection));
+  const categoryOptions = attributeOptions(attributes, 'category', products.map((product) => product.category));
+  const productTypeOptions = attributeOptions(attributes, 'product_type', products.map((product) => product.product_type));
+  const tagOptions = attributeOptions(attributes, 'tag', products.flatMap((product) => product.tags || []));
+  const featureOptions = attributeOptions(attributes, 'feature', products.flatMap((product) => product.features || []));
+  const badgeOptions = attributeOptions(attributes, 'badge', fallbackBadgeOptions);
 
   const hydrateInputs = (product?: Product) => { setTagsInput((product?.tags || []).join('\n')); setFeaturesInput((product?.features || []).join('\n')); };
   const openCreate = () => { setEditingProduct(null); setForm(emptyProduct); hydrateInputs(); setSaveError(''); setEditorTab('basic'); setDialogOpen(true); };
   const openEdit = (product: Product) => { setEditingProduct(product); setForm({ ...emptyProduct, ...product, stock: totalStock(product) }); hydrateInputs(product); setSaveError(''); setEditorTab('basic'); setDialogOpen(true); };
   const closeDialog = () => { setDialogOpen(false); setEditingProduct(null); };
   const updateField = <K extends keyof Omit<Product, 'id'>>(key: K, value: Omit<Product, 'id'>[K]) => setForm((current) => ({ ...current, [key]: value }));
+  const addAttributeDefault = async (type: string, value: string) => {
+    const normalizedValue = value.trim();
+    if (!normalizedValue || attributes.some((item) => item.type === type && (item.value || item.name).toLowerCase() === normalizedValue.toLowerCase())) return;
+    await adminApi.create<ProductAttribute>('ProductAttribute', { type, name: normalizedValue, value: normalizedValue });
+    await reloadAttributes();
+  };
 
   const handleSubmit = async () => {
     if (!form.title.trim()) return setSaveError('نام محصول الزامی است.');
@@ -73,7 +170,24 @@ export default function Products() {
     <AlertDialog open={deleteAllOpen} title="حذف همه محصولات" description={<>آیا از حذف همه <b>{products.length.toLocaleString('fa-IR')}</b> محصول مطمئن هستید؟ این عملیات قابل بازگشت نیست.</>} confirmText="حذف همه محصولات" danger loading={deleteLoading} onConfirm={handleDeleteAll} onClose={() => setDeleteAllOpen(false)} />
     <Dialog open={!!inventoryProduct} title="مدیریت موجودی" onClose={() => setInventoryProduct(null)} wide>{inventoryProduct && <div className="admin-form"><div className="admin-soft-box admin-inline">{imageUrl(inventoryProduct.images?.[0]) && <img src={imageUrl(inventoryProduct.images?.[0])} alt="" className="admin-table-image" />}<strong>{inventoryProduct.title}</strong><span>موجودی کل: {inventoryVariants.reduce((sum, variant) => sum + Number(variant.stock ?? variant.inventory ?? 0), 0).toLocaleString('fa-IR')}</span></div><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>وریانت</th><th>موجودی</th></tr></thead><tbody>{inventoryVariants.map((variant, index) => <tr key={`${variant.id}-${index}`}><td>{variantTitle(variant)}</td><td><Input type="number" value={variant.stock ?? variant.inventory ?? 0} onChange={(event) => setInventoryVariants((current) => current.map((item, i) => i === index ? { ...item, stock: Number(event.target.value), inventory: Number(event.target.value) } : item))} dir="ltr" /></td></tr>)}</tbody></table></div><div className="admin-dialog-footer"><Button className="outline" onClick={() => setInventoryProduct(null)}>انصراف</Button><Button className="primary" onClick={saveInventory}>ذخیره موجودی</Button></div></div>}</Dialog>
     <Dialog open={dialogOpen} title={editingProduct ? 'ویرایش محصول' : 'افزودن محصول جدید'} onClose={closeDialog} wide><div className="admin-form"><div className="store-tab-list">{[['basic', 'اطلاعات پایه'], ['images', 'تصاویر'], ['variants', 'رنگ، سایز و کاپ'], ['content', 'توضیحات'], ['relations', 'محصولات مرتبط'], ['seo', 'SEO']].map(([key, label]) => <button key={key} type="button" className={editorTab === key ? 'active' : ''} onClick={() => setEditorTab(key)}>{label}</button>)}</div>{saveError && <div className="admin-alert destructive">{saveError}</div>}
-      {editorTab === 'basic' && <><div className="admin-form-grid"><div><Label>نام محصول *</Label><Input value={form.title} onChange={(e) => updateField('title', e.target.value)} /></div><div><Label>کد/اسلاگ محصول</Label><Input value={form.code} onChange={(e) => updateField('code', e.target.value)} dir="ltr" /></div><div><Label>برند</Label><Input value={form.brand} onChange={(e) => updateField('brand', e.target.value)} /></div><div><Label>کالکشن</Label><Input value={form.collection} onChange={(e) => updateField('collection', e.target.value)} /></div><div><Label>دسته‌بندی</Label><Input value={form.category} onChange={(e) => updateField('category', e.target.value)} /></div><div><Label>نوع محصول</Label><Input value={form.product_type} onChange={(e) => updateField('product_type', e.target.value)} /></div><div><Label>قیمت (ریال) *</Label><Input inputMode="numeric" value={form.price ? String(form.price) : ''} onChange={(e) => updateField('price', Number(onlyDigits(e.target.value)))} dir="ltr" placeholder="0" /></div><div><Label>قیمت با تخفیف (ریال)</Label><Input inputMode="numeric" value={form.discount_price ? String(form.discount_price) : ''} onChange={(e) => updateField('discount_price', Number(onlyDigits(e.target.value)))} dir="ltr" placeholder="0" /></div><div><Label>وزن (گرم)</Label><Input type="number" value={form.weight} onChange={(e) => updateField('weight', Number(e.target.value))} dir="ltr" /></div><div><Label>موجودی کل</Label><Input value={totalStock(form).toLocaleString('fa-IR')} disabled /></div></div><div><Label>توضیح کوتاه</Label><Textarea value={form.short_description} onChange={(e) => updateField('short_description', e.target.value)} className="short" /></div><div><Label>تگ‌ها (هر خط یک تگ)</Label><Textarea value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} className="short" /></div><div><Label>ویژگی‌ها (هر خط یک ویژگی)</Label><Textarea value={featuresInput} onChange={(e) => setFeaturesInput(e.target.value)} className="short" /></div><div><Label>بج‌ها</Label><div className="admin-actions-row">{badgeOptions.map((badge) => <label key={badge} className="admin-inline small"><input type="checkbox" checked={(form.badges || []).includes(badge)} onChange={(e) => updateField('badges', e.target.checked ? [...(form.badges || []), badge] : (form.badges || []).filter((item) => item !== badge))} /> {badge}</label>)}</div></div><div className="admin-toggle-row"><div className="admin-inline"><Toggle checked={form.is_active !== false} onChange={(value) => updateField('is_active', value)} /><Label>محصول فعال</Label></div><div className="admin-inline"><Toggle checked={!!form.is_featured} onChange={(value) => updateField('is_featured', value)} /><Label>محصول ویژه</Label></div></div></>}
+      {editorTab === 'basic' && <>
+        <div className="admin-form-grid">
+          <div><Label>نام محصول *</Label><Input value={form.title} onChange={(e) => updateField('title', e.target.value)} /></div>
+          <div><Label>کد/اسلاگ محصول</Label><Input value={form.code} onChange={(e) => updateField('code', e.target.value)} dir="ltr" /></div>
+          <AdminCreatableDropdown label="برند" value={form.brand || ''} options={brandOptions} onChange={(value) => updateField('brand', value as string)} onCreate={(value) => addAttributeDefault('brand', value)} />
+          <AdminCreatableDropdown label="کالکشن" value={form.collection || ''} options={collectionOptions} onChange={(value) => updateField('collection', value as string)} onCreate={(value) => addAttributeDefault('collection', value)} />
+          <AdminCreatableDropdown label="دسته‌بندی" value={form.category || ''} options={categoryOptions} onChange={(value) => updateField('category', value as string)} onCreate={(value) => addAttributeDefault('category', value)} />
+          <AdminCreatableDropdown label="نوع محصول" value={form.product_type || ''} options={productTypeOptions} onChange={(value) => updateField('product_type', value as string)} onCreate={(value) => addAttributeDefault('product_type', value)} />
+          <div><Label>قیمت (ریال) *</Label><Input inputMode="numeric" value={formatNumericInput(form.price)} onChange={(e) => updateField('price', Number(onlyDigits(e.target.value)))} dir="ltr" placeholder="0" /></div>
+          <div><Label>قیمت با تخفیف (ریال)</Label><Input inputMode="numeric" value={formatNumericInput(form.discount_price)} onChange={(e) => updateField('discount_price', Number(onlyDigits(e.target.value)))} dir="ltr" placeholder="0" /></div>
+          <div><Label>وزن (گرم)</Label><Input type="number" value={form.weight} onChange={(e) => updateField('weight', Number(e.target.value))} dir="ltr" /></div>
+        </div>
+        <div><Label>توضیح کوتاه</Label><Textarea value={form.short_description} onChange={(e) => updateField('short_description', e.target.value)} className="short" /></div>
+        <AdminCreatableDropdown label="تگ‌ها" multiple selectedValues={splitLines(tagsInput)} options={tagOptions} onChange={(values) => setTagsInput((values as string[]).join('\n'))} onCreate={(value) => addAttributeDefault('tag', value)} />
+        <AdminCreatableDropdown label="ویژگی‌ها" multiple selectedValues={splitLines(featuresInput)} options={featureOptions} onChange={(values) => setFeaturesInput((values as string[]).join('\n'))} onCreate={(value) => addAttributeDefault('feature', value)} />
+        <AdminCreatableDropdown label="بج‌ها" multiple selectedValues={form.badges || []} options={badgeOptions} onChange={(values) => updateField('badges', values as string[])} onCreate={(value) => addAttributeDefault('badge', value)} />
+        <div className="admin-toggle-row"><div className="admin-inline"><Toggle checked={form.is_active !== false} onChange={(value) => updateField('is_active', value)} /><Label>محصول فعال</Label></div><div className="admin-inline"><Toggle checked={!!form.is_featured} onChange={(value) => updateField('is_featured', value)} /><Label>محصول ویژه</Label></div></div>
+      </>}
       {editorTab === 'images' && <AdminImageManager coverImage={(form.images || [])[0]} images={(form.images || []).slice(1)} onCoverChange={(url) => updateField('images', url ? [url, ...(form.images || []).slice(1)] : (form.images || []).slice(1))} onImagesChange={(images) => updateField('images', [(form.images || [])[0], ...images.map((image) => typeof image === 'string' ? image : image.url || '')].filter(Boolean))} />}
       {editorTab === 'variants' && <div className="admin-manager-stack"><AdminColorManager colors={form.color_swatches || []} colorOptions={colorOptions} onChange={(colors) => updateField('color_swatches', colors)} /><AdminVariantMatrix sizes={form.sizes || []} cups={form.cups || []} hasCup={!!form.cups?.length || !!form.has_cup_option} colors={form.color_swatches || []} variants={form.variants || []} sizeOptions={sizeOptions} cupOptions={cupOptions} onSizesChange={(sizes) => updateField('sizes', sizes)} onCupsChange={(cups) => updateField('cups', cups)} onHasCupChange={(hasCup) => updateField('has_cup_option', hasCup)} onVariantsChange={(variants) => updateField('variants', variants)} /><div><Label>سایز کاپ پیش‌فرض</Label><Input value={form.cup_size} onChange={(e) => updateField('cup_size', e.target.value)} /></div></div>}
       {editorTab === 'content' && <><div><Label>توضیحات</Label><Textarea value={form.description} onChange={(e) => updateField('description', e.target.value)} /></div><div><Label>Product Details</Label><Textarea value={form.details || ''} onChange={(e) => updateField('details', e.target.value)} /></div><div><Label>Size & Fit</Label><Textarea value={form.size_fit || ''} onChange={(e) => updateField('size_fit', e.target.value)} className="short" /></div><div><Label>Fabric & Care</Label><Textarea value={form.fabric_care || ''} onChange={(e) => updateField('fabric_care', e.target.value)} className="short" /></div><div><Label>Shipping & Returns</Label><Textarea value={form.shipping_returns || ''} onChange={(e) => updateField('shipping_returns', e.target.value)} className="short" /></div><div><Label>FAQ / راهنمای شستشو</Label><Textarea value={form.faq || form.wash_instructions || ''} onChange={(e) => { updateField('faq', e.target.value); updateField('wash_instructions', e.target.value); }} className="short" /></div></>}

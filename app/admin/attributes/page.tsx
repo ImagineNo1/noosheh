@@ -6,18 +6,15 @@ import { formatDate, useEntityList } from '../_components/hooks';
 import { Button, Card, EmptyState, Input, Label, Select } from '../_components/ui';
 import type { ProductAttribute } from '../types';
 
-const typeLabels: Record<string, string> = { size: 'سایزها', color: 'رنگ‌ها', cup: 'کاپ‌ها' };
-const typeExamples: Record<string, string> = { size: 'S, M, L, XL', color: 'قرمز، مشکی، سفید، آبی', cup: 'A, B, C, D' };
+const typeLabels: Record<string, string> = { size: 'سایزها', color: 'رنگ‌ها', cup: 'کاپ‌ها', brand: 'برندها', collection: 'کالکشن‌ها', category: 'دسته‌بندی محصول', product_type: 'نوع محصول', tag: 'تگ‌های محصول', feature: 'ویژگی‌های محصول', badge: 'بج‌های محصول' };
+const typeExamples: Record<string, string> = { size: 'S, M, L, XL', color: 'قرمز، مشکی، سفید، آبی', cup: 'A, B, C, D', brand: 'Noosheh', collection: 'بهاره', category: 'لباس خواب', product_type: 'ست', tag: 'پرفروش', feature: 'پارچه لطیف', badge: 'new, sale' };
+const productAttributeTypes = Object.keys(typeLabels);
 
 export default function AttributesPage() {
   const { data: attributes, isLoading, reload } = useEntityList<ProductAttribute>('ProductAttribute', 'type', 300);
   const [form, setForm] = useState({ id: '', type: 'size', name: '', value: '' });
   const [saving, setSaving] = useState(false);
-  const grouped = useMemo(() => ({
-    size: attributes.filter((item) => item.type === 'size'),
-    color: attributes.filter((item) => item.type === 'color'),
-    cup: attributes.filter((item) => item.type === 'cup')
-  }), [attributes]);
+  const grouped = useMemo(() => Object.fromEntries(productAttributeTypes.map((type) => [type, attributes.filter((item) => item.type === type)])), [attributes]);
 
   const reset = () => setForm({ id: '', type: 'size', name: '', value: '' });
   const save = async () => {
@@ -37,7 +34,7 @@ export default function AttributesPage() {
       <div className="admin-page-header"><div><h1 className="admin-title">پیش‌فرض‌ها / مدیریت ویژگی‌ها</h1><p className="admin-muted">رنگ‌ها، سایزها و کاپ‌ها را یک بار تعریف کنید تا در ساخت محصول از آن‌ها انتخاب شود.</p></div></div>
       <Card><div className="admin-card-body">
         <div className="admin-form-grid">
-          <div><Label>نوع ویژگی</Label><Select value={form.type} onChange={(type) => setForm((current) => ({ ...current, type }))}>{Object.entries(typeLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</Select></div>
+          <div><Label>نوع ویژگی</Label><Select value={form.type} onChange={(type) => setForm((current) => ({ ...current, type }))}>{productAttributeTypes.map((key) => <option key={key} value={key}>{typeLabels[key]}</option>)}</Select></div>
           <div><Label>نام</Label><Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder={typeExamples[form.type]} /></div>
           <div><Label>مقدار ذخیره‌شده</Label><Input value={form.value} onChange={(event) => setForm((current) => ({ ...current, value: event.target.value }))} placeholder="اگر خالی باشد برابر نام ذخیره می‌شود" /></div>
         </div>
