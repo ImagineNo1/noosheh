@@ -123,11 +123,18 @@ const editorActions: Array<{ label: string; command: string; value?: string }> =
   { label: 'Bold', command: 'bold' },
   { label: 'Italic', command: 'italic' },
   { label: 'Underline', command: 'underline' },
+  { label: 'Strike', command: 'strikeThrough' },
+  { label: 'H1', command: 'formatBlock', value: 'h1' },
   { label: 'H2', command: 'formatBlock', value: 'h2' },
   { label: 'H3', command: 'formatBlock', value: 'h3' },
   { label: '• لیست', command: 'insertUnorderedList' },
   { label: '۱. لیست', command: 'insertOrderedList' },
-  { label: 'نقل‌قول', command: 'formatBlock', value: 'blockquote' }
+  { label: 'نقل‌قول', command: 'formatBlock', value: 'blockquote' },
+  { label: 'راست', command: 'justifyRight' },
+  { label: 'وسط', command: 'justifyCenter' },
+  { label: 'چپ', command: 'justifyLeft' },
+  { label: 'تورفتگی', command: 'indent' },
+  { label: 'برگشت تورفتگی', command: 'outdent' }
 ];
 
 function normalizeSlug(value: string) {
@@ -142,6 +149,7 @@ export default function BlogEditor({ id }: { id?: string }) {
   const [blogCategoryDefaults, setBlogCategoryDefaults] = useState<ProductAttribute[]>([]);
   const [previewMode, setPreviewMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     adminApi.list<ProductAttribute>('ProductAttribute').then((items) => setBlogCategoryDefaults(items.filter((item) => item.type === 'blog_category')));
@@ -162,7 +170,9 @@ export default function BlogEditor({ id }: { id?: string }) {
 
   const save = async (nextStatus = form.status) => {
     setSaving(true);
-    const payload = { ...form, status: nextStatus, slug: generatedSlug || normalizeSlug(form.title), og_image: form.og_image || form.cover_image };
+    const derivedSeoTitle = form.seo_title || form.title;
+    const derivedSeoDescription = form.seo_description || form.excerpt || form.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 165);
+    const payload = { ...form, status: nextStatus, slug: generatedSlug || normalizeSlug(form.title), seo_title: derivedSeoTitle, seo_description: derivedSeoDescription, og_image: form.og_image || form.cover_image };
     if (isEditing) await adminApi.update('BlogPost', id!, payload);
     else await adminApi.create('BlogPost', payload);
     setSaving(false);
@@ -171,6 +181,18 @@ export default function BlogEditor({ id }: { id?: string }) {
 
   const execEditor = (command: string, value?: string) => {
     document.execCommand(command, false, value);
+  };
+
+  const uploadImage = async (file?: File, target: 'cover' | 'content' = 'content') => {
+    if (!file || uploadingImage) return;
+    setUploadingImage(true);
+    try {
+      const result = await adminApi.upload(file);
+      if (target === 'cover') setForm((current) => ({ ...current, cover_image: result.file_url, og_image: current.og_image || result.file_url }));
+      else execEditor('insertImage', result.file_url);
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const addBlogCategoryDefault = async (value: string) => {
@@ -219,6 +241,7 @@ export default function BlogEditor({ id }: { id?: string }) {
               <div className="flex flex-wrap gap-2 border-b border-[#eaded5] bg-white/80 p-3">
                 {editorActions.map((action) => <button key={action.label} type="button" className="rounded-xl border border-[#eaded5] bg-[#fffaf5] px-3 py-2 text-xs font-black text-[#4a241f] hover:text-[#970f35]" onClick={() => execEditor(action.command, action.value)}>{action.label}</button>)}
                 <button type="button" className="rounded-xl border border-[#eaded5] bg-[#fffaf5] px-3 py-2 text-xs font-black text-[#4a241f] hover:text-[#970f35]" onClick={() => { const url = window.prompt('لینک را وارد کنید'); if (url) execEditor('createLink', url); }}>لینک</button>
+                <label className="cursor-pointer rounded-xl border border-[#eaded5] bg-[#fffaf5] px-3 py-2 text-xs font-black text-[#4a241f] hover:text-[#970f35]">↥ آپلود عکس<input type="file" accept="image/*" hidden disabled={uploadingImage} onChange={(event) => uploadImage(event.target.files?.[0], 'content')} /></label>
                 <button type="button" className="rounded-xl border border-[#eaded5] bg-[#fffaf5] px-3 py-2 text-xs font-black text-[#4a241f] hover:text-[#970f35]" onClick={() => execEditor('removeFormat')}>پاک‌سازی</button>
               </div>
               {previewMode ? <article className="min-h-80 px-5 py-6 text-base leading-9 text-[#4a241f] [&_a]:text-[#970f35] [&_blockquote]:border-r-4 [&_blockquote]:border-[#970f35] [&_blockquote]:bg-[#f8eee8] [&_blockquote]:p-4 [&_h2]:mt-8 [&_h2]:text-2xl [&_h2]:font-black [&_h3]:mt-6 [&_h3]:text-xl [&_h3]:font-black" dangerouslySetInnerHTML={{ __html: form.content || '<p>پیش‌نمایش محتوا اینجا نمایش داده می‌شود.</p>' }} /> : <div className="min-h-80 px-5 py-6 text-base leading-9 text-[#4a241f] outline-none empty:before:text-[#b09b92]" contentEditable suppressContentEditableWarning onInput={(e) => setForm({ ...form, content: (e.currentTarget as HTMLDivElement).innerHTML })} dangerouslySetInnerHTML={{ __html: form.content || '' }} />}
@@ -234,7 +257,7 @@ export default function BlogEditor({ id }: { id?: string }) {
             </div>
             <Field label="Meta title" helper={`${seoTitleLength.toLocaleString('fa-IR')} کاراکتر؛ پیشنهاد ۲۰ تا ۷۰ کاراکتر.`}><input className={inputClass} value={form.seo_title} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} placeholder="عنوان سئو" /></Field>
             <Field label="Meta description" helper={`${seoDescriptionLength.toLocaleString('fa-IR')} کاراکتر؛ پیشنهاد ۷۰ تا ۱۷۰ کاراکتر.`}><textarea className={`${inputClass} min-h-24`} value={form.seo_description} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} placeholder="توضیحات متا" /></Field>
-            <Field label="OG image" helper="در صورت خالی بودن، تصویر شاخص برای شبکه‌های اجتماعی استفاده می‌شود."><input className={inputClass} dir="ltr" value={form.og_image} onChange={(e) => setForm({ ...form, og_image: e.target.value })} placeholder="https://..." /></Field>
+            <Field label="OG image" helper="در صورت خالی بودن، تصویر شاخص آپلودشده برای شبکه‌های اجتماعی استفاده می‌شود."><div className="flex gap-2"><input className={inputClass} dir="ltr" value={form.og_image} onChange={(e) => setForm({ ...form, og_image: e.target.value })} placeholder="/uploads/..." /><label className="cursor-pointer rounded-2xl bg-[#970f35] px-4 py-3 text-sm font-black text-white">آپلود<input type="file" accept="image/*" hidden disabled={uploadingImage} onChange={(event) => uploadImage(event.target.files?.[0], 'cover')} /></label></div></Field>
             <div className={`rounded-2xl border px-4 py-3 text-sm font-bold ${metadataValid ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>{metadataValid ? 'متادیتا از نظر طول آماده انتشار است.' : 'برای نتیجه بهتر، طول عنوان و توضیحات متا را به محدوده پیشنهادی نزدیک کنید.'}</div>
             {isEditing && id ? <SeoTab entity={form} entityType="blog_post" entityId={id} /> : <div className="rounded-2xl border border-dashed border-[#eaded5] bg-white/70 px-4 py-3 text-sm leading-7 text-[#7d6660]">پس از اولین ذخیره، پنل تخصصی SEO و اسکیما فعال می‌شود.</div>}
           </Section>
@@ -245,7 +268,7 @@ export default function BlogEditor({ id }: { id?: string }) {
             <div className="overflow-hidden rounded-[1.4rem] border border-[#eaded5] bg-[#f7eee8]">
               <Image src={form.cover_image || fallbackImage} alt="تصویر شاخص" width={640} height={420} unoptimized className="h-56 w-full object-cover" />
             </div>
-            <Field label="Featured image URL"><input className={inputClass} dir="ltr" value={form.cover_image} onChange={(e) => setForm({ ...form, cover_image: e.target.value })} placeholder="https://..." /></Field>
+            <Field label="آپلود تصویر شاخص" helper="برای تصویر شاخص لینک وارد نمی‌کنیم؛ فایل را از سیستم انتخاب و آپلود کنید."><label className="flex cursor-pointer items-center justify-center rounded-2xl border border-dashed border-[#970f35]/35 bg-white px-4 py-4 text-sm font-black text-[#970f35] hover:bg-[#fff5f8]">{uploadingImage ? 'در حال آپلود...' : 'انتخاب و آپلود تصویر از سیستم'}<input type="file" accept="image/*" hidden disabled={uploadingImage} onChange={(event) => uploadImage(event.target.files?.[0], 'cover')} /></label>{form.cover_image && <p className="break-all rounded-xl bg-[#fffaf5] p-3 text-xs font-medium text-[#7d6660]" dir="ltr">{form.cover_image}</p>}</Field>
           </Section>
 
           <Section eyebrow="05" title="انتشار" description="وضعیت، تاریخ انتشار، دسته‌بندی و برچسب‌های تحریریه را کنترل کنید.">

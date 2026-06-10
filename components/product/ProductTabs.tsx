@@ -27,7 +27,7 @@ export default function ProductTabs({ product }: { product: Product }) {
         {tabConfig.map((tab) => <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)} className={`whitespace-nowrap border-b-2 px-4 pb-3 pt-1 text-sm font-medium transition ${activeTab === tab.key ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>{tab.label}</button>)}
       </div>
       <div className="p-5 text-sm leading-8 text-muted-foreground">
-        {activeTab === 'reviews' ? <ProductReviews productId={product.id} /> : <div className="whitespace-pre-line">{content[activeTab]}</div>}
+        {activeTab === 'reviews' ? <ProductReviews productId={product.id} /> : <div className="store-product-rich-content whitespace-pre-line" dangerouslySetInnerHTML={{ __html: content[activeTab] }} />}
       </div>
     </section>
   );
