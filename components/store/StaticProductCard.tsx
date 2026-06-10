@@ -1,27 +1,20 @@
+'use client';
+
 import Link from 'next/link';
+import { useState } from 'react';
 import type { Product } from '@/app/admin/types';
 import { productHref } from '@/lib/product-normalization';
 import ProductCardImageCarousel from './ProductCardImageCarousel';
+import ProductCardOptions, { type ProductCardSelection } from './ProductCardOptions';
 
 const fallbackImage = '/store/product-fallback.png';
 const formatPrice = (price?: number) => `${(price || 0).toLocaleString('fa-IR')} ریال`;
-
-function activeColors(product: Product) {
-  if (product.color_swatches?.length) {
-    return product.color_swatches.filter((color) => color.active !== false && color.is_active !== false).map((color) => ({
-      key: color.slug || (color.value?.startsWith('#') ? '' : color.value) || color.name,
-      name: color.name,
-      hex: color.hex || color.value || color.slug
-    }));
-  }
-  return (product.colors || []).map((color) => ({ key: color, name: color, hex: color }));
-}
 
 export default function StaticProductCard({ product, imageSizes = '(max-width: 768px) 50vw, 25vw' }: { product: Product; imageSizes?: string }) {
   const hasDiscount = Boolean(product.discount_price && product.discount_price < product.price);
   const discountPercent = hasDiscount ? Math.round((1 - (product.discount_price || 0) / product.price) * 100) : 0;
   const currentPrice = hasDiscount ? product.discount_price : product.price;
-  const colors = activeColors(product);
+  const [selection, setSelection] = useState<ProductCardSelection>({});
   const href = productHref(product);
 
   return (
@@ -47,12 +40,7 @@ export default function StaticProductCard({ product, imageSizes = '(max-width: 7
         </div>
         <Link href={href} className="store-product-title">{product.title}</Link>
 
-        {colors.length > 0 ? (
-          <div className="store-product-colors">
-            {colors.slice(0, 5).map((color) => <span key={color.key} title={color.name} style={{ backgroundColor: color.hex }} />)}
-            {colors.length > 5 ? <small>+{(colors.length - 5).toLocaleString('fa-IR')}</small> : null}
-          </div>
-        ) : null}
+        <ProductCardOptions product={product} selection={selection} onSelectionChange={setSelection} compact />
 
         <div className="store-product-price">
           <strong>{formatPrice(currentPrice)}</strong>

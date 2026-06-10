@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Product } from '@/app/admin/types';
 import { useCart } from '@/lib/cart-context';
 import { productHref } from '@/lib/product-normalization';
 import { useCompare } from './ProductCompare';
 import ProductCardImageCarousel from './ProductCardImageCarousel';
+import ProductCardOptions, { findProductCardVariant, getProductCardOptions, hasProductCardOptions, isProductCardSelectionAvailable, isProductCardSelectionComplete, type ProductCardSelection } from './ProductCardOptions';
 
 const fallbackImage = '/store/product-fallback.png';
 const formatPrice = (price?: number) => `${(price || 0).toLocaleString('fa-IR')} تومان`;
@@ -23,42 +24,39 @@ function Icon({ name }: { name: 'heart' | 'cart' | 'compare' | 'eye' | 'bell' })
   return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
 
-function activeColors(product: Product) {
-  if (product.color_swatches?.length) {
-    return product.color_swatches.filter((color) => color.active !== false && color.is_active !== false).map((color) => ({
-      key: color.slug || (color.value?.startsWith('#') ? '' : color.value) || color.name,
-      name: color.name,
-      hex: color.hex || color.value || color.slug
-    }));
-  }
-  return (product.colors || []).map((color) => ({ key: color, name: color, hex: color }));
-}
-
-function availableSizes(product: Product) {
-  const variantSizes = product.variants?.map((variant) => variant.size).filter(Boolean) || [];
-  return Array.from(new Set([...(product.sizes || []), ...variantSizes])).slice(0, 5);
-}
-
 export default function ProductCard({ product }: { product: Product }) {
   const [wished, setWished] = useState(false);
+  const [selection, setSelection] = useState<ProductCardSelection>({});
+  const [selectionError, setSelectionError] = useState(false);
   const hasDiscount = Boolean(product.discount_price && product.discount_price < product.price);
   const discountPercent = hasDiscount ? Math.round((1 - (product.discount_price || 0) / product.price) * 100) : 0;
   const currentPrice = hasDiscount ? product.discount_price : product.price;
   const stock = totalStock(product);
   const inStock = stock > 0;
-  const needsVariantSelection = Boolean(product.variants?.length || product.sizes?.length || product.color_swatches?.length || product.has_cup || product.cups?.length);
   const compare = useCompare();
   const { addItem } = useCart();
-  const colors = activeColors(product);
-  const sizes = availableSizes(product);
   const href = productHref(product);
   const rating = product.avg_rating || 4.6;
   const reviews = product.review_count || 0;
+  const optionGroups = useMemo(() => getProductCardOptions(product), [product]);
+  const hasOptions = hasProductCardOptions(optionGroups);
+  const selectionComplete = isProductCardSelectionComplete(optionGroups, selection);
+  const selectedVariant = findProductCardVariant(product, selection);
+  const selectionAvailable = !selectionComplete || isProductCardSelectionAvailable(product, selection);
+  const canAddConfiguredProduct = (!hasOptions || selectionComplete) && selectionAvailable;
+
+  const handleSelectionChange = (nextSelection: ProductCardSelection) => {
+    setSelection(nextSelection);
+    setSelectionError(false);
+  };
 
   const handlePrimaryAction = () => {
     if (!inStock) return;
-    if (needsVariantSelection) window.location.assign(href);
-    else addItem(product, 1);
+    if (!canAddConfiguredProduct) {
+      setSelectionError(true);
+      return;
+    }
+    addItem(product, 1, selection.size || '', selection.color || '', selection.cup || '', selectedVariant?.id || selectedVariant?.product_variant_id || '');
   };
 
   return (
@@ -105,18 +103,7 @@ export default function ProductCard({ product }: { product: Product }) {
           {hasDiscount ? <del>{formatPrice(product.price)}</del> : null}
         </div>
 
-        {colors.length > 0 ? (
-          <div className="store-product-colors">
-            {colors.slice(0, 5).map((color) => <span key={color.key} title={color.name} style={{ backgroundColor: color.hex }} />)}
-            {colors.length > 5 ? <small>+{(colors.length - 5).toLocaleString('fa-IR')}</small> : null}
-          </div>
-        ) : null}
-
-        {sizes.length > 0 ? (
-          <div className="store-product-sizes">
-            {sizes.map((size) => <span key={size}>{size}</span>)}
-          </div>
-        ) : null}
+        <ProductCardOptions product={product} selection={selection} onSelectionChange={handleSelectionChange} showError={selectionError} />
 
         <div className="store-product-stock-row">
           {inStock ? <span className={stock <= 3 ? 'low' : ''}>{stock <= 3 ? 'موجودی کم' : 'ارسال سریع'}</span> : <span className="out">اطلاع‌رسانی موجودی</span>}
@@ -125,7 +112,7 @@ export default function ProductCard({ product }: { product: Product }) {
         <div className="store-product-actions">
           <button type="button" disabled={!inStock} onClick={handlePrimaryAction}>
             {inStock ? <Icon name="cart" /> : <Icon name="bell" />}
-            <span>{!inStock ? 'ناموجود' : needsVariantSelection ? 'انتخاب سایز' : 'افزودن به سبد'}</span>
+            <span>{!inStock ? 'ناموجود' : hasOptions && !selectionComplete ? 'انتخاب گزینه‌ها' : selectionComplete && !selectionAvailable ? 'ناموجود' : 'افزودن به سبد'}</span>
           </button>
           {compare ? (
             <button type="button" className={`store-compare-mini ${compare.isInCompare(product.id) ? 'active' : ''}`} onClick={() => compare.addToCompare(product)} aria-label="افزودن به مقایسه">
