@@ -2997,6 +2997,225 @@ body { background: var(--ref-bg); }
   border-color: var(--ref-burgundy);
 }
 
+
+.store-product-sticky-shell {
+  display: grid;
+  grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr);
+  gap: clamp(2rem, 4vw, 3rem);
+  align-items: start;
+  direction: ltr;
+}
+
+.store-product-sticky-gallery,
+.store-product-detail-column {
+  direction: rtl;
+  min-width: 0;
+}
+
+.store-product-sticky-gallery {
+  position: sticky;
+  top: 6.5rem;
+  align-self: start;
+  max-height: calc(100vh - 7.25rem);
+  overflow: hidden;
+}
+
+.store-product-detail-column {
+  display: grid;
+  gap: 0;
+}
+
+.store-complete-look-section {
+  width: min(1240px, calc(100% - 2rem));
+  margin: 4rem auto 0;
+  scroll-margin-top: 7rem;
+}
+
+.store-ref-heading small {
+  color: var(--ref-muted);
+  font-size: .76rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.store-look-rail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.store-look-card {
+  overflow: hidden;
+  border: 1px solid var(--ref-line);
+  border-radius: 18px;
+  background: #fffdf9;
+  box-shadow: 0 14px 36px rgba(74, 42, 32, .06);
+}
+
+.store-look-media {
+  display: block;
+  aspect-ratio: 1 / .92;
+  overflow: hidden;
+  background: var(--ref-blush);
+  color: var(--ref-muted);
+  text-decoration: none;
+}
+
+.store-look-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .35s ease;
+}
+
+.store-look-card:hover .store-look-media img {
+  transform: scale(1.04);
+}
+
+.store-look-media span {
+  display: grid;
+  height: 100%;
+  place-items: center;
+  font-size: .82rem;
+}
+
+.store-look-body {
+  display: grid;
+  gap: .65rem;
+  padding: .95rem;
+  text-align: center;
+}
+
+.store-look-body a {
+  color: var(--ref-ink);
+  text-decoration: none;
+}
+
+.store-look-body h3 {
+  min-height: 2.7rem;
+  margin: 0;
+  font-size: .9rem;
+  font-weight: 900;
+  line-height: 1.7;
+}
+
+.store-look-price {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .45rem;
+}
+
+.store-look-price strong {
+  color: var(--ref-burgundy);
+  font-size: .88rem;
+}
+
+.store-look-price del {
+  color: var(--ref-muted);
+  font-size: .76rem;
+}
+
+.store-look-swatches,
+.store-look-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .38rem;
+}
+
+.store-look-swatches button {
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 1px solid var(--ref-line);
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.86);
+  cursor: pointer;
+}
+
+.store-look-swatches button.active {
+  outline: 2px solid var(--ref-burgundy);
+  outline-offset: 2px;
+}
+
+.store-look-swatches small {
+  color: var(--ref-muted);
+  font-size: .72rem;
+  font-weight: 900;
+}
+
+.store-look-options button {
+  min-width: 2rem;
+  min-height: 1.75rem;
+  border: 1px solid var(--ref-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ref-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 900;
+  padding: .18rem .56rem;
+}
+
+.store-look-options button.active {
+  border-color: rgba(151, 15, 53, .45);
+  background: rgba(151, 15, 53, .08);
+  color: var(--ref-burgundy);
+}
+
+.store-look-add {
+  min-height: 2.45rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ref-burgundy);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 900;
+}
+
+.store-look-add.added {
+  background: #27834f;
+}
+
+.store-look-add:disabled {
+  background: #ded8d3;
+  color: #928780;
+  cursor: not-allowed;
+}
+
+@media (max-width: 1024px) {
+  .store-product-sticky-shell {
+    grid-template-columns: 1fr;
+    direction: rtl;
+  }
+  .store-product-sticky-gallery {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+  .store-look-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .store-look-rail {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(12rem, 72%);
+    grid-template-columns: none;
+    overflow-x: auto;
+    scroll-snap-type: inline mandatory;
+    padding-bottom: .75rem;
+  }
+  .store-look-card {
+    scroll-snap-align: start;
+  }
+}
+
 .store-similar-section {
   width: min(1240px, calc(100% - 2rem));
   margin: 4rem auto 0;

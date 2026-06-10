@@ -16,40 +16,54 @@ function ProductMiniCard({ product, preferredColor, onAddToCart }: { product: Pr
 
   const variant = useMemo(() => product.variants?.find((item) => colorMatchesVariant(selectedColor, item.color) && optionMatchesVariant(selectedSize, item.size) && (!product.has_cup_option || optionMatchesVariant(selectedCup, item.cup))), [product, selectedColor, selectedSize, selectedCup]);
   const images = colorImageUrls(selectedColor);
-  const coverImage = images[0] || product.images?.[0] || '';
+  const coverImage = images[0] || product.images?.[0] || product.cover_image || '';
   const price = variant?.discount_price || variant?.price || product.discount_price || product.price;
   const comparePrice = variant?.compare_at_price || (variant?.discount_price ? variant.price : product.discount_price ? product.price : undefined);
   const hasConfiguredVariants = Boolean(product.variants?.length);
+  const hasMissingSize = Boolean(product.sizes?.length && !selectedSize);
+  const hasMissingCup = Boolean(product.has_cup_option && product.cups?.length && !selectedCup);
   const isAvailable = hasConfiguredVariants ? variantAvailable(variant) : (product.stock ?? 1) > 0;
+  const canAdd = isAvailable && !hasMissingSize && !hasMissingCup;
 
   const handleAdd = () => {
-    if (product.sizes?.length && !selectedSize) return;
-    if (product.has_cup_option && product.cups?.length && !selectedCup) return;
-    onAddToCart(product, selectedSize, selectedColor ? colorValue(selectedColor) : '', selectedCup, variant?.id, coverImage, price);
+    if (!canAdd) return;
+    onAddToCart(product, selectedSize, selectedColor ? colorValue(selectedColor) : '', selectedCup, variant?.id || variant?.product_variant_id, coverImage, price);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <Link href={productHref(product)} className="block aspect-square overflow-hidden bg-secondary/30">{coverImage ? <img src={coverImage} alt={product.title} className="h-full w-full object-cover transition-transform duration-500 hover:scale-105" /> : <div className="flex h-full items-center justify-center text-sm text-muted-foreground">بدون تصویر</div>}</Link>
-      <div className="space-y-3 p-4">
-        <Link href={productHref(product)} className="block"><h3 className="line-clamp-2 text-sm font-semibold">{product.title}</h3></Link>
-        <div className="flex items-center gap-2"><span className="font-bold text-primary">{formatPrice(price)} ریال</span>{comparePrice && comparePrice > price && <span className="text-xs text-muted-foreground line-through">{formatPrice(comparePrice)}</span>}</div>
-        {colors.length > 0 && <div className="flex gap-1.5">{colors.map((color) => <button key={colorValue(color)} type="button" onClick={() => setSelectedColor(color)} className={`h-6 w-6 rounded-full border-2 transition ${colorValue(selectedColor) === colorValue(color) ? 'scale-110 border-primary' : 'border-transparent hover:scale-105'}`} style={{ backgroundColor: color.hex || color.value }} title={color.name} />)}</div>}
-        {product.sizes?.length ? <div className="flex flex-wrap gap-1.5">{normalizeList(product.sizes).map((size) => <button key={size} type="button" onClick={() => setSelectedSize(size)} className={`min-w-9 rounded border px-2 py-1.5 text-xs ${selectedSize === size ? 'border-foreground bg-foreground text-background' : 'border-border hover:border-foreground'}`}>{size}</button>)}</div> : null}
-        {product.has_cup_option && product.cups?.length ? <div className="flex flex-wrap gap-1.5">{normalizeList(product.cups).map((cup) => <button key={cup} type="button" onClick={() => setSelectedCup(cup)} className={`min-w-9 rounded border px-2 py-1.5 text-xs ${selectedCup === cup ? 'border-foreground bg-foreground text-background' : 'border-border hover:border-foreground'}`}>{cup}</button>)}</div> : null}
-        <button type="button" onClick={handleAdd} disabled={!isAvailable || (Boolean(product.sizes?.length) && !selectedSize) || (Boolean(product.has_cup_option && product.cups?.length) && !selectedCup)} className={`flex h-10 w-full items-center justify-center gap-2 rounded-full text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-55 ${added ? 'bg-emerald-600 text-white' : isAvailable ? 'bg-foreground text-background hover:bg-foreground/90' : 'bg-secondary text-muted-foreground'}`}>{added ? '✓ اضافه شد' : isAvailable ? '🛍 افزودن به سبد' : 'ناموجود'}</button>
+    <article className="store-look-card">
+      <Link href={productHref(product)} className="store-look-media">
+        {coverImage ? <img src={coverImage} alt={product.title} /> : <span>بدون تصویر</span>}
+      </Link>
+      <div className="store-look-body">
+        <Link href={productHref(product)}><h3>{product.title}</h3></Link>
+        <div className="store-look-price"><strong>{formatPrice(price)} ریال</strong>{comparePrice && comparePrice > price ? <del>{formatPrice(comparePrice)}</del> : null}</div>
+        {colors.length > 0 ? (
+          <div className="store-look-swatches" aria-label="انتخاب رنگ">
+            {colors.slice(0, 5).map((color) => <button key={colorValue(color)} type="button" onClick={() => { setSelectedColor(color); setSelectedSize(''); setSelectedCup(''); }} className={colorValue(selectedColor) === colorValue(color) ? 'active' : ''} style={{ backgroundColor: color.hex || color.value }} title={color.name} />)}
+            {colors.length > 5 ? <small>+{(colors.length - 5).toLocaleString('fa-IR')}</small> : null}
+          </div>
+        ) : null}
+        {product.sizes?.length ? <div className="store-look-options">{normalizeList(product.sizes).slice(0, 6).map((size) => <button key={size} type="button" onClick={() => { setSelectedSize(size); setSelectedCup(''); }} className={selectedSize === size ? 'active' : ''}>{size}</button>)}</div> : null}
+        {product.has_cup_option && product.cups?.length ? <div className="store-look-options">{normalizeList(product.cups).slice(0, 6).map((cup) => <button key={cup} type="button" onClick={() => setSelectedCup(cup)} className={selectedCup === cup ? 'active' : ''}>{cup}</button>)}</div> : null}
+        <button type="button" onClick={handleAdd} disabled={!canAdd} className={`store-look-add ${added ? 'added' : ''}`}>{added ? '✓ اضافه شد' : isAvailable ? 'افزودن به سبد' : 'ناموجود'}</button>
       </div>
-    </div>
+    </article>
   );
 }
 
 export default function CompleteTheLook({ products = [], currentColor, onAddToCart }: { products?: Product[]; currentColor?: ProductColor | null; onAddToCart: (product: Product, size?: string, color?: string, cup?: string, variantId?: string, image?: string, price?: number) => void }) {
   return (
-    <section className="mx-auto max-w-7xl px-4 pt-16">
-      <h2 className="mb-8 text-center text-2xl font-bold italic">Complete the Look</h2>
-      {products.length ? <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">{products.map((product) => <ProductMiniCard key={product.id} product={product} preferredColor={currentColor} onAddToCart={onAddToCart} />)}</div> : <div className="rounded-lg bg-secondary/30 p-12 text-center"><p className="text-sm text-muted-foreground">پیشنهاد مکملی ثبت نشده است.</p></div>}
+    <section className="store-complete-look-section" dir="rtl" id="complete-the-look">
+      <div className="store-ref-heading">
+        <span />
+        <h2>استایلتان را کامل کنید</h2>
+        <span />
+        <small>Complete the Look</small>
+      </div>
+      {products.length ? <div className="store-look-rail">{products.map((product) => <ProductMiniCard key={product.id} product={product} preferredColor={currentColor} onAddToCart={onAddToCart} />)}</div> : <div className="store-empty-state">پیشنهاد مکملی ثبت نشده است.</div>}
     </section>
   );
 }
