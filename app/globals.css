@@ -1707,7 +1707,7 @@ body { background: var(--store-bg); color: var(--store-ink); }
   white-space: nowrap;
 }
 .store-card-option-row button,
-.store-card-option-more {
+.store-card-option-select {
   flex: 0 0 auto;
   min-width: 1.9rem;
   height: 1.7rem;
@@ -1724,7 +1724,7 @@ body { background: var(--store-bg); color: var(--store-ink); }
 }
 .store-card-option-row button:hover,
 .store-card-option-row button.active,
-.store-card-option-more.active {
+.store-card-option-select.active {
   border-color: var(--store-primary);
   background: rgba(139,30,63,.08);
   color: var(--store-primary);
@@ -1747,8 +1747,9 @@ body { background: var(--store-bg); color: var(--store-ink); }
   outline-offset: 2px;
   transform: scale(.94);
 }
-.store-card-option-more {
-  max-width: 5.6rem;
+.store-card-option-select {
+  width: min(100%, 8.5rem);
+  max-width: 8.5rem;
   appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
   background-position: calc(100% - .7rem) 50%, calc(100% - .45rem) 50%;
@@ -1774,7 +1775,7 @@ body { background: var(--store-bg); color: var(--store-ink); }
   grid-template-columns: 2.25rem minmax(0, 1fr);
 }
 .store-card-options.compact .store-card-option-row button,
-.store-card-options.compact .store-card-option-more {
+.store-card-options.compact .store-card-option-select {
   height: 1.55rem;
   min-width: 1.7rem;
   font-size: .64rem;
@@ -1788,6 +1789,9 @@ body { background: var(--store-bg); color: var(--store-ink); }
   grid-template-columns: 1fr auto auto;
   gap: .45rem;
   margin-top: .3rem;
+}
+.store-product-actions.has-inline-cart {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 .store-product-actions a,
 .store-product-actions button {
@@ -4153,13 +4157,13 @@ body { background: var(--ref-bg); }
   color: #a7958d;
 }
 .store-product-card.premium .store-card-option-row button,
-.store-product-card.premium .store-card-option-more {
+.store-product-card.premium .store-card-option-select {
   border-color: var(--boutique-line);
   color: var(--boutique-brown);
 }
 .store-product-card.premium .store-card-option-row button:hover,
 .store-product-card.premium .store-card-option-row button.active,
-.store-product-card.premium .store-card-option-more.active {
+.store-product-card.premium .store-card-option-select.active {
   border-color: rgba(151, 15, 53, .38);
   background: rgba(151, 15, 53, .07);
   color: var(--boutique-burgundy);
