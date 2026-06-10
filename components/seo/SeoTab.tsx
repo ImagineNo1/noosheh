@@ -10,7 +10,8 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   return <div className='space-y-1.5'><label className='block text-sm font-semibold'>{label}</label>{hint ? <p className='text-xs text-muted-foreground'>{hint}</p> : null}{children}</div>;
 }
 
-export default function SeoTab({ entity, entityType, entityId }: { entity: any; entityType: string; entityId: string }) {
+export default function SeoTab({ entity, entityType, entityId, defaultCollapsed = false }: { entity: any; entityType: string; entityId: string; defaultCollapsed?: boolean }) {
+  const [expanded, setExpanded] = useState(!defaultCollapsed);
   const [list, setList] = useState<any[]>([]);
   const [siteUrl, setSiteUrl] = useState('');
   const [saving, setSaving] = useState(false);
@@ -46,12 +47,13 @@ export default function SeoTab({ entity, entityType, entityId }: { entity: any; 
 
   return <section className='space-y-4 rounded-2xl border bg-card p-4'>
     <header className='flex flex-wrap items-start justify-between gap-3 border-b pb-3'>
-      <div>
-        <h3 className='text-base font-bold'>تنظیمات SEO</h3>
+      <button type='button' className='text-right' onClick={() => setExpanded((value) => !value)} aria-expanded={expanded}>
+        <h3 className='text-base font-bold'>تنظیمات SEO <span className='text-xs text-muted-foreground'>{expanded ? '— بستن' : '— باز کردن'}</span></h3>
         <p className='text-xs text-muted-foreground'>بهینه‌سازی موتورهای جستجو برای این محتوا</p>
-      </div>
+      </button>
       <div className='flex items-center gap-2'><SeoScoreBadge score={analysis.seoScore} size='sm' /><SeoScoreBadge score={analysis.readabilityScore} size='sm' /></div>
     </header>
+    {!expanded ? <button type='button' onClick={() => setExpanded(true)} className='w-full rounded-xl border border-dashed p-4 text-sm font-bold text-primary'>برای باز کردن تنظیمات کامل SEO کلیک کنید</button> : <>
 
     <div className='rounded-xl border p-3'>
       <h4 className='mb-2 text-sm font-bold'>پیش‌نمایش در گوگل</h4>
@@ -108,5 +110,6 @@ export default function SeoTab({ entity, entityType, entityId }: { entity: any; 
     <div className='flex justify-end'>
       <button onClick={onSave} className='rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground'>{saving ? 'در حال ذخیره...' : 'ذخیره تنظیمات SEO'}</button>
     </div>
+    </>}
   </section>;
 }

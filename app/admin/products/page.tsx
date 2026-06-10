@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { adminApi } from '../admin-api';
 import AdminColorManager from '@/components/admin/AdminColorManager';
 import AdminImageManager from '@/components/admin/AdminImageManager';
@@ -24,6 +24,72 @@ const uniqueOptions = (...groups: Array<Array<string | undefined>>) => Array.fro
 const attributeValues = (items: ProductAttribute[], type: string) => items.filter((item) => item.type === type).map((item) => item.value || item.name).filter(Boolean);
 const attributeOptions = (items: ProductAttribute[], type: string, fallback: Array<string | undefined> = []) => uniqueOptions(attributeValues(items, type), fallback);
 const variantTitle = (variant: ProductVariant) => [variant.color && `رنگ ${variant.color}`, variant.size && `سایز ${variant.size}`, variant.cup && `کاپ ${variant.cup}`].filter(Boolean).join(' / ') || 'وریانت پیش‌فرض';
+const stripHtml = (value = '') => value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+const truncateText = (value: string, max: number) => value.length > max ? `${value.slice(0, max - 1).trim()}…` : value;
+
+function makeProductSeoPayload(product: Product, siteUrl = '') {
+  const title = product.title || product.name || 'محصول نوشه';
+  const summarySource = stripHtml(product.short_description || product.description || product.details || product.fabric_care || '');
+  const summary = truncateText(summarySource || `${title} را با کیفیت و طراحی اختصاصی از فروشگاه نوشه تهیه کنید.`, 158);
+  const focus = product.category || product.product_type || product.brand || title.split(' ').slice(0, 3).join(' ');
+  const image = imageUrl(product.images?.[0]) || product.cover_image || '';
+  const canonicalBase = siteUrl.replace(/\/$/, '');
+  return {
+    entity_type: 'product',
+    entity_id: product.id,
+    meta_title: truncateText(`${title}${product.category ? ` | ${product.category}` : ''}`, 60),
+    meta_description: summary,
+    focus_keyword: focus,
+    canonical_url: canonicalBase ? `${canonicalBase}${productHref(product)}` : productHref(product),
+    og_title: truncateText(title, 70),
+    og_description: summary,
+    og_image: image,
+    twitter_title: truncateText(title, 70),
+    twitter_description: summary,
+    twitter_image: image,
+    robots_index: product.is_active !== false,
+    robots_follow: true
+  };
+}
+
+function RichTextField({ label, value, onChange, short = false }: { label: string; value?: string; onChange: (value: string) => void; short?: boolean }) {
+  const editorRef = useRef<HTMLDivElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const exec = (command: string, commandValue?: string) => {
+    editorRef.current?.focus();
+    document.execCommand(command, false, commandValue);
+    onChange(editorRef.current?.innerHTML || '');
+  };
+  const uploadImage = async (file?: File) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const result = await adminApi.upload(file);
+      exec('insertImage', result.file_url);
+    } finally {
+      setUploading(false);
+    }
+  };
+  const toolbar = [
+    ['B', 'bold'], ['I', 'italic'], ['U', 'underline'], ['S', 'strikeThrough'],
+    ['H2', 'formatBlock', 'h2'], ['H3', 'formatBlock', 'h3'], ['نقل‌قول', 'formatBlock', 'blockquote'],
+    ['• لیست', 'insertUnorderedList'], ['۱. لیست', 'insertOrderedList'], ['راست', 'justifyRight'], ['وسط', 'justifyCenter'], ['چپ', 'justifyLeft']
+  ] as const;
+  return (
+    <div className="admin-rich-field">
+      <Label>{label}</Label>
+      <div className="admin-rich-editor">
+        <div className="admin-rich-toolbar">
+          {toolbar.map(([text, command, commandValue]) => <button key={`${label}-${text}`} type="button" onClick={() => exec(command, commandValue)}>{text}</button>)}
+          <button type="button" onClick={() => { const url = window.prompt('آدرس لینک را وارد کنید'); if (url) exec('createLink', url); }}>لینک</button>
+          <button type="button" onClick={() => exec('removeFormat')}>پاک‌سازی</button>
+          <label className={uploading ? 'disabled' : ''}>↥ عکس<input type="file" accept="image/*" hidden disabled={uploading} onChange={(event) => uploadImage(event.target.files?.[0])} /></label>
+        </div>
+        <div ref={editorRef} className={`admin-rich-surface ${short ? 'short' : ''}`} contentEditable suppressContentEditableWarning onInput={(event) => onChange((event.currentTarget as HTMLDivElement).innerHTML)} dangerouslySetInnerHTML={{ __html: value || '' }} />
+      </div>
+    </div>
+  );
+}
 
 function AdminCreatableDropdown({
   label,
@@ -130,8 +196,6 @@ export default function Products() {
   const { data: products, isLoading, reload } = useEntityList<Product>('Product', '-created_date', 100);
   const { data: attributes, reload: reloadAttributes } = useEntityList<ProductAttribute>('ProductAttribute', 'type', 500);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [inventoryProduct, setInventoryProduct] = useState<Product | null>(null);
-  const [inventoryVariants, setInventoryVariants] = useState<ProductVariant[]>([]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [form, setForm] = useState<Omit<Product, 'id'>>(emptyProduct);
   const [tagsInput, setTagsInput] = useState('');
@@ -166,6 +230,18 @@ export default function Products() {
     await reloadAttributes();
   };
 
+  const upsertProductSeo = async (product: Product) => {
+    const [seoRows, settingsRows] = await Promise.all([
+      adminApi.list<any>('SeoMeta', '-created_date', 500).catch(() => []),
+      adminApi.list<any>('SeoSettings', '-updated_date', 1).catch(() => [])
+    ]);
+    const siteUrl = String(settingsRows?.[0]?.site_url || (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/$/, '');
+    const payload = makeProductSeoPayload(product, siteUrl);
+    const existingSeo = seoRows.find((row: any) => row.entity_type === 'product' && row.entity_id === product.id);
+    if (existingSeo?.id) await adminApi.update('SeoMeta', existingSeo.id, payload);
+    else await adminApi.create('SeoMeta', payload);
+  };
+
   const handleSubmit = async () => {
     if (!form.title.trim()) return setSaveError('نام محصول الزامی است.');
     if (!Number(form.price)) return setSaveError('قیمت محصول الزامی است.');
@@ -173,22 +249,20 @@ export default function Products() {
     try {
       const variants = (form.variants || []).map((variant) => ({ ...variant, id: variant.id || variant.product_variant_id, product_variant_id: variant.product_variant_id || variant.id, stock: Number(variant.inventory ?? variant.stock ?? 0), inventory: Number(variant.inventory ?? variant.stock ?? 0), discount_price: variant.discount_price || undefined }));
       const data = { ...form, tags: splitLines(tagsInput), features: splitLines(featuresInput), price: Number(form.price) || 0, discount_price: Number(form.discount_price) || 0, stock: variants.reduce((sum, variant) => sum + Number(variant.stock || 0), 0), weight: Number(form.weight) || 0, badges: form.badges || [], complete_the_look_ids: form.complete_the_look_ids || [], similar_product_ids: form.similar_product_ids || [], has_cup_option: Boolean(form.cups?.length), variants, color_swatches: (form.color_swatches || []).map((color) => ({ ...color, value: color.slug || (color.value?.startsWith('#') ? '' : color.value) || color.name, active: color.active !== false && color.is_active !== false })) };
-      if (editingProduct) await adminApi.update<Product>('Product', editingProduct.id, data); else await adminApi.create<Product>('Product', data);
+      const savedProduct = editingProduct ? await adminApi.update<Product>('Product', editingProduct.id, data) : await adminApi.create<Product>('Product', data);
+      await upsertProductSeo(savedProduct);
       await reload(); closeDialog();
     } catch (error) { setSaveError(error instanceof Error ? error.message : 'خطا در ذخیره محصول'); } finally { setSaving(false); }
   };
 
   const handleDelete = async () => { if (!deleteTarget) return; setDeleteLoading(true); await adminApi.delete('Product', deleteTarget.id); await reload(); setDeleteLoading(false); setDeleteTarget(null); };
   const handleDeleteAll = async () => { setDeleteLoading(true); await Promise.all(products.map((product) => adminApi.delete('Product', product.id))); await reload(); setDeleteLoading(false); setDeleteAllOpen(false); };
-  const openInventory = (product: Product) => { setInventoryProduct(product); setInventoryVariants(product.variants || []); };
-  const saveInventory = async () => { if (!inventoryProduct) return; const variants = inventoryVariants.map((variant) => ({ ...variant, stock: Number(variant.stock ?? variant.inventory ?? 0), inventory: Number(variant.stock ?? variant.inventory ?? 0) })); await adminApi.update<Product>('Product', inventoryProduct.id, { variants, stock: variants.reduce((sum, variant) => sum + Number(variant.stock || 0), 0) }); await reload(); setInventoryProduct(null); };
 
   return <div className="admin-page">
     <div className="admin-page-header"><h1 className="admin-title">مدیریت محصولات</h1><div className="admin-actions-row"><Button className="ghost danger" onClick={() => setDeleteAllOpen(true)} disabled={!products.length || deleteLoading}>حذف همه محصولات</Button><Button className="primary" onClick={openCreate}>＋ افزودن محصول</Button></div></div>
-    {isLoading ? <div className="admin-grid cards-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="admin-skeleton" />)}</div> : products.length === 0 ? <EmptyState icon="▣" text="هنوز محصولی اضافه نشده"><Button className="primary" onClick={openCreate}>＋ اولین محصول را اضافه کنید</Button></EmptyState> : <Card className="overflow-hidden"><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>تصویر</th><th>نام محصول</th><th>قیمت</th><th>موجودی</th><th>دسته‌بندی</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>{products.map((product) => { const previewImage = imageUrl(product.images?.[0] as string | { url?: string }) || product.cover_image || ''; const stock = totalStock(product); return <tr key={product.id}><td>{previewImage ? <img src={previewImage} alt="" className="admin-table-image" /> : <span className="admin-table-placeholder">▣</span>}</td><td className="bold">{product.title}</td><td className="admin-price">{formatPrice(product.discount_price && product.discount_price < product.price ? product.discount_price : product.price)} ریال</td><td>{stock.toLocaleString('fa-IR')}</td><td>{product.category || '-'}</td><td><span className={`admin-badge ${product.is_active !== false && stock > 0 ? 'success' : 'neutral'}`}>{product.is_active !== false && stock > 0 ? 'موجود' : 'ناموجود'}</span></td><td><div className="admin-actions-row"><Link href={productHref(product)} target="_blank" className="admin-btn ghost" aria-label={`مشاهده ${product.title}`}>مشاهده</Link><Button className="ghost" onClick={() => openInventory(product)}>مدیریت موجودی</Button><Button className="ghost" onClick={() => openEdit(product)} aria-label={`ویرایش ${product.title}`}>✎</Button><Button className="ghost danger" onClick={() => setDeleteTarget(product)} aria-label={`حذف ${product.title}`}>🗑</Button></div></td></tr>; })}</tbody></table></div></Card>}
+    {isLoading ? <div className="admin-grid cards-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="admin-skeleton" />)}</div> : products.length === 0 ? <EmptyState icon="▣" text="هنوز محصولی اضافه نشده"><Button className="primary" onClick={openCreate}>＋ اولین محصول را اضافه کنید</Button></EmptyState> : <Card className="overflow-hidden"><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>تصویر</th><th>نام محصول</th><th>قیمت</th><th>موجودی</th><th>دسته‌بندی</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>{products.map((product) => { const previewImage = imageUrl(product.images?.[0] as string | { url?: string }) || product.cover_image || ''; const stock = totalStock(product); return <tr key={product.id}><td>{previewImage ? <img src={previewImage} alt="" className="admin-table-image" /> : <span className="admin-table-placeholder">▣</span>}</td><td className="bold">{product.title}</td><td className="admin-price">{formatPrice(product.discount_price && product.discount_price < product.price ? product.discount_price : product.price)} ریال</td><td>{stock.toLocaleString('fa-IR')}</td><td>{product.category || '-'}</td><td><span className={`admin-badge ${product.is_active !== false && stock > 0 ? 'success' : 'neutral'}`}>{product.is_active !== false && stock > 0 ? 'موجود' : 'ناموجود'}</span></td><td><div className="admin-actions-row"><Link href={productHref(product)} target="_blank" className="admin-btn ghost icon-only" title="مشاهده" aria-label={`مشاهده ${product.title}`}>👁</Link><Button className="ghost" onClick={() => openEdit(product)} aria-label={`ویرایش ${product.title}`}>✎</Button><Button className="ghost danger" onClick={() => setDeleteTarget(product)} aria-label={`حذف ${product.title}`}>🗑</Button></div></td></tr>; })}</tbody></table></div></Card>}
     <AlertDialog open={!!deleteTarget} title="حذف محصول" description={deleteTarget ? <>آیا از حذف محصول <b>{deleteTarget.title}</b> مطمئن هستید؟</> : ''} confirmText="حذف محصول" danger loading={deleteLoading} onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />
     <AlertDialog open={deleteAllOpen} title="حذف همه محصولات" description={<>آیا از حذف همه <b>{products.length.toLocaleString('fa-IR')}</b> محصول مطمئن هستید؟ این عملیات قابل بازگشت نیست.</>} confirmText="حذف همه محصولات" danger loading={deleteLoading} onConfirm={handleDeleteAll} onClose={() => setDeleteAllOpen(false)} />
-    <Dialog open={!!inventoryProduct} title="مدیریت موجودی" onClose={() => setInventoryProduct(null)} wide>{inventoryProduct && <div className="admin-form"><div className="admin-soft-box admin-inline">{imageUrl(inventoryProduct.images?.[0]) && <img src={imageUrl(inventoryProduct.images?.[0])} alt="" className="admin-table-image" />}<strong>{inventoryProduct.title}</strong><span>موجودی کل: {inventoryVariants.reduce((sum, variant) => sum + Number(variant.stock ?? variant.inventory ?? 0), 0).toLocaleString('fa-IR')}</span></div><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>وریانت</th><th>موجودی</th></tr></thead><tbody>{inventoryVariants.map((variant, index) => <tr key={`${variant.id}-${index}`}><td>{variantTitle(variant)}</td><td><Input type="number" value={variant.stock ?? variant.inventory ?? 0} onChange={(event) => setInventoryVariants((current) => current.map((item, i) => i === index ? { ...item, stock: Number(event.target.value), inventory: Number(event.target.value) } : item))} dir="ltr" /></td></tr>)}</tbody></table></div><div className="admin-dialog-footer"><Button className="outline" onClick={() => setInventoryProduct(null)}>انصراف</Button><Button className="primary" onClick={saveInventory}>ذخیره موجودی</Button></div></div>}</Dialog>
     <Dialog open={dialogOpen} title={editingProduct ? 'ویرایش محصول' : 'افزودن محصول جدید'} onClose={closeDialog} wide><div className="admin-form"><div className="store-tab-list">{[['basic', 'اطلاعات پایه'], ['images', 'تصاویر'], ['variants', 'رنگ، سایز و کاپ'], ['content', 'توضیحات'], ['relations', 'محصولات مرتبط'], ['seo', 'SEO']].map(([key, label]) => <button key={key} type="button" className={editorTab === key ? 'active' : ''} onClick={() => setEditorTab(key)}>{label}</button>)}</div>{saveError && <div className="admin-alert destructive">{saveError}</div>}
       {editorTab === 'basic' && <>
         <div className="admin-form-grid">
@@ -210,9 +284,9 @@ export default function Products() {
       </>}
       {editorTab === 'images' && <AdminImageManager coverImage={(form.images || [])[0]} images={(form.images || []).slice(1)} onCoverChange={(url) => updateField('images', url ? [url, ...(form.images || []).slice(1)] : (form.images || []).slice(1))} onImagesChange={(images) => updateField('images', [(form.images || [])[0], ...images.map((image) => typeof image === 'string' ? image : image.url || '')].filter(Boolean))} />}
       {editorTab === 'variants' && <div className="admin-manager-stack"><AdminColorManager colors={form.color_swatches || []} colorOptions={colorOptions} onChange={(colors) => updateField('color_swatches', colors)} /><AdminVariantMatrix sizes={form.sizes || []} cups={form.cups || []} hasCup={!!form.cups?.length || !!form.has_cup_option} colors={form.color_swatches || []} variants={form.variants || []} sizeOptions={sizeOptions} cupOptions={cupOptions} onSizesChange={(sizes) => updateField('sizes', sizes)} onCupsChange={(cups) => updateField('cups', cups)} onHasCupChange={(hasCup) => updateField('has_cup_option', hasCup)} onVariantsChange={(variants) => updateField('variants', variants)} onCreateSize={(value) => addAttributeDefault('size', value)} onCreateCup={(value) => addAttributeDefault('cup', value)} /><div><Label>سایز کاپ پیش‌فرض</Label><Input value={form.cup_size} onChange={(e) => updateField('cup_size', e.target.value)} /></div></div>}
-      {editorTab === 'content' && <><div><Label>توضیحات</Label><Textarea value={form.description} onChange={(e) => updateField('description', e.target.value)} /></div><div><Label>Product Details</Label><Textarea value={form.details || ''} onChange={(e) => updateField('details', e.target.value)} /></div><div><Label>Size & Fit</Label><Textarea value={form.size_fit || ''} onChange={(e) => updateField('size_fit', e.target.value)} className="short" /></div><div><Label>Fabric & Care</Label><Textarea value={form.fabric_care || ''} onChange={(e) => updateField('fabric_care', e.target.value)} className="short" /></div><div><Label>Shipping & Returns</Label><Textarea value={form.shipping_returns || ''} onChange={(e) => updateField('shipping_returns', e.target.value)} className="short" /></div><div><Label>FAQ / راهنمای شستشو</Label><Textarea value={form.faq || form.wash_instructions || ''} onChange={(e) => { updateField('faq', e.target.value); updateField('wash_instructions', e.target.value); }} className="short" /></div></>}
+      {editorTab === 'content' && <><RichTextField label="توضیحات" value={form.description} onChange={(value) => updateField('description', value)} /><RichTextField label="Product Details" value={form.details || ''} onChange={(value) => updateField('details', value)} /><RichTextField label="Size & Fit" value={form.size_fit || ''} onChange={(value) => updateField('size_fit', value)} short /><RichTextField label="Fabric & Care" value={form.fabric_care || ''} onChange={(value) => updateField('fabric_care', value)} short /><RichTextField label="Shipping & Returns" value={form.shipping_returns || ''} onChange={(value) => updateField('shipping_returns', value)} short /><RichTextField label="FAQ / راهنمای شستشو" value={form.faq || form.wash_instructions || ''} onChange={(value) => { updateField('faq', value); updateField('wash_instructions', value); }} short /></>}
       {editorTab === 'relations' && <div className="admin-manager-stack"><AdminRelationPicker label="استایلتان را تکمیل کنید" products={products} excludeId={editingProduct?.id} contextProduct={{ ...form, id: editingProduct?.id || '' } as Product} relationType="complete" selectedIds={form.complete_the_look_ids || []} onChange={(ids) => updateField('complete_the_look_ids', ids)} /><AdminRelationPicker label="محصولات مشابه" products={products} excludeId={editingProduct?.id} contextProduct={{ ...form, id: editingProduct?.id || '' } as Product} relationType="similar" selectedIds={form.similar_product_ids || []} onChange={(ids) => updateField('similar_product_ids', ids)} /></div>}
-      {editorTab === 'seo' && (editingProduct ? <SeoTab entity={form} entityType='product' entityId={editingProduct.id} /> : <div className='admin-soft-box'>ابتدا محصول را ذخیره کنید سپس تنظیمات SEO را انجام دهید.</div>)}
+      {editorTab === 'seo' && (editingProduct ? <SeoTab entity={form} entityType='product' entityId={editingProduct.id} defaultCollapsed /> : <div className='admin-soft-box'>ابتدا محصول را ذخیره کنید سپس تنظیمات SEO را انجام دهید.</div>)}
     </div><div className="admin-dialog-footer"><Button className="outline" onClick={closeDialog}>انصراف</Button><Button className="primary" onClick={handleSubmit} disabled={!form.title || saving}>{saving ? 'در حال ذخیره...' : editingProduct ? 'ذخیره تغییرات' : 'افزودن محصول'}</Button></div></Dialog>
   </div>;
 }

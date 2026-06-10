@@ -7,15 +7,15 @@ import GuidedTour from '@/components/GuidedTour';
 import { adminApi, clearAdminToken } from './admin-api';
 
 const navItems = [
-  { path: '/admin', label: 'داشبورد', icon: '▦', exact: true },
-  { path: '/admin/products', label: 'محصولات', icon: '▣' },
-  { path: '/admin/attributes', label: 'پیش‌فرض‌ها', icon: '☷' },
-  { path: '/admin/orders', label: 'سفارشات', icon: '◈' },
-  { path: '/admin/reviews', label: 'نظرات', icon: '☷' },
+  { path: '/admin', label: 'داشبورد', icon: '⌘', exact: true },
+  { path: '/admin/products', label: 'محصولات', icon: '◈' },
+  { path: '/admin/orders', label: 'سفارش‌ها', icon: '🛒' },
+  { path: '/admin/reviews', label: 'نظرات', icon: '💬' },
   { path: '/admin/blog', label: 'مدیریت بلاگ', icon: '✎' },
+  { path: '/admin/attributes', label: 'پیش‌فرض‌ها', icon: '☷' },
   { path: '/admin/settings', label: 'تنظیمات', icon: '⚙' },
-  { path: '/admin/seo', label: 'SEO', icon: '🔎' },
-  { path: '/', label: 'صفحه اصلی', icon: '⌂', exact: true }
+  { path: '/admin/seo', label: 'SEO', icon: '▥' },
+  { path: '/', label: 'صفحه اصلی سایت', icon: '⌂', exact: true }
 ];
 
 
@@ -90,54 +90,41 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 font-vazir" dir="rtl">
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-border bg-card px-4 py-3">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-bold">N<span className="text-primary">♥</span>OSHEH</h1>
-          <span className="rounded bg-secondary px-2 py-0.5 text-xs text-muted-foreground">پنل مدیریت</span>
+    <div className="admin-ref-shell font-vazir" dir="rtl">
+      <aside className="admin-ref-sidebar">
+        <div className="admin-ref-logo">N<span>♥</span>OSHEH</div>
+        <nav className="admin-ref-nav">
+          {navItems.map((item) => {
+            const active = isActivePath(pathname, item);
+            return (
+              <Link key={item.path} href={item.path} data-tour={item.path === '/admin' ? 'admin-dashboard' : item.path === '/admin/products' ? 'admin-products' : item.path === '/admin/attributes' ? 'admin-defaults' : item.path === '/admin/orders' ? 'admin-orders' : item.path === '/admin/blog' ? 'admin-blog' : item.path === '/admin/settings' ? 'admin-settings' : undefined} className={active ? 'active' : ''}>
+                <span aria-hidden="true">{item.icon}</span>
+                <b>{item.label}</b>
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="admin-ref-sidebar-footer">
+          <button type="button" onClick={handleLogout} className="admin-ref-logout"><span>↪</span> خروج از پنل</button>
         </div>
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={handleLogout} className="hidden text-xs text-destructive hover:underline sm:inline">خروج</button>
-          <Link href="/" className="flex items-center gap-1 text-xs text-primary hover:underline">بازگشت به سایت <span>‹</span></Link>
-        </div>
-      </header>
+      </aside>
 
-      <div className="flex">
-        <aside className="sticky top-[53px] hidden min-h-[calc(100vh-53px)] w-56 border-l border-border bg-card md:block">
-          <nav className="space-y-0.5 p-3">
-            {navItems.map((item) => {
-              const active = isActivePath(pathname, item);
-              return (
-                <Link key={item.path} href={item.path} data-tour={item.path === '/admin' ? 'admin-dashboard' : item.path === '/admin/products' ? 'admin-products' : item.path === '/admin/attributes' ? 'admin-defaults' : item.path === '/admin/orders' ? 'admin-orders' : item.path === '/admin/blog' ? 'admin-blog' : item.path === '/admin/settings' ? 'admin-settings' : undefined} className={`flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm transition-colors ${active ? 'bg-primary/10 font-medium text-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}>
-                  <span className="h-4 w-4 text-center">{item.icon}</span>
-                  {item.label}
-                </Link>
-              );
-            })}
-            <button type="button" onClick={handleLogout} className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-sm text-destructive transition-colors hover:bg-destructive/10">
-              <span className="h-4 w-4 text-center">⎋</span>
-              خروج از پنل
-            </button>
-          </nav>
-        </aside>
-
-        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card px-2 py-1 md:hidden">
-          <div className="flex justify-around overflow-x-auto">
-            {navItems.slice(0, 5).map((item) => {
-              const active = isActivePath(pathname, item);
-              return (
-                <Link key={item.path} href={item.path} data-tour={item.path === '/admin' ? 'admin-dashboard' : item.path === '/admin/products' ? 'admin-products' : item.path === '/admin/attributes' ? 'admin-defaults' : item.path === '/admin/orders' ? 'admin-orders' : item.path === '/admin/blog' ? 'admin-blog' : item.path === '/admin/settings' ? 'admin-settings' : undefined} className={`flex flex-col items-center gap-0.5 px-2 py-1.5 text-[10px] ${active ? 'text-primary' : 'text-muted-foreground'}`}>
-                  <span className="h-4">{item.icon}</span>
-                  <span className="whitespace-nowrap">{item.label}</span>
-                </Link>
-              );
-            })}
+      <div className="admin-ref-main">
+        <header className="admin-ref-header">
+          <div className="admin-ref-user">
+            <button type="button" className="admin-ref-chevron">⌄</button>
+            <span className="admin-ref-avatar" aria-hidden="true" />
+            <div>
+              <strong>پشتیبانی نوشه</strong>
+              <small>مدیر سیستم</small>
+            </div>
+            <span className="admin-ref-bell" aria-label="اعلان‌ها">♧<i>۳</i></span>
           </div>
-        </div>
-
-        <main className="min-w-0 flex-1 p-4 pb-20 md:p-6 md:pb-6">{children}</main>
-        <GuidedTour storageKey="noosheh-admin-tour-v1" steps={adminTourSteps} helpLabel="راهنمای پنل" />
+          <Link href="/" className="admin-ref-store-link">مشاهده فروشگاه <span>↗</span></Link>
+        </header>
+        <main className="admin-ref-content">{children}</main>
       </div>
+      <GuidedTour storageKey="noosheh-admin-tour-v1" steps={adminTourSteps} helpLabel="راهنمای پنل" />
     </div>
   );
 }
