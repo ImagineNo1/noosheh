@@ -31,6 +31,7 @@ type ProductCardOptionsProps = {
   onSelectionChange: (selection: ProductCardSelection) => void;
   showError?: boolean;
   compact?: boolean;
+  reserveRows?: boolean;
 };
 
 const visibleOptionCount = 5;
@@ -120,9 +121,9 @@ function OptionRow({ label, children }: { label: string; children: ReactNode }) 
   );
 }
 
-export default function ProductCardOptions({ product, selection, onSelectionChange, showError = false, compact = false }: ProductCardOptionsProps) {
+export default function ProductCardOptions({ product, selection, onSelectionChange, showError = false, compact = false, reserveRows = false }: ProductCardOptionsProps) {
   const options = getProductCardOptions(product);
-  if (!hasProductCardOptions(options)) return null;
+  if (!hasProductCardOptions(options) && !reserveRows) return null;
 
   const setSelection = (patch: ProductCardSelection) => onSelectionChange({ ...selection, ...patch });
 
@@ -135,7 +136,7 @@ export default function ProductCardOptions({ product, selection, onSelectionChan
 
   return (
     <div className={`store-card-options ${compact ? 'compact' : ''} ${showError ? 'has-error' : ''}`}>
-      {options.colors.length ? (
+      {options.colors.length || reserveRows ? (
         <OptionRow label="رنگ">
           {visibleColors.map((color) => {
             const disabled = !optionAvailability(product, selection, { color: color.value, size: '', cup: '' });
@@ -165,10 +166,11 @@ export default function ProductCardOptions({ product, selection, onSelectionChan
               onChange={(color) => setSelection({ color, size: '', cup: '' })}
             />
           ) : null}
+        {!options.colors.length && reserveRows ? <span className="store-card-option-placeholder">—</span> : null}
         </OptionRow>
       ) : null}
 
-      {options.sizes.length ? (
+      {options.sizes.length || reserveRows ? (
         <OptionRow label="سایز">
           {visibleSizes.map((size) => {
             const disabled = !optionAvailability(product, selection, { size, cup: '' });
@@ -187,10 +189,11 @@ export default function ProductCardOptions({ product, selection, onSelectionChan
               onChange={(size) => setSelection({ size, cup: '' })}
             />
           ) : null}
+        {!options.sizes.length && reserveRows ? <span className="store-card-option-placeholder">—</span> : null}
         </OptionRow>
       ) : null}
 
-      {options.cups.length ? (
+      {options.cups.length || reserveRows ? (
         <OptionRow label="کاپ">
           {visibleCups.map((cup) => {
             const disabled = !optionAvailability(product, selection, { cup });
@@ -209,6 +212,7 @@ export default function ProductCardOptions({ product, selection, onSelectionChan
               onChange={(cup) => setSelection({ cup })}
             />
           ) : null}
+        {!options.cups.length && reserveRows ? <span className="store-card-option-placeholder">—</span> : null}
         </OptionRow>
       ) : null}
       {showError ? <small>گزینه‌های محصول را انتخاب کنید.</small> : null}

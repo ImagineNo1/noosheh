@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
+import GuidedTour from '@/components/GuidedTour';
 import { clearUserSession, getStoredUser, type SessionUser } from '@/lib/user-auth';
 
 const navItems = [
@@ -14,6 +15,16 @@ const navItems = [
   { href: '/account/returns', label: 'مرجوعی‌ها', icon: '↻' },
   { href: '/account/profile', label: 'پروفایل', icon: '♙' },
   { href: '/account/security', label: 'امنیت', icon: '⚿' }
+];
+
+
+const accountTourSteps = [
+  { selector: '[data-tour="account-summary"]', title: 'خلاصه حساب', description: 'در داشبورد کاربر وضعیت سفارش‌های اخیر، آدرس‌ها و فعالیت حساب نمایش داده می‌شود.' },
+  { selector: '[data-tour="account-orders"]', title: 'سفارش‌ها', description: 'برای دیدن جزئیات خرید، وضعیت پرداخت، ارسال و کد رهگیری وارد این بخش شوید.' },
+  { selector: '[data-tour="account-addresses"]', title: 'آدرس‌ها', description: 'آدرس‌های تحویل را اضافه، ویرایش یا به‌عنوان پیش‌فرض انتخاب کنید.' },
+  { selector: '[data-tour="account-wishlist"]', title: 'علاقه‌مندی‌ها', description: 'محصولات محبوبتان را ذخیره کنید تا بعداً سریع‌تر به آن‌ها برگردید.' },
+  { selector: '[data-tour="account-reviews"]', title: 'نظرات و تجربه خرید', description: 'نظرهای ثبت‌شده برای محصولات را اینجا پیگیری و مدیریت می‌کنید.' },
+  { selector: '[data-tour="account-security"]', title: 'امنیت حساب', description: 'اطلاعات ورود و تنظیمات امنیتی حساب کاربری در این قسمت قرار دارد.' }
 ];
 
 function getInitials(name?: string) {
@@ -66,6 +77,7 @@ export default function AccountShell({ children }: { children: ReactNode }) {
             <Link
               key={item.href}
               href={item.href}
+              data-tour={item.href === '/account' ? 'account-summary' : item.href === '/account/orders' ? 'account-orders' : item.href === '/account/addresses' ? 'account-addresses' : item.href === '/account/wishlist' ? 'account-wishlist' : item.href === '/account/reviews' ? 'account-reviews' : item.href === '/account/security' ? 'account-security' : undefined}
               onClick={() => setMobileOpen(false)}
               className={`flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm transition-colors ${active ? 'bg-primary/10 font-medium text-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}
             >
@@ -137,6 +149,7 @@ export default function AccountShell({ children }: { children: ReactNode }) {
         </div>
 
         <main className="min-w-0 flex-1 p-4 pb-24 md:p-6 md:pb-6">{children}</main>
+        <GuidedTour storageKey="noosheh-account-tour-v1" steps={accountTourSteps} helpLabel="راهنمای حساب" />
       </div>
     </div>
   );

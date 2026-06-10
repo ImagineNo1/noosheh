@@ -9,7 +9,8 @@ import type { ProductAttribute } from '../types';
 const attributeGroups = [
   { type: 'brand', title: 'برند', icon: '✦', helper: 'نام برندهایی که در محصول انتخاب می‌شوند.', example: 'Noosheh' },
   { type: 'collection', title: 'کالکشن', icon: '◈', helper: 'فصل، کمپین یا مجموعه محصول.', example: 'بهاره' },
-  { type: 'category', title: 'دسته‌بندی', icon: '▦', helper: 'دسته اصلی نمایش محصول.', example: 'لباس خواب' },
+  { type: 'category', title: 'دسته‌بندی محصول', icon: '▦', helper: 'دسته اصلی نمایش محصول.', example: 'لباس خواب' },
+  { type: 'blog_category', title: 'دسته‌بندی بلاگ', icon: '✎', helper: 'دسته‌هایی که در افزودن و ویرایش مقاله انتخاب می‌شوند.', example: 'راهنمای خرید' },
   { type: 'product_type', title: 'نوع محصول', icon: '◇', helper: 'مدل یا فرم محصول.', example: 'ست' },
   { type: 'tag', title: 'تگ', icon: '#', helper: 'برچسب‌های جستجو و پیشنهاددهی.', example: 'پرفروش' },
   { type: 'feature', title: 'ویژگی', icon: '✓', helper: 'مزیت‌های کوتاه محصول.', example: 'پارچه لطیف' },

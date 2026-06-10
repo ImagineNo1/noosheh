@@ -11,7 +11,7 @@ function totalStock(product: Product) {
   return product.variants?.length ? product.variants.reduce((sum, variant) => sum + Number(variant.stock ?? variant.inventory ?? 0), 0) : Number(product.stock ?? 0);
 }
 
-function ProductMiniCard({ product, preferredColor, onAddToCart }: { product: Product; preferredColor?: ProductColor | null; onAddToCart: (product: Product, size?: string, color?: string, cup?: string, variantId?: string, image?: string, price?: number) => void }) {
+export function ProductMiniCard({ product, preferredColor, onAddToCart }: { product: Product; preferredColor?: ProductColor | null; onAddToCart: (product: Product, size?: string, color?: string, cup?: string, variantId?: string, image?: string, price?: number) => void }) {
   const colors = normalizeColors(product);
   const defaultColor = colors.find((color) => colorValue(color) === colorValue(preferredColor)) || colors.find((color) => color.is_active !== false && color.active !== false) || colors[0] || null;
   const [selection, setSelection] = useState<ProductCardSelection>({ color: defaultColor ? colorValue(defaultColor) : '' });
@@ -56,7 +56,7 @@ function ProductMiniCard({ product, preferredColor, onAddToCart }: { product: Pr
         <span className="store-look-brand">{product.brand || 'NOOSHEH'}</span>
         <Link href={productHref(product)}><h3>{product.title}</h3></Link>
         <div className="store-look-price"><strong>{formatPrice(price)} ریال</strong>{comparePrice && comparePrice > price ? <del>{formatPrice(comparePrice)}</del> : null}</div>
-        <ProductCardOptions product={product} selection={selection} onSelectionChange={handleSelectionChange} showError={selectionError} compact />
+        <ProductCardOptions product={product} selection={selection} onSelectionChange={handleSelectionChange} showError={selectionError} compact reserveRows />
         <button type="button" onClick={handleAdd} disabled={!isAvailable} className={`store-look-add ${added ? 'added' : ''}`}>{added ? '✓ اضافه شد' : isAvailable ? 'افزودن به سبد' : 'ناموجود'}</button>
       </div>
     </article>
@@ -68,9 +68,9 @@ export default function CompleteTheLook({ products = [], currentColor, onAddToCa
     <section className="store-complete-look-section" dir="rtl" id="complete-the-look">
       <div className="store-ref-heading">
         <span />
-        <h2>استایلتان را کامل کنید</h2>
+        <h2>استایلتان را تکمیل کنید</h2>
         <span />
-        <small>Complete the Look</small>
+        <small>استایلتان را تکمیل کنید</small>
       </div>
       {products.length ? <div className="store-look-rail">{products.map((product) => <ProductMiniCard key={product.id} product={product} preferredColor={currentColor} onAddToCart={onAddToCart} />)}</div> : <div className="store-empty-state">پیشنهاد مکملی ثبت نشده است.</div>}
     </section>

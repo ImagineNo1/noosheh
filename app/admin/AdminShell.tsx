@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { FormEvent, useEffect, useState, type ReactNode } from 'react';
+import GuidedTour from '@/components/GuidedTour';
 import { adminApi, clearAdminToken } from './admin-api';
 
 const navItems = [
@@ -11,11 +12,20 @@ const navItems = [
   { path: '/admin/attributes', label: 'پیش‌فرض‌ها', icon: '☷' },
   { path: '/admin/orders', label: 'سفارشات', icon: '◈' },
   { path: '/admin/reviews', label: 'نظرات', icon: '☷' },
-  { path: '/admin/categories', label: 'دسته‌بندی‌ها', icon: '▤' },
   { path: '/admin/blog', label: 'مدیریت بلاگ', icon: '✎' },
   { path: '/admin/settings', label: 'تنظیمات', icon: '⚙' },
   { path: '/admin/seo', label: 'SEO', icon: '🔎' },
   { path: '/', label: 'صفحه اصلی', icon: '⌂', exact: true }
+];
+
+
+const adminTourSteps = [
+  { selector: '[data-tour="admin-dashboard"]', title: 'نمای کلی مدیریت', description: 'از این بخش وضعیت فروشگاه، آمارها و مسیرهای اصلی پنل مدیریت را دنبال می‌کنید.' },
+  { selector: '[data-tour="admin-products"]', title: 'مدیریت محصولات', description: 'محصول، تصویر، رنگ، سایز، کاپ، موجودی، محصولات مرتبط و SEO را از اینجا مدیریت کنید.' },
+  { selector: '[data-tour="admin-defaults"]', title: 'پیش‌فرض‌ها', description: 'همه مقدارهای دراپ‌داونی محصول و دسته‌بندی بلاگ را یکجا اضافه یا ویرایش کنید.' },
+  { selector: '[data-tour="admin-orders"]', title: 'سفارش‌ها', description: 'پرداخت، وضعیت آماده‌سازی، ارسال و پیگیری سفارش مشتری‌ها در این بخش قرار دارد.' },
+  { selector: '[data-tour="admin-blog"]', title: 'مجله و بلاگ', description: 'مقاله جدید بسازید، دسته‌بندی بلاگ را داخل فرم انتخاب کنید و وضعیت انتشار را کنترل کنید.' },
+  { selector: '[data-tour="admin-settings"]', title: 'تنظیمات سایت', description: 'تنظیمات عمومی فروشگاه، درگاه‌های پرداخت و ابزارهای SEO در این مسیرها قرار گرفته‌اند.' }
 ];
 
 function isActivePath(pathname: string, item: { path: string; exact?: boolean }) {
@@ -98,7 +108,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             {navItems.map((item) => {
               const active = isActivePath(pathname, item);
               return (
-                <Link key={item.path} href={item.path} className={`flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm transition-colors ${active ? 'bg-primary/10 font-medium text-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}>
+                <Link key={item.path} href={item.path} data-tour={item.path === '/admin' ? 'admin-dashboard' : item.path === '/admin/products' ? 'admin-products' : item.path === '/admin/attributes' ? 'admin-defaults' : item.path === '/admin/orders' ? 'admin-orders' : item.path === '/admin/blog' ? 'admin-blog' : item.path === '/admin/settings' ? 'admin-settings' : undefined} className={`flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm transition-colors ${active ? 'bg-primary/10 font-medium text-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}>
                   <span className="h-4 w-4 text-center">{item.icon}</span>
                   {item.label}
                 </Link>
@@ -116,7 +126,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             {navItems.slice(0, 5).map((item) => {
               const active = isActivePath(pathname, item);
               return (
-                <Link key={item.path} href={item.path} className={`flex flex-col items-center gap-0.5 px-2 py-1.5 text-[10px] ${active ? 'text-primary' : 'text-muted-foreground'}`}>
+                <Link key={item.path} href={item.path} data-tour={item.path === '/admin' ? 'admin-dashboard' : item.path === '/admin/products' ? 'admin-products' : item.path === '/admin/attributes' ? 'admin-defaults' : item.path === '/admin/orders' ? 'admin-orders' : item.path === '/admin/blog' ? 'admin-blog' : item.path === '/admin/settings' ? 'admin-settings' : undefined} className={`flex flex-col items-center gap-0.5 px-2 py-1.5 text-[10px] ${active ? 'text-primary' : 'text-muted-foreground'}`}>
                   <span className="h-4">{item.icon}</span>
                   <span className="whitespace-nowrap">{item.label}</span>
                 </Link>
@@ -126,6 +136,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         </div>
 
         <main className="min-w-0 flex-1 p-4 pb-20 md:p-6 md:pb-6">{children}</main>
+        <GuidedTour storageKey="noosheh-admin-tour-v1" steps={adminTourSteps} helpLabel="راهنمای پنل" />
       </div>
     </div>
   );

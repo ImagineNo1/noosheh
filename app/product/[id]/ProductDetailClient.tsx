@@ -182,7 +182,7 @@ export default function ProductDetailClient({ params, initialProducts = [] }: { 
       </main>
 
       {completeTheLook.length > 0 && <CompleteTheLook products={completeTheLook} currentColor={selectedColor} onAddToCart={addConfiguredProduct} />}
-      {similarProducts.length > 0 && <SimilarProducts products={similarProducts} />}
+      {similarProducts.length > 0 && <SimilarProducts products={similarProducts} currentColor={selectedColor} onAddToCart={addConfiguredProduct} />}
     </div>
   );
 }
