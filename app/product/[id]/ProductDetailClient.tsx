@@ -111,7 +111,7 @@ export default function ProductDetailClient({ params, initialProducts = [] }: { 
   const hasDiscount = Boolean(comparePrice && comparePrice > currentPrice);
   const discountPercent = hasDiscount ? Math.round((1 - currentPrice / (comparePrice || currentPrice)) * 100) : 0;
   const features = product.features || [];
-  const completeTheLook = products.filter((item) => (product.complete_the_look_ids || []).includes(item.id));
+  const completeTheLook = product.complete_the_look_enabled === false ? [] : products.filter((item) => (product.complete_the_look_ids || []).includes(item.id));
   const similarProducts = (product.similar_product_ids?.length ? products.filter((item) => product.similar_product_ids?.includes(item.id)) : products.filter((item) => item.category === product.category && item.id !== product.id && item.is_active !== false)).slice(0, 8);
   const validationErrors = [
     ...(product.sizes?.length && !selectedSize ? ['لطفاً سایز را انتخاب کنید'] : []),
@@ -136,10 +136,10 @@ export default function ProductDetailClient({ params, initialProducts = [] }: { 
         </nav>
       </div>
 
-      <main className="mx-auto max-w-7xl px-4">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
-          <section className="lg:sticky lg:top-28 lg:self-start"><ProductGallery images={galleryImages} title={product.title} /></section>
-          <section className="space-y-5">
+      <main className="store-product-sticky-shell mx-auto max-w-7xl px-4">
+        <section className="store-product-sticky-gallery"><ProductGallery images={galleryImages} title={product.title} /></section>
+        <section className="store-product-detail-column">
+          <div className="space-y-5">
             <ProductBadges badges={product.badges} isAvailable={isAvailable} />
             <div><h1 className="text-2xl font-bold md:text-3xl">{product.title}</h1>{(product.brand || product.collection) && <p className="mt-2 text-xs text-muted-foreground">{product.brand && <>برند: {product.brand}</>}{product.brand && product.collection && ' | '}{product.collection && <>کالکشن: {product.collection}</>}</p>}</div>
             <div className="flex flex-wrap items-baseline gap-3"><span className="text-2xl font-bold text-primary">{formatPrice(currentPrice)} ریال</span>{hasDiscount && <><span className="text-sm text-muted-foreground line-through">{formatPrice(comparePrice)} ریال</span><span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">{discountPercent}٪ تخفیف</span></>}</div>
@@ -156,9 +156,9 @@ export default function ProductDetailClient({ params, initialProducts = [] }: { 
               <AddToCartButton isAvailable={isAvailable} isValid={validationErrors.length === 0} validationErrors={validationErrors} onAdd={handleAdd} onNotify={() => setNotifyMessage('درخواست اطلاع‌رسانی شما ثبت شد.')} />
             </div>
             <TrustBadges />
-          </section>
-        </div>
-        <ProductTabs product={product} />
+          </div>
+          <ProductTabs product={product} />
+        </section>
       </main>
 
       {completeTheLook.length > 0 && <CompleteTheLook products={completeTheLook} currentColor={selectedColor} onAddToCart={addConfiguredProduct} />}

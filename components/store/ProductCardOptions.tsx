@@ -89,18 +89,24 @@ export function isProductCardSelectionAvailable(product: Product, selection: Pro
   return !product.variants?.length || Boolean(variant && variantAvailable(variant));
 }
 
-function MoreSelect({ label, value, options, onChange }: { label: string; value?: string; options: string[]; onChange: (value: string) => void }) {
+type SelectOption = {
+  value: string;
+  label: string;
+  disabled?: boolean;
+};
+
+function OptionSelect({ label, placeholder, value, options, onChange }: { label: string; placeholder: string; value?: string; options: SelectOption[]; onChange: (value: string) => void }) {
   if (!options.length) return null;
-  const selectedInMore = value && options.includes(value);
+  const hasSelectedValue = Boolean(value && options.some((option) => option.value === value));
   return (
     <select
-      className={`store-card-option-more ${selectedInMore ? 'active' : ''}`}
-      value={selectedInMore ? value : ''}
+      className={`store-card-option-select ${hasSelectedValue ? 'active' : ''}`}
+      value={hasSelectedValue ? value : ''}
       onChange={(event) => event.target.value && onChange(event.target.value)}
       aria-label={label}
     >
-      <option value="">بیشتر</option>
-      {options.map((option) => <option key={option} value={option}>{option}</option>)}
+      <option value="">{placeholder}</option>
+      {options.map((option) => <option key={option.value} value={option.value} disabled={option.disabled}>{option.label}</option>)}
     </select>
   );
 }
@@ -120,12 +126,12 @@ export default function ProductCardOptions({ product, selection, onSelectionChan
 
   const setSelection = (patch: ProductCardSelection) => onSelectionChange({ ...selection, ...patch });
 
-  const visibleColors = options.colors.slice(0, visibleOptionCount);
-  const moreColors = options.colors.slice(visibleOptionCount);
-  const visibleSizes = options.sizes.slice(0, visibleOptionCount + 1);
-  const moreSizes = options.sizes.slice(visibleOptionCount + 1);
-  const visibleCups = options.cups.slice(0, visibleOptionCount + 1);
-  const moreCups = options.cups.slice(visibleOptionCount + 1);
+  const shouldCollapseColors = options.colors.length > visibleOptionCount;
+  const shouldCollapseSizes = options.sizes.length > visibleOptionCount;
+  const shouldCollapseCups = options.cups.length > visibleOptionCount;
+  const visibleColors = shouldCollapseColors ? [] : options.colors;
+  const visibleSizes = shouldCollapseSizes ? [] : options.sizes;
+  const visibleCups = shouldCollapseCups ? [] : options.cups;
 
   return (
     <div className={`store-card-options ${compact ? 'compact' : ''} ${showError ? 'has-error' : ''}`}>
@@ -146,7 +152,19 @@ export default function ProductCardOptions({ product, selection, onSelectionChan
               />
             );
           })}
-          <MoreSelect label="رنگ‌های بیشتر" value={selection.color} options={moreColors.map((color) => color.value)} onChange={(color) => setSelection({ color, size: '', cup: '' })} />
+          {shouldCollapseColors ? (
+            <OptionSelect
+              label="انتخاب رنگ"
+              placeholder="انتخاب رنگ"
+              value={selection.color}
+              options={options.colors.map((color) => ({
+                value: color.value,
+                label: color.name,
+                disabled: !optionAvailability(product, selection, { color: color.value, size: '', cup: '' })
+              }))}
+              onChange={(color) => setSelection({ color, size: '', cup: '' })}
+            />
+          ) : null}
         </OptionRow>
       ) : null}
 
@@ -156,7 +174,19 @@ export default function ProductCardOptions({ product, selection, onSelectionChan
             const disabled = !optionAvailability(product, selection, { size, cup: '' });
             return <button key={size} type="button" className={selection.size === size ? 'active' : ''} disabled={disabled} onClick={() => setSelection({ size, cup: '' })}>{size}</button>;
           })}
-          <MoreSelect label="سایزهای بیشتر" value={selection.size} options={moreSizes} onChange={(size) => setSelection({ size, cup: '' })} />
+          {shouldCollapseSizes ? (
+            <OptionSelect
+              label="انتخاب سایز"
+              placeholder="انتخاب سایز"
+              value={selection.size}
+              options={options.sizes.map((size) => ({
+                value: size,
+                label: size,
+                disabled: !optionAvailability(product, selection, { size, cup: '' })
+              }))}
+              onChange={(size) => setSelection({ size, cup: '' })}
+            />
+          ) : null}
         </OptionRow>
       ) : null}
 
@@ -166,7 +196,19 @@ export default function ProductCardOptions({ product, selection, onSelectionChan
             const disabled = !optionAvailability(product, selection, { cup });
             return <button key={cup} type="button" className={selection.cup === cup ? 'active' : ''} disabled={disabled} onClick={() => setSelection({ cup })}>{cup}</button>;
           })}
-          <MoreSelect label="کاپ‌های بیشتر" value={selection.cup} options={moreCups} onChange={(cup) => setSelection({ cup })} />
+          {shouldCollapseCups ? (
+            <OptionSelect
+              label="انتخاب کاپ"
+              placeholder="انتخاب کاپ"
+              value={selection.cup}
+              options={options.cups.map((cup) => ({
+                value: cup,
+                label: cup,
+                disabled: !optionAvailability(product, selection, { cup })
+              }))}
+              onChange={(cup) => setSelection({ cup })}
+            />
+          ) : null}
         </OptionRow>
       ) : null}
       {showError ? <small>گزینه‌های محصول را انتخاب کنید.</small> : null}
