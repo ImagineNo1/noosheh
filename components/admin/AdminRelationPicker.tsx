@@ -81,7 +81,6 @@ export default function AdminRelationPicker({
               <button type="button" onClick={() => removeProduct(product.id)} aria-label={`حذف ${product.title}`}>×</button>
             </span>
           ))}
-          {selectedProducts.length === 0 && <p className="admin-muted small">هنوز محصولی انتخاب نشده است؛ در صفحه محصول پیشنهادهای خودکار نمایش داده می‌شوند.</p>}
         </div>
 
         <div>
@@ -97,15 +96,6 @@ export default function AdminRelationPicker({
             </button>
           ))}
           {availableProducts.length === 0 && search && <p className="admin-muted small center">محصولی یافت نشد</p>}
-        </div>
-
-        <div>
-          <Label>شناسه‌های انتخاب‌شده</Label>
-          <Input
-            value={selectedIds.join(', ')}
-            onChange={(event) => onChange(event.target.value.split(',').map((item) => item.trim()).filter(Boolean))}
-            dir="ltr"
-          />
         </div>
       </div>
     </Card>

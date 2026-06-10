@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminApi } from '@/app/admin/admin-api';
 import SeoTab from '@/components/seo/SeoTab';
+import type { ProductAttribute } from '@/app/admin/types';
 
 const fallbackImage = '/store/noosheh-hero-editorial.png';
 
@@ -48,7 +49,75 @@ function Field({ label, helper, children, required }: { label: string; helper?: 
   );
 }
 
+const uniqueOptions = (...groups: Array<Array<string | undefined>>) => Array.from(new Set(groups.flat().map((item) => (item || '').trim()).filter(Boolean)));
+const attributeValues = (items: ProductAttribute[], type: string) => items.filter((item) => item.type === type).map((item) => item.value || item.name).filter(Boolean);
+
 const inputClass = 'w-full rounded-2xl border border-[#eaded5] bg-[#fffaf5] px-4 py-3 text-sm text-[#3a211d] outline-none transition placeholder:text-[#b09b92] focus:border-[#970f35] focus:ring-4 focus:ring-[#970f35]/10';
+
+
+function BlogCategoryDropdown({ value, options, onChange, onCreate }: { value: string; options: string[]; onChange: (value: string) => void; onCreate: (value: string) => Promise<void> }) {
+  const [query, setQuery] = useState(value || '');
+  const [open, setOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredOptions = useMemo(() => options.filter((option) => !normalizedQuery || option.toLowerCase().includes(normalizedQuery)).slice(0, 8), [normalizedQuery, options]);
+  const exactExists = options.some((option) => option.toLowerCase() === normalizedQuery);
+  const canCreate = Boolean(query.trim()) && !exactExists;
+
+  const choose = (option: string) => {
+    onChange(option);
+    setQuery('');
+    setOpen(false);
+  };
+
+  const createOption = async () => {
+    const nextValue = query.trim();
+    if (!nextValue || creating) return;
+    setCreating(true);
+    try {
+      await onCreate(nextValue);
+      choose(nextValue);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const commitKeyboardSelection = async () => {
+    const exactOption = options.find((option) => option.toLowerCase() === normalizedQuery);
+    if (exactOption) return choose(exactOption);
+    if (filteredOptions.length === 1 && filteredOptions[0].toLowerCase().startsWith(normalizedQuery)) return choose(filteredOptions[0]);
+    if (canCreate) await createOption();
+  };
+
+  return (
+    <div className="admin-combobox">
+      <div className="admin-combobox-input-wrap">
+        <input
+          className={inputClass}
+          value={open ? query : value || ''}
+          onFocus={() => { setQuery(value || ''); setOpen(true); }}
+          onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+          onChange={(event) => { setQuery(event.target.value); setOpen(true); onChange(event.target.value); }}
+          onKeyDown={async (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            if (event.key === ' ' && (!open || query.trim().includes(' ') || (!exactExists && filteredOptions.length !== 1))) return;
+            if (!query.trim()) return;
+            event.preventDefault();
+            await commitKeyboardSelection();
+          }}
+          placeholder="جستجو یا تایپ دسته‌بندی..."
+        />
+        {canCreate && <button type="button" className="admin-combobox-add" onMouseDown={(event) => event.preventDefault()} onClick={createOption} disabled={creating} aria-label={`افزودن ${query}`}>＋</button>}
+      </div>
+      {open && (filteredOptions.length > 0 || canCreate) && (
+        <div className="admin-combobox-menu">
+          {filteredOptions.map((option) => <button type="button" key={option} onMouseDown={(event) => event.preventDefault()} onClick={() => choose(option)}>{option}</button>)}
+          {canCreate && <button type="button" className="create" onMouseDown={(event) => event.preventDefault()} onClick={createOption} disabled={creating}>＋ افزودن «{query.trim()}» به پیش‌فرض‌ها</button>}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const editorActions: Array<{ label: string; command: string; value?: string }> = [
   { label: 'Bold', command: 'bold' },
@@ -70,12 +139,12 @@ export default function BlogEditor({ id }: { id?: string }) {
   const router = useRouter();
   const [form, setForm] = useState<EditorForm>({ title: '', slug: '', excerpt: '', content: '', cover_image: '', category: '', tags: [], status: 'draft', author_name: '', publish_at: '', seo_title: '', seo_description: '', og_image: '' });
   const [tagInput, setTagInput] = useState('');
-  const [categories, setCategories] = useState<any[]>([]);
+  const [blogCategoryDefaults, setBlogCategoryDefaults] = useState<ProductAttribute[]>([]);
   const [previewMode, setPreviewMode] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    adminApi.list<any>('BlogCategory').then(setCategories);
+    adminApi.list<ProductAttribute>('ProductAttribute').then((items) => setBlogCategoryDefaults(items.filter((item) => item.type === 'blog_category')));
     if (id) {
       adminApi.list<any>('BlogPost').then((rows) => {
         const post = rows.find((item) => item.id === id);
@@ -87,6 +156,8 @@ export default function BlogEditor({ id }: { id?: string }) {
   const generatedSlug = useMemo(() => normalizeSlug(form.slug || form.title), [form.slug, form.title]);
   const seoTitleLength = (form.seo_title || form.title).length;
   const seoDescriptionLength = (form.seo_description || form.excerpt).length;
+  const blogCategoryOptions = uniqueOptions(attributeValues(blogCategoryDefaults, 'blog_category'), form.category ? [form.category] : []);
+
   const metadataValid = seoTitleLength >= 20 && seoTitleLength <= 70 && seoDescriptionLength >= 70 && seoDescriptionLength <= 170;
 
   const save = async (nextStatus = form.status) => {
@@ -100,6 +171,14 @@ export default function BlogEditor({ id }: { id?: string }) {
 
   const execEditor = (command: string, value?: string) => {
     document.execCommand(command, false, value);
+  };
+
+  const addBlogCategoryDefault = async (value: string) => {
+    const normalizedValue = value.trim();
+    if (!normalizedValue || blogCategoryDefaults.some((item) => (item.value || item.name).toLowerCase() === normalizedValue.toLowerCase())) return;
+    await adminApi.create<ProductAttribute>('ProductAttribute', { type: 'blog_category', name: normalizedValue, value: normalizedValue });
+    const items = await adminApi.list<ProductAttribute>('ProductAttribute');
+    setBlogCategoryDefaults(items.filter((item) => item.type === 'blog_category'));
   };
 
   const addTag = () => {
@@ -172,7 +251,7 @@ export default function BlogEditor({ id }: { id?: string }) {
           <Section eyebrow="05" title="انتشار" description="وضعیت، تاریخ انتشار، دسته‌بندی و برچسب‌های تحریریه را کنترل کنید.">
             <Field label="وضعیت"><select className={inputClass} value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as EditorForm['status'] })}><option value="draft">پیش‌نویس</option><option value="published">منتشر شده</option><option value="archived">بایگانی</option></select></Field>
             <Field label="تاریخ انتشار"><input className={inputClass} type="datetime-local" value={form.publish_at ? form.publish_at.slice(0, 16) : ''} onChange={(e) => setForm({ ...form, publish_at: e.target.value })} /></Field>
-            <Field label="دسته‌بندی"><select className={inputClass} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="">انتخاب دسته</option>{categories.map((category) => <option key={category.id || category.name} value={category.name}>{category.name}</option>)}</select></Field>
+            <Field label="دسته‌بندی"><BlogCategoryDropdown value={form.category} options={blogCategoryOptions} onChange={(category) => setForm({ ...form, category })} onCreate={addBlogCategoryDefault} /></Field>
             <Field label="برچسب‌ها"><div className="flex gap-2"><input className={inputClass} value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }} placeholder="مثال: ساتن" /><button type="button" onClick={addTag} className="rounded-2xl bg-[#970f35] px-4 font-black text-white">+</button></div></Field>
             <div className="flex flex-wrap gap-2">{form.tags.map((tag) => <button type="button" key={tag} onClick={() => setForm({ ...form, tags: form.tags.filter((item) => item !== tag) })} className="rounded-full bg-[#f7e8ee] px-3 py-1.5 text-xs font-bold text-[#970f35]">{tag} ×</button>)}</div>
           </Section>

@@ -5,7 +5,8 @@ import { useEntityList, formatDate } from '../_components/hooks';
 
 export default function AdminBlogDashboard() {
   const { data: posts, isLoading } = useEntityList<any>('BlogPost', '-created_date');
-  const { data: categories } = useEntityList<any>('BlogCategory');
+  const { data: categoryDefaults } = useEntityList<any>('ProductAttribute');
+  const categories = categoryDefaults.filter((item) => item.type === 'blog_category');
 
   const publishedCount = posts.filter((p) => p.status === 'published').length;
   const draftCount = posts.filter((p) => p.status === 'draft').length;
