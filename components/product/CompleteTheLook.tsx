@@ -4,30 +4,45 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { Product } from '@/app/admin/types';
 import { productHref } from '@/lib/product-normalization';
-import { colorImageUrls, colorMatchesVariant, colorValue, formatPrice, normalizeColors, normalizeList, optionMatchesVariant, variantAvailable, type ProductColor } from './product-utils';
+import ProductCardOptions, { findProductCardVariant, getProductCardOptions, hasProductCardOptions, isProductCardSelectionAvailable, isProductCardSelectionComplete, type ProductCardSelection } from '@/components/store/ProductCardOptions';
+import { colorImageUrls, colorValue, formatPrice, normalizeColors, variantAvailable, type ProductColor } from './product-utils';
+
+function totalStock(product: Product) {
+  return product.variants?.length ? product.variants.reduce((sum, variant) => sum + Number(variant.stock ?? variant.inventory ?? 0), 0) : Number(product.stock ?? 0);
+}
 
 function ProductMiniCard({ product, preferredColor, onAddToCart }: { product: Product; preferredColor?: ProductColor | null; onAddToCart: (product: Product, size?: string, color?: string, cup?: string, variantId?: string, image?: string, price?: number) => void }) {
   const colors = normalizeColors(product);
   const defaultColor = colors.find((color) => colorValue(color) === colorValue(preferredColor)) || colors.find((color) => color.is_active !== false && color.active !== false) || colors[0] || null;
-  const [selectedColor, setSelectedColor] = useState<ProductColor | null>(defaultColor);
-  const [selectedSize, setSelectedSize] = useState('');
-  const [selectedCup, setSelectedCup] = useState('');
+  const [selection, setSelection] = useState<ProductCardSelection>({ color: defaultColor ? colorValue(defaultColor) : '' });
+  const [selectionError, setSelectionError] = useState(false);
   const [added, setAdded] = useState(false);
 
-  const variant = useMemo(() => product.variants?.find((item) => colorMatchesVariant(selectedColor, item.color) && optionMatchesVariant(selectedSize, item.size) && (!product.has_cup_option || optionMatchesVariant(selectedCup, item.cup))), [product, selectedColor, selectedSize, selectedCup]);
+  const optionGroups = useMemo(() => getProductCardOptions(product), [product]);
+  const hasOptions = hasProductCardOptions(optionGroups);
+  const selectedColor = useMemo(() => colors.find((color) => colorValue(color) === selection.color || color.name === selection.color || color.slug === selection.color || color.value === selection.color) || defaultColor, [colors, defaultColor, selection.color]);
+  const variant = useMemo(() => findProductCardVariant(product, selection), [product, selection]);
   const images = colorImageUrls(selectedColor);
   const coverImage = images[0] || product.images?.[0] || product.cover_image || '';
   const price = variant?.discount_price || variant?.price || product.discount_price || product.price;
   const comparePrice = variant?.compare_at_price || (variant?.discount_price ? variant.price : product.discount_price ? product.price : undefined);
-  const hasConfiguredVariants = Boolean(product.variants?.length);
-  const hasMissingSize = Boolean(product.sizes?.length && !selectedSize);
-  const hasMissingCup = Boolean(product.has_cup_option && product.cups?.length && !selectedCup);
-  const isAvailable = hasConfiguredVariants ? variantAvailable(variant) : (product.stock ?? 1) > 0;
-  const canAdd = isAvailable && !hasMissingSize && !hasMissingCup;
+  const stock = totalStock(product);
+  const selectionComplete = isProductCardSelectionComplete(optionGroups, selection);
+  const selectionAvailable = !selectionComplete || isProductCardSelectionAvailable(product, selection);
+  const isAvailable = product.variants?.length ? (selectionComplete ? Boolean(variant && variantAvailable(variant)) : stock > 0) : stock > 0;
+  const canAdd = (!hasOptions || selectionComplete) && selectionAvailable && isAvailable;
+
+  const handleSelectionChange = (nextSelection: ProductCardSelection) => {
+    setSelection(nextSelection);
+    setSelectionError(false);
+  };
 
   const handleAdd = () => {
-    if (!canAdd) return;
-    onAddToCart(product, selectedSize, selectedColor ? colorValue(selectedColor) : '', selectedCup, variant?.id || variant?.product_variant_id, coverImage, price);
+    if (!canAdd) {
+      setSelectionError(true);
+      return;
+    }
+    onAddToCart(product, selection.size || '', selection.color || '', selection.cup || '', variant?.id || variant?.product_variant_id, coverImage, price);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -38,17 +53,11 @@ function ProductMiniCard({ product, preferredColor, onAddToCart }: { product: Pr
         {coverImage ? <img src={coverImage} alt={product.title} /> : <span>بدون تصویر</span>}
       </Link>
       <div className="store-look-body">
+        <span className="store-look-brand">{product.brand || 'NOOSHEH'}</span>
         <Link href={productHref(product)}><h3>{product.title}</h3></Link>
         <div className="store-look-price"><strong>{formatPrice(price)} ریال</strong>{comparePrice && comparePrice > price ? <del>{formatPrice(comparePrice)}</del> : null}</div>
-        {colors.length > 0 ? (
-          <div className="store-look-swatches" aria-label="انتخاب رنگ">
-            {colors.slice(0, 5).map((color) => <button key={colorValue(color)} type="button" onClick={() => { setSelectedColor(color); setSelectedSize(''); setSelectedCup(''); }} className={colorValue(selectedColor) === colorValue(color) ? 'active' : ''} style={{ backgroundColor: color.hex || color.value }} title={color.name} />)}
-            {colors.length > 5 ? <small>+{(colors.length - 5).toLocaleString('fa-IR')}</small> : null}
-          </div>
-        ) : null}
-        {product.sizes?.length ? <div className="store-look-options">{normalizeList(product.sizes).slice(0, 6).map((size) => <button key={size} type="button" onClick={() => { setSelectedSize(size); setSelectedCup(''); }} className={selectedSize === size ? 'active' : ''}>{size}</button>)}</div> : null}
-        {product.has_cup_option && product.cups?.length ? <div className="store-look-options">{normalizeList(product.cups).slice(0, 6).map((cup) => <button key={cup} type="button" onClick={() => setSelectedCup(cup)} className={selectedCup === cup ? 'active' : ''}>{cup}</button>)}</div> : null}
-        <button type="button" onClick={handleAdd} disabled={!canAdd} className={`store-look-add ${added ? 'added' : ''}`}>{added ? '✓ اضافه شد' : isAvailable ? 'افزودن به سبد' : 'ناموجود'}</button>
+        <ProductCardOptions product={product} selection={selection} onSelectionChange={handleSelectionChange} showError={selectionError} compact />
+        <button type="button" onClick={handleAdd} disabled={!isAvailable} className={`store-look-add ${added ? 'added' : ''}`}>{added ? '✓ اضافه شد' : isAvailable ? 'افزودن به سبد' : 'ناموجود'}</button>
       </div>
     </article>
   );

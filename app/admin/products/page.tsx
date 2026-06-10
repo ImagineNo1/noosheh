@@ -77,6 +77,19 @@ function AdminCreatableDropdown({
     }
   };
 
+  const commitKeyboardSelection = async () => {
+    const exactOption = options.find((option) => option.toLowerCase() === normalizedQuery);
+    if (exactOption) {
+      choose(exactOption);
+      return;
+    }
+    if (filteredOptions.length === 1 && filteredOptions[0].toLowerCase().startsWith(normalizedQuery)) {
+      choose(filteredOptions[0]);
+      return;
+    }
+    if (canCreate) await createOption();
+  };
+
   return (
     <div className="admin-combobox">
       <Label>{label}</Label>
@@ -90,6 +103,13 @@ function AdminCreatableDropdown({
             setQuery(event.target.value);
             setOpen(true);
             if (!multiple) onChange(event.target.value);
+          }}
+          onKeyDown={async (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            if (event.key === ' ' && (!open || query.trim().includes(' ') || (!exactExists && filteredOptions.length !== 1))) return;
+            if (!query.trim()) return;
+            event.preventDefault();
+            await commitKeyboardSelection();
           }}
           placeholder={placeholder || 'جستجو یا تایپ کنید...'}
         />
