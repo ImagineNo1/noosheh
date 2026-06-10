@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { adminApi } from '@/app/admin/admin-api';
-import { Button, Card, Input, Label, Toggle } from '@/app/admin/_components/ui';
+import { Button, Card, Dialog, Input, Label, Toggle } from '@/app/admin/_components/ui';
 import type { Product } from '@/app/admin/types';
 
 type ColorSwatch = NonNullable<Product['color_swatches']>[number];
@@ -29,6 +29,20 @@ function normalizeColor(color: ColorSwatch): ColorSwatch {
 export default function AdminColorManager({ colors = [], colorOptions = [], onChange }: { colors?: ColorSwatch[]; colorOptions?: string[]; onChange: (colors: ColorSwatch[]) => void }) {
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [error, setError] = useState('');
+  const [colorQuery, setColorQuery] = useState('');
+  const [colorDropdownOpen, setColorDropdownOpen] = useState(false);
+  const [colorModalOpen, setColorModalOpen] = useState(false);
+  const [newColor, setNewColor] = useState({ name: '', hex: '#000000', slug: '' });
+
+  const selectedNames = useMemo(() => colors.map((color) => color.name || color.value || color.slug).filter(Boolean) as string[], [colors]);
+  const filteredColorOptions = useMemo(() => {
+    const query = colorQuery.trim().toLowerCase();
+    return colorOptions
+      .filter((option) => !selectedNames.includes(option))
+      .filter((option) => !query || option.toLowerCase().includes(query))
+      .slice(0, 10);
+  }, [colorOptions, colorQuery, selectedNames]);
+  const canCreateColor = Boolean(colorQuery.trim()) && !colorOptions.some((option) => option.toLowerCase() === colorQuery.trim().toLowerCase());
 
   const setColorAt = (index: number, nextColor: ColorSwatch) => {
     onChange(colors.map((color, colorIndex) => colorIndex === index ? normalizeColor(nextColor) : color));
@@ -39,23 +53,32 @@ export default function AdminColorManager({ colors = [], colorOptions = [], onCh
     onChange([...colors, normalizeColor({ name, hex: '#000000', slug: slugify(name), value: slugify(name), swatch_image: '', active: true, is_active: true, order: colors.length, sort_order: colors.length, images: [] })]);
   };
 
-  const addColor = () => {
-    onChange([
-      ...colors,
-      normalizeColor({
-        name: '',
-        hex: '#000000',
-        slug: '',
-        value: '',
-        swatch_image: '',
-        active: true,
-        is_active: true,
-        order: colors.length,
-        sort_order: colors.length,
-        images: []
-      })
-    ]);
+  const openNewColorModal = (name = '') => {
+    const slug = slugify(name);
+    setNewColor({ name, hex: '#000000', slug });
+    setColorModalOpen(true);
+    setColorDropdownOpen(false);
   };
+
+  const saveNewColor = async () => {
+    const name = newColor.name.trim();
+    const slug = slugify(newColor.slug || name);
+    if (!name || !slug) {
+      setError('نام رنگ و اسلاگ الزامی است.');
+      return;
+    }
+    setError('');
+    if (!colorOptions.some((option) => option.toLowerCase() === name.toLowerCase())) {
+      await adminApi.create('ProductAttribute', { type: 'color', name, value: name });
+    }
+    if (!colors.some((color) => (color.name || color.value || color.slug) === name || color.slug === slug || color.value === slug)) {
+      onChange([...colors, normalizeColor({ name, hex: newColor.hex || '#000000', slug, value: slug, swatch_image: '', active: true, is_active: true, order: colors.length, sort_order: colors.length, images: [] })]);
+    }
+    setColorQuery('');
+    setColorModalOpen(false);
+  };
+
+  const addColor = () => openNewColorModal(colorQuery.trim());
 
   const updateColor = (index: number, field: keyof ColorSwatch, value: unknown) => {
     const current = normalizeColor(colors[index]);
@@ -113,7 +136,19 @@ export default function AdminColorManager({ colors = [], colorOptions = [], onCh
       </div>
       <div className="admin-card-body manager-list">
         {error && <div className="admin-alert destructive">{error}</div>}
-        {colorOptions.length > 0 && <div><Label>انتخاب رنگ‌های پیش‌فرض</Label><div className="admin-actions-row">{colorOptions.map((option) => <label key={option} className="admin-inline small"><input type="checkbox" checked={colors.some((color) => (color.name || color.value || color.slug) === option)} onChange={(event) => event.target.checked ? addPresetColor(option) : onChange(colors.filter((color) => (color.name || color.value || color.slug) !== option))} /> {option}</label>)}</div></div>}
+        <div className="admin-combobox">
+          <Label>انتخاب یا افزودن رنگ</Label>
+          <div className="admin-combobox-input-wrap">
+            <Input value={colorQuery} onFocus={() => setColorDropdownOpen(true)} onBlur={() => window.setTimeout(() => setColorDropdownOpen(false), 120)} onChange={(event) => { setColorQuery(event.target.value); setColorDropdownOpen(true); }} placeholder="رنگ را جستجو یا اضافه کنید..." />
+            <button type="button" className="admin-combobox-add" onMouseDown={(event) => event.preventDefault()} onClick={() => openNewColorModal(colorQuery.trim())} aria-label="افزودن رنگ جدید">＋</button>
+          </div>
+          {colorDropdownOpen && (filteredColorOptions.length > 0 || canCreateColor) ? (
+            <div className="admin-combobox-menu">
+              {filteredColorOptions.map((option) => <button type="button" key={option} onMouseDown={(event) => event.preventDefault()} onClick={() => { addPresetColor(option); setColorQuery(''); setColorDropdownOpen(false); }}>{option}</button>)}
+              {canCreateColor && <button type="button" className="create" onMouseDown={(event) => event.preventDefault()} onClick={() => openNewColorModal(colorQuery.trim())}>＋ افزودن رنگ جدید «{colorQuery.trim()}»</button>}
+            </div>
+          ) : null}
+        </div>
         {colors.map((rawColor, index) => {
           const color = normalizeColor(rawColor);
           const images = (color.images || []) as ColorImage[];
@@ -173,6 +208,31 @@ export default function AdminColorManager({ colors = [], colorOptions = [], onCh
         })}
         {colors.length === 0 && <p className="admin-muted center pad-lg">هنوز رنگی اضافه نشده است</p>}
       </div>
+      <Dialog open={colorModalOpen} title="افزودن رنگ جدید" onClose={() => setColorModalOpen(false)}>
+        <div className="admin-form">
+          <div className="admin-form-grid compact-grid">
+            <div>
+              <Label>نام رنگ</Label>
+              <Input value={newColor.name} onChange={(event) => setNewColor((current) => ({ ...current, name: event.target.value, slug: current.slug || slugify(event.target.value) }))} />
+            </div>
+            <div>
+              <Label>کد رنگ</Label>
+              <div className="manager-row">
+                <input type="color" value={newColor.hex} onChange={(event) => setNewColor((current) => ({ ...current, hex: event.target.value }))} className="admin-color-input" />
+                <Input value={newColor.hex} onChange={(event) => setNewColor((current) => ({ ...current, hex: event.target.value }))} dir="ltr" />
+              </div>
+            </div>
+            <div>
+              <Label>اسلاگ</Label>
+              <Input value={newColor.slug} onChange={(event) => setNewColor((current) => ({ ...current, slug: slugify(event.target.value) }))} dir="ltr" />
+            </div>
+          </div>
+          <div className="admin-dialog-footer">
+            <Button type="button" className="outline" onClick={() => setColorModalOpen(false)}>انصراف</Button>
+            <Button type="button" className="primary" onClick={saveNewColor}>افزودن رنگ</Button>
+          </div>
+        </div>
+      </Dialog>
     </Card>
   );
 }

@@ -20,6 +20,21 @@ import { productIdentifierMatches } from '@/lib/product-normalization';
 import { storeApi } from '@/lib/store-api';
 import type { Product } from '@/app/admin/types';
 
+const normalizeText = (value?: string) => (value || '').trim().toLowerCase();
+const intersectionCount = (first: string[] = [], second: string[] = []) => {
+  const secondSet = new Set(second.map(normalizeText).filter(Boolean));
+  return first.map(normalizeText).filter((item) => item && secondSet.has(item)).length;
+};
+const byManualOrder = (ids: string[] = []) => (first: Product, second: Product) => ids.indexOf(first.id) - ids.indexOf(second.id);
+const activeOtherProducts = (products: Product[], product: Product) => products.filter((item) => item.id !== product.id && item.is_active !== false);
+const similarScore = (candidate: Product, product: Product) => Number(Boolean(candidate.collection && normalizeText(candidate.collection) === normalizeText(product.collection))) * 3 + Number(Boolean(candidate.category && normalizeText(candidate.category) === normalizeText(product.category))) * 2 + Number(Boolean(candidate.brand && normalizeText(candidate.brand) === normalizeText(product.brand)));
+const completeLookScore = (candidate: Product, product: Product) => intersectionCount(candidate.tags, product.tags) * 3 + intersectionCount(candidate.features, product.features) * 2 + intersectionCount(candidate.badges, product.badges);
+const rankedProducts = (candidates: Product[], scoreProduct: (candidate: Product) => number) => candidates
+  .map((candidate) => ({ candidate, score: scoreProduct(candidate) }))
+  .filter(({ score }) => score > 0)
+  .sort((first, second) => second.score - first.score || (second.candidate.avg_rating || 0) - (first.candidate.avg_rating || 0) || (second.candidate.review_count || 0) - (first.candidate.review_count || 0))
+  .map(({ candidate }) => candidate);
+
 export default function ProductDetailClient({ params, initialProducts = [] }: { params: { id: string }; initialProducts?: Product[] }) {
   const { addItem } = useCart();
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -111,8 +126,13 @@ export default function ProductDetailClient({ params, initialProducts = [] }: { 
   const hasDiscount = Boolean(comparePrice && comparePrice > currentPrice);
   const discountPercent = hasDiscount ? Math.round((1 - currentPrice / (comparePrice || currentPrice)) * 100) : 0;
   const features = product.features || [];
-  const completeTheLook = product.complete_the_look_enabled === false ? [] : products.filter((item) => (product.complete_the_look_ids || []).includes(item.id));
-  const similarProducts = (product.similar_product_ids?.length ? products.filter((item) => product.similar_product_ids?.includes(item.id)) : products.filter((item) => item.category === product.category && item.id !== product.id && item.is_active !== false)).slice(0, 8);
+  const candidateProducts = activeOtherProducts(products, product);
+  const completeTheLook = (product.complete_the_look_ids?.length
+    ? candidateProducts.filter((item) => product.complete_the_look_ids?.includes(item.id)).sort(byManualOrder(product.complete_the_look_ids))
+    : rankedProducts(candidateProducts, (candidate) => completeLookScore(candidate, product))).slice(0, 8);
+  const similarProducts = (product.similar_product_ids?.length
+    ? candidateProducts.filter((item) => product.similar_product_ids?.includes(item.id)).sort(byManualOrder(product.similar_product_ids))
+    : rankedProducts(candidateProducts, (candidate) => similarScore(candidate, product))).slice(0, 8);
   const validationErrors = [
     ...(product.sizes?.length && !selectedSize ? ['لطفاً سایز را انتخاب کنید'] : []),
     ...(product.has_cup_option && product.cups?.length && !selectedCup ? ['لطفاً کاپ را انتخاب کنید'] : [])
